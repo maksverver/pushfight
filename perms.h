@@ -28,6 +28,8 @@
 constexpr int L = 26;
 
 // Total number of permutations of first_perm.
+//
+// 26! / 16! / 2! / 3! / 2! / 2! = 401,567,166,000
 constexpr int64_t total_perms = 401567166000;
 
 // A permutation of 26 characters, with 16 0s, 2 1s, 3 2s, 2 3s, 2 4s, and 1 5 (see all_freq below).

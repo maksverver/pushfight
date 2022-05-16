@@ -30,7 +30,6 @@ void InitializePerms() {
     int64_t n = 1;
     FORE(i, a + 1, a + b + c + d + e + f) n *= i;
     int64_t m = fac[b] * fac[c] * fac[d] * fac[e] * fac[f];
-    //std::cout << a << ' ' << b << ' ' << c << ' ' << d << ' ' << e << ' ' << f << ": " << n << '/' << m << std::endl;
     assert(n % m == 0);
     num_perms[a][b][c][d][e][f] = n / m;
   }
@@ -69,11 +68,11 @@ Perm PermAtIndex(int64_t idx) {
   Perm p;
   REP(i, L) {
     // Note: this could use binary search instead (using the indexOf_memo),
-    // but not sure if it's useful in practice.
+    // but not sure if it's useful in practice, since log(6)/log(2) = ~2.58
+    // and this loop runs only 3 iterations on average (6 worst case).
     REP(x, 6) if (f[x] > 0) {
       --f[x];
       int64_t n = num_perms[f[0]][f[1]][f[2]][f[3]][f[4]][f[5]];
-      //std::cout << i << ' ' << x << ' ' << f[0] << ' ' << f[1] << ' ' << f[2] << ' ' << f[3] << ' ' << f[4] << ' ' << f[5] << ' ' << f[0] << ' ' << ' ' << n << std::endl;
       if (n > idx) {
         p[i] = x;
         break;
