@@ -19,6 +19,10 @@ constexpr std::array<std::array<int, W>, H> BOARD_INDEX = {
   std::array<int, 8>{ -1, 21, 22, 23, 24, 25, -1, -1 },
 };
 
+constexpr int DANGER_POSITIONS[] = {
+  0, 4, 5, 6, 12, 13, 19, 20, 21, 25
+};
+
 constexpr std::array<int, L> FIELD_ROW = {
           0,  0,  0,  0,  0,
   1,  1,  1,  1,  1,  1,  1,  1,
@@ -268,6 +272,13 @@ void Deduplicate(std::vector<std::pair<Moves, State>> &successors) {
   successors.erase(it, successors.end());
 }
 
+bool IsBlackInDanger(const Perm &p) {
+  for (int i : DANGER_POSITIONS) {
+    if (p[i] == BLACK_MOVER || p[i] == BLACK_PUSHER) return true;
+  }
+  return false;
+}
+
 }  // namespace
 
 int main() {
@@ -280,24 +291,35 @@ int main() {
   //  Ties:   398867
   //  Wins:   601133
   //
-  // Time taken: 2m32.233s (6578 positions/second)
+  // Time taken: 21s (47,619 permutations/second)
 
   int64_t outcome_counts[3] = {0, 0, 0};
   REP(_, 1000000) {
     //Dump(perm, std::cout) << std::endl;
-    Outcome o = LOSS;
-    GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
-      o = MaxOutcome(o, INVERSE_OUTCOME[state.outcome]);
-      if (o == WIN) {
-        /*
-        const Moves &moves = successor.first;
-        const State &state = successor.second;
-        Dump(moves, std::cout) << std::endl;
-        Dump(state, std::cout) << std::endl;
-        */
-      }
-      return o != WIN;
-    });
+    Outcome o = TIE;
+    // Optimization: for the first pass, only check successors if there is a
+    // pushable black piece on an edge spot. Otherwise, we cannot win this turn.
+    // Note: this means we cannot detect losses due to being unable to move.
+    // My hypothesis is that there are no such positions, but if there are, the
+    // we should interpret TIE as "not a WIN (possibly a loss)".
+    if (IsBlackInDanger(perm)) {
+      int n = 0;
+      GenerateSuccessors(perm, [&o, &n](const Moves &moves, const State &state) {
+        (void) moves;  // unused
+        ++n;
+        o = MaxOutcome(o, INVERSE_OUTCOME[state.outcome]);
+        if (o == WIN) {
+          /*
+          const Moves &moves = successor.first;
+          const State &state = successor.second;
+          Dump(moves, std::cout) << std::endl;
+          Dump(state, std::cout) << std::endl;
+          */
+        }
+        return o != WIN;
+      });
+      assert(n > 0);  // hypothesis: there is always some valid move
+    }
     outcome_counts[o]++;
     std::next_permutation(perm.begin(), perm.end());
   }
