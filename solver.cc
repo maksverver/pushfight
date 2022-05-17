@@ -107,9 +107,16 @@ void ProcessChunk(int chunk) {
 
 }  // namespace
 
-int main() {
+int main(int argc, char *argv[]) {
+  int start_chunk = 0;
+  if (argc == 2) {
+    std::istringstream iss(argv[1]);
+    iss >> start_chunk;
+    assert(iss);
+  }
+
   InitializePerms();
-  REP(chunk, num_chunks) {
+  FOR(chunk, start_chunk, num_chunks) {
     if (std::filesystem::exists(FileName(chunk))) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
