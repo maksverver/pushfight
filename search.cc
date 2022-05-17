@@ -77,22 +77,9 @@ Outcome ExecutePush(Perm &perm, int i, int d) {
 bool GenerateSuccessors(
     Perm &perm,
     Moves &moves,
+    int moves_left,
     std::function<bool(const Moves&, const State&)> &callback) {
-  // Generate push moves.
-  REP(i, L) if (perm[i] == WHITE_PUSHER) REP(d, 4) if (IsValidPush(perm, i, d)) {
-    moves.moves[moves.size] = {i, getNeighbourIndex(i, d)};
-    ++moves.size;
-
-    // Possible optimization: undo push instead of copying the permutation?
-    State state = {.perm = perm, .outcome = TIE};
-    state.outcome = ExecutePush(state.perm, i, d);
-
-    if (!callback(moves, state)) return false;
-
-    --moves.size;
-  }
-
-  if (moves.size < 2) {
+  if (moves_left > 0) {
     // Generate moves.
     std::vector<int> todo;
     REP(i0, L) if (perm[i0] == WHITE_MOVER || perm[i0] == WHITE_PUSHER) {
@@ -112,7 +99,7 @@ bool GenerateSuccessors(
             ++moves.size;
 
             std::swap(perm[i0], perm[i2]);
-            if (!GenerateSuccessors(perm, moves, callback)) return false;
+            if (!GenerateSuccessors(perm, moves, moves_left - 1, callback)) return false;
             std::swap(perm[i0], perm[i2]);
 
             --moves.size;
@@ -120,8 +107,21 @@ bool GenerateSuccessors(
         }
       }
     }
-  }
+  } else {
+    // Generate push moves.
+    REP(i, L) if (perm[i] == WHITE_PUSHER) REP(d, 4) if (IsValidPush(perm, i, d)) {
+      moves.moves[moves.size] = {i, getNeighbourIndex(i, d)};
+      ++moves.size;
 
+      // Possible optimization: undo push instead of copying the permutation?
+      State state = {.perm = perm, .outcome = TIE};
+      state.outcome = ExecutePush(state.perm, i, d);
+
+      if (!callback(moves, state)) return false;
+
+      --moves.size;
+    }
+  }
   return true;
 }
 
@@ -132,7 +132,10 @@ bool GenerateSuccessors(
     std::function<bool(const Moves&, const State&)> callback) {
   Perm mutable_perm = perm;
   Moves moves = {.size = 0, .moves={}};
-  return GenerateSuccessors(mutable_perm, moves, callback);
+  return
+    GenerateSuccessors(mutable_perm, moves, 0, callback) &&
+    GenerateSuccessors(mutable_perm, moves, 1, callback) &&
+    GenerateSuccessors(mutable_perm, moves, 2, callback);
 }
 
 void Deduplicate(std::vector<std::pair<Moves, State>> &successors) {
