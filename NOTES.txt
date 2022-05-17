@@ -12,4 +12,4 @@ Total size at 1 byte per permutation:  ~401.5 GB
 
 File formats:
 
-chunk-r0-0000
+chunk-r0-0000:  1 bit per position (0=TIE/LOSS, 1=WON)
