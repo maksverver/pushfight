@@ -101,7 +101,12 @@ void ProcessChunk(int chunk) {
     assert(outcomes[i] == TIE || outcomes[i] == WIN);
     if (outcomes[i] == WIN) bytes[i / 8] |= 1 << (i % 8);
   }
-  std::ofstream os(FileName(chunk), std::fstream::binary);
+  std::string filename = FileName(chunk);
+  std::ofstream os(filename, std::fstream::binary);
+  if (!os) {
+    std::cerr << "Could not open output file: " << filename << std::endl;
+    exit(1);
+  }
   os.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
 }
 
