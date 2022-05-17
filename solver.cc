@@ -89,7 +89,7 @@ std::vector<Outcome> ComputeChunk(int chunk) {
 
 std::string FileName(int chunk) {
   std::ostringstream oss;
-  oss << "chunk-r0-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
+  oss << "results/chunk-r0-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
   return oss.str();
 }
 
