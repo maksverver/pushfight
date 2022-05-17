@@ -1,6 +1,6 @@
 CXXFLAGS=-std=c++20 -Wall -Wextra -Wno-sign-compare -O3 -march=native -g
 
-BINARIES=solver print
+BINARIES=countbits solver print
 TESTS=perms_test
 
 all: $(BINARIES) $(TESTS)
@@ -21,6 +21,9 @@ solver: solver.cc board.o perms.o search.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 print: print.cc board.o perms.o search.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+countbits: countbits.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 test: $(TESTS)
