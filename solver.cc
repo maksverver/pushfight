@@ -108,20 +108,25 @@ void ProcessChunk(int chunk) {
     exit(1);
   }
   os.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
+  assert(os);
+}
+
+int64_t ParseInt(const char *s) {
+  int64_t i = -1;
+  std::istringstream iss(s);
+  iss >> i;
+  assert(iss);
+  return i;
 }
 
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  int start_chunk = 0;
-  if (argc == 2) {
-    std::istringstream iss(argv[1]);
-    iss >> start_chunk;
-    assert(iss);
-  }
+  int start_chunk = argc > 1 ? ParseInt(argv[1]) : 0;
+  int end_chunk = argc > 2 ? ParseInt(argv[2]) : num_chunks;
 
   InitializePerms();
-  FOR(chunk, start_chunk, num_chunks) {
+  FOR(chunk, start_chunk, end_chunk) {
     if (std::filesystem::exists(FileName(chunk))) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
