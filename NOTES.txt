@@ -1,0 +1,15 @@
+401567166000 permutations
+401567166000 = 2^4 × 3^3 × 5^3 × 7 × 11 × 13
+
+401567166000 = 7429 × 54054000
+
+At 54054000 permutations per chunk, and 10,000 permutations/second, each chunk takes 1.5 hours to process.
+
+Total size at 1 bit per permutation:    ~50.2 GB (6.8 MB/chunk)
+Total size at 1.6 bit per permutation:  ~80.3 GB (10.8 MB/chunk)
+Total size at 4 bits per permutation:  ~321.3 GB (27.0 MB/chunk)
+Total size at 1 byte per permutation:  ~401.5 GB
+
+File formats:
+
+chunk-r0-0000
