@@ -1,4 +1,4 @@
-CXXFLAGS=-std=c++20 -Wall -Wextra -Wno-sign-compare -O3 -march=native -g
+CXXFLAGS=-std=c++20 -Wall -Wextra -Wno-sign-compare -O3 -march=native -flto
 
 COMMON_OBJS=perms.o board.o search.o
 BINARIES=countbits print solve-r0 verify-r0
