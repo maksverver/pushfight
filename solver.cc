@@ -48,40 +48,6 @@ void ClearChunkUpdate() {
   std::cerr << "                                                            \r";
 }
 
-bool IsBlackInDanger(const Perm &p) {
-  for (int i : DANGER_POSITIONS) {
-    if (p[i] == BLACK_MOVER || p[i] == BLACK_PUSHER) return true;
-  }
-  return false;
-}
-
-Outcome CalculateR0(const Perm &perm) {
-  // Optimization: for the first pass, only check successors if there is a
-  // pushable black piece on an edge spot. Otherwise, we cannot win this turn.
-  // Note: this means we cannot detect losses due to being unable to move.
-  // My hypothesis is that there are no such positions, but if there are, the
-  // we should interpret TIE as "not a WIN (possibly a loss)".
-  if (!IsBlackInDanger(perm)) return TIE;
-
-  Outcome o = TIE;
-  int n = 0;
-  bool finished = GenerateSuccessors(perm, [&o, &n](const Moves &moves, const State &state) {
-    (void) moves;  // unused
-    ++n;
-    if (state.outcome == LOSS) {
-      o = WIN;
-      return false;
-    }
-    return true;
-  });
-  assert(finished == (o == TIE));
-  if (n == 0) {
-    Dump(perm, std::cout);
-  }
-  assert(n > 0);  // hypothesis: there is always some valid move
-  return o;
-}
-
 void ComputeChunkThread(int chunk, std::atomic<int> *next_part, Outcome outcomes[]) {
   const int64_t start_index = int64_t{chunk} * int64_t{chunk_size};
   for (;;) {
@@ -91,7 +57,7 @@ void ComputeChunkThread(int chunk, std::atomic<int> *next_part, Outcome outcomes
     int part_start = part * part_size;
     Perm perm = PermAtIndex(start_index + part_start);
     REP(i, part_size) {
-      outcomes[part_start + i] = CalculateR0(perm);
+      outcomes[part_start + i] = HasWinningMove(perm) ? WIN : TIE;
       std::next_permutation(perm.begin(), perm.end());
     }
   }

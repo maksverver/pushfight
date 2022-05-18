@@ -127,6 +127,54 @@ bool GenerateSuccessors(
   return true;
 }
 
+bool HasWinningMove(const int danger[], Perm &perm, int moves_left, int last_move) {
+  // Check if any of black's pieces in danger can be pushed off the board.
+  for (const int *p = danger; *p >= 0; ++p) REP(d, 4) {
+    int r = FIELD_ROW[*p];
+    int c = FIELD_COL[*p];
+    const int dr = DR[d];
+    const int dc = DC[d];
+    if (r + dr >= 0 && r + dr < H && (c + dc < 0 || c + dc >= W || BOARD_INDEX[r + dr][c + dc] < 0)) {
+      for (;;) {
+        r -= dr;
+        c -= dc;
+        int i = getBoardIndex(r, c);
+        if (i < 0 || perm[i] == BLACK_ANCHOR || perm[i] == EMPTY) break;
+        if (perm[i] == WHITE_PUSHER) return true;
+      }
+    }
+  }
+  if (moves_left > 0) {
+    // Generate moves.
+    int todo_data[L];  // uninitialized for efficiency
+    int todo_size;
+    REP(i0, L) if (perm[i0] == WHITE_MOVER || perm[i0] == WHITE_PUSHER) {
+      // Optimization: don't move the same piece twice. There is never any reason for it.
+      if (last_move == i0) continue;
+
+      todo_size = 0;
+      todo_data[todo_size++] = i0;
+      uint32_t visited = uint32_t{1} << i0;
+      for (int j = 0; j < todo_size; ++j) {
+        const int i1 = todo_data[j];
+        REP(d, 4) {
+          if (const int i2 = getNeighbourIndex(i1, d); i2 >= 0 && perm[i2] == EMPTY && (visited & (uint32_t{1} << i2)) == 0) {
+            visited |= uint32_t{1} << i2;
+            todo_data[todo_size++] = i2;
+
+            std::swap(perm[i0], perm[i2]);
+            bool res = HasWinningMove(danger, perm, moves_left - 1, i2);
+            std::swap(perm[i0], perm[i2]);  // must restore `perm` before returning
+
+            if (res) return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 bool GenerateSuccessors(
@@ -150,4 +198,22 @@ void Deduplicate(std::vector<std::pair<Moves, State>> &successors) {
   std::sort(successors.begin(), successors.end(), lt);
   std::vector<std::pair<Moves, State>>::iterator it = std::unique(successors.begin(), successors.end(), eq);
   successors.erase(it, successors.end());
+}
+
+bool HasWinningMove(Perm &perm) {
+  // Check if any of black's pieces are in danger of being pushed off the board.
+  int danger_data[std::size(DANGER_POSITIONS) + 1];  // uninitialized for efficiency
+  int danger_size = 0;
+  for (int i : DANGER_POSITIONS) {
+    if (perm[i] == BLACK_MOVER || perm[i] == BLACK_PUSHER) {
+      danger_data[danger_size++] = i;
+    }
+  }
+
+  // If none of black's pieces are in danger, it's not possible to win immediately.
+  if (danger_size == 0) return false;
+
+  danger_data[danger_size] = -1;
+
+  return HasWinningMove(danger_data, perm, 2, -1);
 }

@@ -18,4 +18,10 @@ bool GenerateSuccessors(
 // Unused? TODO: delete this?
 void Deduplicate(std::vector<std::pair<Moves, State>> &successors);
 
+// Returns whether there is an immediately-winning move in the given permutation.
+//
+// Modifies the argument during the computation, but restores it to its original
+// value before returning.
+bool HasWinningMove(Perm &perm);
+
 #endif  // ndef SEARCH_H_INCLUDED
