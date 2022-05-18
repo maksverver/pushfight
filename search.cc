@@ -81,19 +81,21 @@ bool GenerateSuccessors(
     std::function<bool(const Moves&, const State&)> &callback) {
   if (moves_left > 0) {
     // Generate moves.
-    std::vector<int> todo;
+    int todo_data[L];  // uninitialized for efficiency
+    int todo_size;
     REP(i0, L) if (perm[i0] == WHITE_MOVER || perm[i0] == WHITE_PUSHER) {
       // Optimization: don't move the same piece twice. There is never any reason for it.
       if (moves.size > 0 && moves.moves[moves.size - 1].second == i0) continue;
 
-      todo.assign(1, i0);
+      todo_size = 0;
+      todo_data[todo_size++] = i0;
       uint32_t visited = uint32_t{1} << i0;
-      for (int j = 0; j < todo.size(); ++j) {
-        const int i1 = todo[j];
+      for (int j = 0; j < todo_size; ++j) {
+        const int i1 = todo_data[j];
         REP(d, 4) {
           if (const int i2 = getNeighbourIndex(i1, d); i2 >= 0 && perm[i2] == EMPTY && (visited & (uint32_t{1} << i2)) == 0) {
             visited |= uint32_t{1} << i2;
-            todo.push_back(i2);
+            todo_data[todo_size++] = i2;
 
             moves.moves[moves.size] = {i0, i2};
             ++moves.size;
