@@ -13,3 +13,23 @@ Total size at 1 byte per permutation:  ~401.5 GB
 File formats:
 
 chunk-r0-0000:  1 bit per position (0=TIE/LOSS, 1=WON)
+
+Test vectors:
+
+$ sha256sum results/chunk-r0-010?.bin
+0deb3a32f8190784a47912ddabd6b8d36b9a734f3d345c30b9fdda21955e3507  results/chunk-r0-0100.bin
+ebd0e118cef4887bd46d1430436437d53e8eb434583d2847e59c41de7764c36e  results/chunk-r0-0101.bin
+e0e2c0cbbdafc17a663fe3decbae699c89cfcee99343abecba272ddff84c6b01  results/chunk-r0-0102.bin
+25aed7790a7426c018f70496d1c8e7c35b88f9060e12a6a05d32ddd25a436dde  results/chunk-r0-0103.bin
+d75b7a9efe5412b2ed7dfaaf154fc94f1d9a652c801840b9c4996ac9c5066558  results/chunk-r0-0104.bin
+a3851ff3df8d45f97cc36c9a5a815cc853a89a6a7ca48113f5da6ad0b238ca47  results/chunk-r0-0105.bin
+77a233275f6f5f05774b6b656f8fe7e16b965f4cb3e034d479d5b007f44cbb26  results/chunk-r0-0106.bin
+a3f3c0396fac84127925e78cc27a215a9a00189da3801a8b74bdd5df82a13ea5  results/chunk-r0-0107.bin
+107f972750452f85a1a358ac50ae7fddc3e77f75a2fbb46f1990d7255cb781a9  results/chunk-r0-0108.bin
+73fb27946f306151e47c4e0c7f83021fa1b2ae3afa92398eb8235d3b18a3bd62  results/chunk-r0-0109.bin
+
+$ ./countbits results/chunk-r0-010?.bin
+Zero bits:  175671731
+One bits:   364868269
+Total bits: 540540000
+Fraction of ones: 0.675007
