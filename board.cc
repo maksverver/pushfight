@@ -4,6 +4,10 @@
 
 #include <iostream>
 
+namespace {
+
+constexpr char FIELD_CHARS[] = {'.', 'o', 'O', 'x', 'X', 'Y'};
+
 std::string FieldToId(int i) {
   std::string s(2, '\0');
   s[0] = 'a' + FIELD_COL[i];
@@ -11,12 +15,21 @@ std::string FieldToId(int i) {
   return s;
 }
 
+}  // namespace
+
 std::ostream &Dump(const Perm &p, std::ostream &os) {
   REP(r, H) {
     REP(c, W) {
-      int i = BOARD_INDEX
-    [r][c];
-      os << (i >= 0 && i < p.size() ? (p[i] >= 0 && p[i] < chars.size() ? chars[p[i]] : '?') : ' ');
+      int i = BOARD_INDEX[r][c];
+      char ch;
+      if (i >= 0 && i < p.size()) {
+        int pi = p[i];
+        ch = pi >= 0 && pi < std::size(FIELD_CHARS) ? FIELD_CHARS[pi] : '?';
+      } else {
+        ch = ' ';
+      }
+      os << ch;
+
     }
     os << '\n';
   }

@@ -39,8 +39,6 @@ constexpr std::array<int, L> FIELD_COL = {
 const int DR[4] = { -1,  0,  0, 1 };
 const int DC[4] = {  0, -1, +1, 0 };
 
-const std::string chars = ".oOxXY";
-
 constexpr int EMPTY        = 0;
 constexpr int WHITE_MOVER  = 1;
 constexpr int WHITE_PUSHER = 2;
