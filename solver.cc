@@ -32,7 +32,7 @@ static_assert(part_size * num_parts  == chunk_size);
 static_assert(part_size % 16 == 0);
 
 // Number of threads to use for calculations. 0 to disable multithreading.
-constexpr int num_threads = 8;
+int num_threads = std::thread::hardware_concurrency();
 
 void PrintChunkUpdate(int chunk, int part) {
   // Precompute output line to minimize formatting errors due to multiple
@@ -144,8 +144,8 @@ void ProcessChunk(int chunk) {
   assert(os);
 }
 
-int64_t ParseInt(const char *s) {
-  int64_t i = -1;
+int ParseInt(const char *s) {
+  int i = -1;
   std::istringstream iss(s);
   iss >> i;
   assert(iss);
@@ -155,8 +155,11 @@ int64_t ParseInt(const char *s) {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  int start_chunk = argc > 1 ? ParseInt(argv[1]) : 0;
-  int end_chunk = argc > 2 ? ParseInt(argv[2]) : num_chunks;
+  int start_chunk = argc > 1 ? std::max(0, ParseInt(argv[1])) : 0;
+  int end_chunk = argc > 2 ? std::min(ParseInt(argv[2]), num_chunks) : num_chunks;
+
+  std::cout << "Calculating " << end_chunk - start_chunk << " chunks from " << start_chunk << " to "
+      << end_chunk << " (exclusive) using " << num_threads << " threads." << std::endl;
 
   InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
