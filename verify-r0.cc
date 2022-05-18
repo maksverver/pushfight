@@ -22,14 +22,6 @@ constexpr int num_probes = 1000;
 std::random_device dev;
 std::mt19937 rng(dev());
 
-int ParseInt(const char *s) {
-  int i = -1;
-  std::istringstream iss(s);
-  iss >> i;
-  assert(iss);
-  return i;
-}
-
 const char *OutcomeToString(Outcome o) {
   return o == WIN ? "WIN" : o == LOSS ? "LOSS" : "TIE";
 }
