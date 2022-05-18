@@ -17,8 +17,36 @@
 
 namespace {
 
+constexpr int chunk_size = 54054000;
+constexpr int num_chunks = 7429;
+
+static_assert(int64_t{chunk_size} * int64_t{num_chunks} == total_perms);
+
+// Number of parts to split each chunk into. Each part is processed by 1 thread.
+// A large number of parts ensures that all CPU cores are kept busy most of the
+// time, but too many parts incur a lot of overhead.
+constexpr int num_parts = 225;
+constexpr int part_size = 240240;
+
+static_assert(part_size * num_parts  == chunk_size);
+static_assert(part_size % 16 == 0);
+
 // Number of threads to use for calculations. 0 to disable multithreading.
 constexpr int num_threads = 8;
+
+void PrintChunkUpdate(int chunk, int part) {
+  // Precompute output line to minimize formatting errors due to multiple
+  // threads writing to std::cerr at the same time.
+  char buf[100];
+  snprintf(buf, sizeof(buf),
+      "Chunk %d calculating... part %d / %d (%.2f%% done)\r",
+      chunk, part, num_parts, 100.0*part / num_parts);
+  std::cerr << buf << std::flush;
+}
+
+void ClearChunkUpdate() {
+  std::cerr << "                                                            \r";
+}
 
 bool IsBlackInDanger(const Perm &p) {
   for (int i : DANGER_POSITIONS) {
@@ -26,10 +54,6 @@ bool IsBlackInDanger(const Perm &p) {
   }
   return false;
 }
-
-constexpr int chunk_size = 54054000;
-constexpr int num_chunks = 7429;
-static_assert(int64_t{chunk_size} * int64_t{num_chunks} == total_perms);
 
 Outcome CalculateR0(const Perm &perm) {
   // Optimization: for the first pass, only check successors if there is a
@@ -58,32 +82,41 @@ Outcome CalculateR0(const Perm &perm) {
   return o;
 }
 
-void ComputeChunkThread(int64_t offset, int size, Outcome *outcomes) {
-  Perm perm = PermAtIndex(offset);
-  REP(i, size) {
-    *outcomes++ = CalculateR0(perm);
-    std::next_permutation(perm.begin(), perm.end());
+void ComputeChunkThread(int chunk, std::atomic<int> *next_part, Outcome outcomes[]) {
+  const int64_t start_index = int64_t{chunk} * int64_t{chunk_size};
+  for (;;) {
+    const int part = (*next_part)++;
+    if (part + 1 >= num_threads) PrintChunkUpdate(chunk, part + 1 - num_threads);
+    if (part >= num_parts) break;  // note: will actually exceed num_parts!
+    int part_start = part * part_size;
+    Perm perm = PermAtIndex(start_index + part_start);
+    REP(i, part_size) {
+      outcomes[part_start + i] = CalculateR0(perm);
+      std::next_permutation(perm.begin(), perm.end());
+    }
   }
 }
 
 std::vector<Outcome> ComputeChunk(int chunk) {
   std::vector<uint8_t> bits(chunk_size / 8);
-  int64_t start_index = int64_t{chunk} * int64_t{chunk_size};
   std::vector<Outcome> outcomes(chunk_size, TIE);
+  std::atomic<int> next_part = 0;
   if (num_threads == 0) {
     // Single-threaded computation.
-    ComputeChunkThread(start_index, chunk_size, outcomes.data());
+    ComputeChunkThread(chunk, &next_part, outcomes.data());
   } else {
     assert(chunk_size % num_threads == 0);
     // Multi-threaded computation.
+    std::atomic<int> next_part = 0;
     std::vector<std::thread> threads;
-    const int thread_size = chunk_size / num_threads;
+    threads.reserve(num_threads);
     REP(i, num_threads) {
-      threads.emplace_back(ComputeChunkThread, start_index + thread_size * i, thread_size,
-          outcomes.data() + thread_size * i);
+      threads.emplace_back(ComputeChunkThread, chunk, &next_part, outcomes.data());
     }
     REP(i, num_threads) threads[i].join();
+    assert(next_part == num_parts + num_threads);
   }
+  ClearChunkUpdate();
   return outcomes;
 }
 
@@ -131,10 +164,9 @@ int main(int argc, char *argv[]) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
     }
-    std::cerr << "Chunk " << chunk << " calculating... " << std::flush;
     auto start_time = std::chrono::system_clock::now();
     ProcessChunk(chunk);
     std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now() - start_time;
-    std::cerr << "Done in " << elapsed_seconds.count() / 60 << " minutes." << std::endl;
+    std::cerr << "Chunk " << chunk << " done in " << elapsed_seconds.count() / 60 << " minutes." << std::endl;
   }
 }
