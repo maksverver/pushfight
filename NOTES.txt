@@ -1,3 +1,20 @@
+Board representation
+--------------------
+
+  abcdefgh
+4   .OX..  4
+3 ...oxY.. 3
+2 ..Oox... 2
+1  ..OX.   1
+  abcdefgh
+
+o = white mover
+O = white pusher
+x = black mover
+X = black pusher without anchor
+Y = black pusher with anchor
+
+
 401567166000 permutations
 401567166000 = 2^4 × 3^3 × 5^3 × 7 × 11 × 13
 
