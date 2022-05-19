@@ -1,4 +1,5 @@
-CXXFLAGS=-std=c++20 -Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread -lpthread -lm
+CXXFLAGS=-std=c++20 -Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread
+LDLIBS=-lpthread -lm
 
 COMMON_OBJS=perms.o board.o search.o
 BINARIES=countbits print solve-r0 verify-r0
@@ -19,16 +20,16 @@ search.o: search.h search.cc perms.o board.o
 	$(CXX) $(CXXFLAGS) -c search.cc
 
 solve-r0: solve-r0.cc $(COMMON_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 print: print.cc $(COMMON_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 countbits: countbits.cc
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 verify-r0: verify-r0.cc $(COMMON_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 test: $(TESTS)
 	./perms_test
