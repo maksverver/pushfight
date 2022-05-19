@@ -35,3 +35,12 @@ R0Accessor::R0Accessor() {
     maps.emplace_back(ChunkR0FileName(chunk).c_str());
   }
 }
+
+R1Accessor::R1Accessor() {
+  maps.reserve(num_chunks);
+  // TODO: uncomment the real implementation
+  // REP(chunk, num_chunks) {
+  FOR(chunk, 7300, 7304) {
+    maps.emplace_back(ChunkR1FileName(chunk).c_str());
+  }
+}
