@@ -37,6 +37,7 @@ int GetChunkId(const char *filename) {
 }
 
 void VerifyFile(const char *filename) {
+  std::cout << "Verifying " << filename << "... ";
   int64_t filesize = std::filesystem::file_size(filename);
   std::vector<uint8_t> chunk_data(chunk_size / 8);
   if (filesize != chunk_data.size()) {
@@ -47,7 +48,7 @@ void VerifyFile(const char *filename) {
     std::ifstream ifs(filename, std::ios::binary);
     ifs.read(reinterpret_cast<char*>(chunk_data.data()), chunk_data.size());
     if (ifs.gcount() != chunk_data.size()) {
-      std::cout << "Failed to chunk file!" << std::endl;
+      std::cout << "Failed to read full file!" << std::endl;
       exit(1);
     }
   }
@@ -82,7 +83,7 @@ void VerifyFile(const char *filename) {
       exit(1);
     }
   }
-  std::cout << "File " << filename << " verified with " << num_probes << " probes." << std::endl;
+  std::cout << "\rFile " << filename << " verified with " << num_probes << " probes." << std::endl;
 }
 
 }  // namespace
