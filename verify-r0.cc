@@ -1,3 +1,4 @@
+#include "chunks.h"
 #include "board.h"
 #include "macros.h"
 #include "search.h"
@@ -13,9 +14,6 @@
 #include <sstream>
 
 namespace {
-
-constexpr int chunk_size = 54054000;
-constexpr int num_chunks = 7429;
 
 constexpr int num_probes = 1000;
 

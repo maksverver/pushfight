@@ -1,4 +1,5 @@
 #include "board.h"
+#include "chunks.h"
 #include "macros.h"
 #include "perms.h"
 #include "search.h"
@@ -16,20 +17,6 @@
 #include <vector>
 
 namespace {
-
-constexpr int chunk_size = 54054000;
-constexpr int num_chunks = 7429;
-
-static_assert(int64_t{chunk_size} * int64_t{num_chunks} == total_perms);
-
-// Number of parts to split each chunk into. Each part is processed by 1 thread.
-// A large number of parts ensures that all CPU cores are kept busy most of the
-// time, but too many parts incur a lot of overhead.
-constexpr int num_parts = 225;
-constexpr int part_size = 240240;
-
-static_assert(part_size * num_parts  == chunk_size);
-static_assert(part_size % 16 == 0);
 
 // Number of threads to use for calculations. 0 to disable multithreading.
 int num_threads = std::thread::hardware_concurrency();
