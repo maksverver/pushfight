@@ -31,7 +31,22 @@ Total size at 1 byte per permutation:  ~401.5 GB
 
 File formats:
 
-chunk-r0-0000:  1 bit per position (0=TIE/LOSS, 1=WON)
+chunk-r0-0000: 1 bit per position (0=TIE/LOSS, 1=WIN)
+
+chunk-rN-0000: 1.6 bits per position (0=TIE, 1=LOSS, 2=WIN)
+
+A state is:
+
+  - WIN, if the state is WIN in r(N - 1), or there is at least one successor in
+    r(N - 1) that is LOSS for the opponent
+  - LOSS, if the state is LOSS in r(N - 1), or all successors in r(N - 1) are
+    WON for the opponent (including the case where there are no successors,
+    though it's not clear if that happens)
+
+Note that between chunk-r(N - 1) and chunk-rN the only values that can change
+are TIEs, because WIN and LOSS will be copied unmodified. After several phases
+fewer and fewer TIEs will remain, until chunks no longer change, at which point
+the assessment is final.
 
 Test vectors:
 

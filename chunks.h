@@ -2,6 +2,7 @@
 #define CHUNKS_H_INCLUDED
 
 #include <cstdint>
+#include <string>
 
 #include "board.h"
 
@@ -18,5 +19,13 @@ constexpr int part_size = 240240;
 
 static_assert(part_size * num_parts  == chunk_size);
 static_assert(part_size % 16 == 0);
+
+std::string ChunkR0FileName(int chunk);
+
+std::string ChunkR1FileName(int chunk);
+
+void PrintChunkUpdate(int chunk, int part);
+
+void ClearChunkUpdate();
 
 #endif  // ndef CHUNKS_H_INCLUDED

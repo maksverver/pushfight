@@ -21,20 +21,6 @@ namespace {
 // Number of threads to use for calculations. 0 to disable multithreading.
 int num_threads = std::thread::hardware_concurrency();
 
-void PrintChunkUpdate(int chunk, int part) {
-  // Precompute output line to minimize formatting errors due to multiple
-  // threads writing to std::cerr at the same time.
-  char buf[100];
-  snprintf(buf, sizeof(buf),
-      "Chunk %d calculating... part %d / %d (%.2f%% done)\r",
-      chunk, part, num_parts, 100.0*part / num_parts);
-  std::cerr << buf << std::flush;
-}
-
-void ClearChunkUpdate() {
-  std::cerr << "                                                            \r";
-}
-
 void ComputeChunkThread(int chunk, std::atomic<int> *next_part, Outcome outcomes[]) {
   const int64_t start_index = int64_t{chunk} * int64_t{chunk_size};
   for (;;) {
@@ -73,12 +59,6 @@ std::vector<Outcome> ComputeChunk(int chunk) {
   return outcomes;
 }
 
-std::string FileName(int chunk) {
-  std::ostringstream oss;
-  oss << "results/chunk-r0-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
-  return oss.str();
-}
-
 void ProcessChunk(int chunk) {
   std::vector<Outcome> outcomes = ComputeChunk(chunk);
   assert(outcomes.size() % 8 == 0);
@@ -87,7 +67,7 @@ void ProcessChunk(int chunk) {
     assert(outcomes[i] == TIE || outcomes[i] == WIN);
     if (outcomes[i] == WIN) bytes[i / 8] |= 1 << (i % 8);
   }
-  std::string filename = FileName(chunk);
+  std::string filename = ChunkR0FileName(chunk);
   std::ofstream os(filename, std::fstream::binary);
   if (!os) {
     std::cerr << "Could not open output file: " << filename << std::endl;
@@ -111,12 +91,12 @@ int main(int argc, char *argv[]) {
   int start_chunk = argc > 1 ? std::max(0, ParseInt(argv[1])) : 0;
   int end_chunk = argc > 2 ? std::min(ParseInt(argv[2]), num_chunks) : num_chunks;
 
-  std::cout << "Calculating " << end_chunk - start_chunk << " chunks from " << start_chunk << " to "
+  std::cout << "Calculating " << end_chunk - start_chunk << " R0 chunks from " << start_chunk << " to "
       << end_chunk << " (exclusive) using " << num_threads << " threads." << std::endl;
 
   InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
-    if (std::filesystem::exists(FileName(chunk))) {
+    if (std::filesystem::exists(ChunkR0FileName(chunk))) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
     }

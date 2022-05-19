@@ -9,6 +9,10 @@
 #include <utility>
 
 // Enumerates the successors of `perm`.
+//
+// When the callback returns false, the search is aborted, and this function
+// returns false too. If the callback returns true every time it is called,
+// then all successors are enumerated and this function returns true.
 bool GenerateSuccessors(
     const Perm &perm,
     std::function<bool(const Moves&, const State&)> callback);
