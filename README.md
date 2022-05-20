@@ -64,7 +64,7 @@ In this notation, `o` is a red circle (mover), `O` is a red square (pusher),
 `x` is a blue circle (mover), `X` is a blue square (pusher), and `Y` is a blue
 square with an anchor on top. Some tools also use `P` for a red square with
 an anchor, but as will be explained below, we can usually assume without loss
-of generality that the anchor is on a black square.
+of generality that the anchor is on a blue square.
 
 If we want a more compact representation, we can remove the board coordinates:
 
@@ -89,7 +89,7 @@ while pushes must move a piece to an occupied square.
 
 ## Number of positions
 Push Fight is an interesting game because of how constrained it is: the board
-consists of only 26 fields, with 10 total pieces (5 for each player). Although
+consists of only 26 squares, with 10 total pieces (5 for each player). Although
 it's possible to push a piece off the board, this immediately ends the game,
 so in any intermediate position all 10 pieces will be present.
 
@@ -120,6 +120,12 @@ the string:
 The total number of such permutations is:
 
 $26! / 16! / 3! / 2! / 2! / 2! / 1! = 401,567,166,000$
+
+This means every board position has an associated permutation index between
+0 and 401,567,166,000 (exclusive). It turns out that, with some precomputation,
+it's possible to efficiently convert between board positions and permutation
+indices. Efficiently here means O(N) where N is the number of squares on the
+board. See the logic in [perms.h](perms.h) and [perms.cc](perms.cc) for details.
 
 ## Solving the game
 
