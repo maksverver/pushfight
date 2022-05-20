@@ -63,7 +63,7 @@ positions and moves. It's fairly easy to encode the board in text:
 In this notation, `o` is a red circle (mover), `O` is a red square (pusher),
 `x` is a blue circle (mover), `X` is a blue square (pusher), and `Y` is a blue
 square with an anchor on top. Some tools also use `P` for a red square with
-an anchor, but as will be explained above, we can usually assume without loss
+an anchor, but as will be explained below, we can usually assume without loss
 of generality that the anchor is on a black square.
 
 If we want a more compact representation, we can remove the board coordinates:
