@@ -1,6 +1,8 @@
-# Solving Push Fight!
+# Solving Push Fight
+
 This repository contains code used to solve Push Fight, an abstract board game for
 designed by Brett Picotte, available from https://pushfightgame.com/
+
 
 ## Rules of the Game
 
@@ -47,6 +49,7 @@ called an *anchor* is placed on the pushing piece. The opponent may not move tha
 during the next turn. This prevents obvious stalemates with players pushing the same
 row of pieces back and forth.
 
+
 ## Notation of positions and moves
 For convenience, let's define human-readable textual representation for
 positions and moves. It's fairly easy to encode the board in text:
@@ -86,6 +89,7 @@ push to the right, and `d1-a2,d3-c3,c2-d2` represents two moves followed by a
 final push. Note that the push is necessarily the last move in the sequence,
 and it's also clear from the board, since moves always end in an empty square
 while pushes must move a piece to an occupied square.
+
 
 ## Number of positions
 Push Fight is an interesting game because of how constrained it is: the board
@@ -127,6 +131,7 @@ it's possible to efficiently convert between board positions and permutation
 indices. Efficiently here means O(N) where N is the number of squares on the
 board. See the logic in [perms.h](perms.h) and [perms.cc](perms.cc) for details.
 
+
 ## Solving the game
 
 To solve the game, we need, at a minimum, to decide for each position if it's
@@ -137,3 +142,57 @@ occurs, so we can enumerate the different options.
 Note that a position is tying if neither player can force a win. In that case,
 the game would go indefinitely (assuming optimal play from both sides). It's
 not clear if tying positions exist, but it seems likely.
+
+To compute results we need to consider the *successors* of a position: all
+positions that are reachable in exactly 1 turn. In Push Fight, a turn consists
+of up to two moves and one push, so the number of successors can be quite large
+($5 × 4 / 2 × 16 × 16 × 12 = 30720$ is an upper bound, though most positions
+have far fewer of course).
+
+We can think of the game as a graph, with nodes representing board positions
+and (directed) edges as possible moves. In other words, the edge *(p, q)* is
+in the graph is *q* is a successor of *p*, and *q* is an intermediate
+position. Positions reached after pushing a piece off the board are not
+included in the graph.
+
+The general algorithm for classifying nodes in the graph works as follows.
+
+*Rule 1*: for a position *p*, if there is a way to win at the current turn,
+we can mark the node as winning.
+
+*Rule 2a*: otherwise, if there is any successor *q* that is marked losing, then
+we can mark *p* as winning.
+
+*Rule 2b*: otherwise, if all successors are marked winning, then we can mark *p*
+as losing.
+
+This leads to the following algorithm to solve the game:
+
+ * Phase 0: loop over all positions, and apply rule 1. This marks some positions
+   as winning, while leaving the rest undetermined.
+ * Phase 1: loop over all positions that are yet undetermind, and apply rules 2a
+   and 2b. This marks some undetermined positions as winning or losing, leaving the
+   rest undetermined.
+ * Phase 2..N: repeat the logic from phase 1 until no more changes occur.
+
+This is a fixed-point iteration algorithm where we classify more and more positions
+until we cannot find any more positions that can be classified by rules 2a and 2b.
+At this point, we can stop and assume that all remaining indetermined positions are
+actually ties.
+
+We don't know in advance how many phases are necessary to compute the fixed point.
+
+
+### Output files and sizes
+
+Phase 0 classifies each possible value as winning or undetermined. Therefore we
+can suffice with 1 bit per position, creating an output file of 401,567,166,000
+bits, or 50.2 GB.
+
+Phase 1..N need to produce a ternary value (winning, losing or undetermined).
+We can encode 5 ternary values in a byte to obtain an efficient of 1.6 bits per
+value, creating an output file of 80.3 GB.
+
+Note that phase 1 is a little special in that it consumes the binary output from
+phase 0, while phases 2 and on instead use a ternary input file that they also
+use as an output file.
