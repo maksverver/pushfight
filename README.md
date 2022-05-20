@@ -32,7 +32,8 @@ in the way in the same direction. At least 1 piece other piece must be pushed, t
 doesn't matter if that piece belongs to the player or his or her opponent.
 
 Below is an example of the first turn for the red player, starting from the second
-starting positon above:
+starting positon above. (The image below is an animated GIF. You may have to click the
+play button to view it.)
 
 ![Another starting position](images/start2-move1.gif)
 
