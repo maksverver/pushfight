@@ -1,0 +1,2 @@
+Special thanks to Jonathan Peeman ("thec0mpler") for contributing CPU time to
+compute r0 chunks.
