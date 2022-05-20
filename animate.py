@@ -185,50 +185,58 @@ def FindPath(r1, c1, r2, c2):
         todo.append((r4, c4))
   return None
 
+# Create first frame
 AddImage(1000)
 
-pushing_piece = None
-for i, ((r1, c1), (r2, c2)) in enumerate(moves):
-  # If this fails, the piece was not found on the selected location!
-  piece = FindPiece(r1, c1)
-  if piece is None:
-    print('No piece found at', (r1, c1))
-    sys.exit(1)
-
-  if i + 1 < len(moves):
-    # Regular move.
-    path = FindPath(r1, c1, r2, c2)
-    if path is None:
-      print('No path found from', (r1, c1), 'to', (r2, c2))
+if moves is None:
+  # Save single image
+  images[0].save(output_arg)
+else:
+  # Create animation
+  pushing_piece = None
+  for i, ((r1, c1), (r2, c2)) in enumerate(moves):
+    # If this fails, the piece was not found on the selected location!
+    piece = FindPiece(r1, c1)
+    if piece is None:
+      print('No piece found at', (r1, c1))
       sys.exit(1)
 
-    for j in range(len(path) - 1):
-      (r1, c1), (r2, c2) = path[j:j + 2]
-      AddAnimation(50, 4, [piece], r2 - r1, c2 - c1)
-      piece.r = r2
-      piece.c = c2
+    if i + 1 < len(moves):
+      # Regular move.
+      path = FindPath(r1, c1, r2, c2)
+      if path is None:
+        print('No path found from', (r1, c1), 'to', (r2, c2))
+        sys.exit(1)
 
-  else:
-    # Push move.
-    dr = r2 - r1
-    dc = c2 - c1
-    pushing_piece = piece
-    moved_pieces = [piece]
-    while True:
-      piece = FindPiece(r1 + len(moved_pieces)*dr, c1 + len(moved_pieces)*dc)
-      if piece is None:
-        break
-      moved_pieces.append(piece)
-    AddAnimation(50, 12, moved_pieces, dr, dc)
-    for piece in moved_pieces:
-      piece.r += dr
-      piece.c += dc
+      for j in range(len(path) - 1):
+        (r1, c1), (r2, c2) = path[j:j + 2]
+        AddAnimation(50, 5, [piece], r2 - r1, c2 - c1)
+        piece.r = r2
+        piece.c = c2
 
-# Move anchor and show final state for 2 seconds
-for piece in pieces:
-  piece.anchor = 0
-  pushing_piece.anchor = 1
-AddImage(2000)
+      durations[-1] = 200
 
-# Save image
-images[0].save(output_arg, save_all=True, append_images=images[1:], loop=0, duration=durations)
+    else:
+      # Push move.
+      dr = r2 - r1
+      dc = c2 - c1
+      pushing_piece = piece
+      moved_pieces = [piece]
+      while True:
+        piece = FindPiece(r1 + len(moved_pieces)*dr, c1 + len(moved_pieces)*dc)
+        if piece is None:
+          break
+        moved_pieces.append(piece)
+      AddAnimation(50, 12, moved_pieces, dr, dc)
+      for piece in moved_pieces:
+        piece.r += dr
+        piece.c += dc
+
+  # Move anchor and show final state for 2 seconds
+  for piece in pieces:
+    piece.anchor = 0
+    pushing_piece.anchor = 1
+  AddImage(2000)
+
+  # Save animated image
+  images[0].save(output_arg, save_all=True, append_images=images[1:], loop=0, duration=durations)
