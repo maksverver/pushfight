@@ -182,6 +182,15 @@ actually ties.
 
 We don't know in advance how many phases are necessary to compute the fixed point.
 
+The phases have some interesting properties. In phase 0 we only find winning
+positions. The means in phase 1, we can only identify newly-losing positions
+because to identify a non-immediate winning position requires a losing successor
+(rule 2a) which we haven't found yet. In phase 2, we can only find newly-winning
+positions because identifying a losing position requires all successors are
+winning for the opponent (rule 2b) and the previous phase didn't find any.
+
+And so on: the phases alternate between finding only losing and winning
+positions, with even phases finding winners and odd phases finding losers.
 
 ### Output files and sizes
 
@@ -196,3 +205,67 @@ value, creating an output file of 80.3 GB.
 Note that phase 1 is a little special in that it consumes the binary output from
 phase 0, while phases 2 and on instead use a ternary input file that they also
 use as an output file.
+
+### Recovering strategies
+
+The above data structures, once computed, can be used to classify an
+arbitrary position (winning, losing or tied), though only after turn 1,
+when the anchor is present. However, this information by itself isn't enough
+to come up with a winning strategy.
+
+For a losing position, it doesn't matter which moves we choose: by definition,
+any successor is winning for the opponent and therefore losing for us.
+
+For a tied position, we can simply choose any moves that lead to a successor
+that is also tied: by definition, the opponent cannot win from that position
+(and also by definition, a tied position cannot have successors that are losing
+for the oppponent, or it would have been classified as winning).
+
+For a winning position, we must choose moves that lead to a successor that
+is marked losing for the opponent (and thus winning for us). But we cannot just
+pick arbitrarily! If we do, and we're unlucky, we would end up in an infinite
+loop.
+
+So to recover the correct winning strategy, we need to keep a little more
+information: the number of turns it takes to win/lose. That way, we can pick
+the successor that leads to a win in the fewest possible moves.
+
+More formally, if a position is losing because it has no successors, we mark
+it as losing in 0 turns; otherwise, it is losing in (K + 1) turns where K is
+the maximum value of a successor that is winning in K turns. Similarly, a
+position with an immediate winning push is winning in 1 turn, and otherwise,
+the position is winning in (K + 1) turns where K is the minimum value of a
+successor that is losing in K turns.
+
+This means we need a bit of additional data to store per position: the
+number of turns it takes to achieve the outcome. How much space is needed
+for this depends on the length of the longest path to a forced win, which is
+equal to the number of times we need to execute the fixed point algorithm.
+
+Note that we can save 1 bit by observing that in the above, losing positions
+are always losing in an even number of turns (0, 2, 4, etc.) while winning
+positions are always winning in odd number of turns (1, 2, 5, etc.) This makes
+sense because there are only two ways for you to win: either you push an
+opponent's piece off the board, or the opponent is unable to push on their turn;
+either way, you made the last move, which means that if you are in a winning
+position, you will always play one more turn than your opponent.
+
+So how can we recover the number of turns remaining from the ternary output
+files? Simple: positions won in 1 turn are identified in phase 0. The
+positions lost in 2 turns are first identified in phase 1. The positions
+won in 3 turns are identified in phase 2. And so on. So we simply need to
+find, for each position, in which phase it was first classified. This gives
+the number of turns left to play.
+
+We can summarize this in a new data structure, but to do so efficiently, we
+need to know exactly how many phases there are, since the number of phases
+corresponds with the maximum number of turns leading to a win.
+
+## Future work
+
+ * Are there any positions that are losing because there are no pushes
+   available? Or the only pushes push one's owns pieces off the board?
+ * Write about how to find optimal moves before turn 1.
+ * List some stats from the final computation
+ * Determining the best starting position
+ * Finding a compact way to represent the optimal strategy
