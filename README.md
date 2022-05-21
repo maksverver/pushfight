@@ -261,6 +261,15 @@ We can summarize this in a new data structure, but to do so efficiently, we
 need to know exactly how many phases there are, since the number of phases
 corresponds with the maximum number of turns leading to a win.
 
+## Results
+
+### Immediately winning positions (phase 0)
+
+The results from phase 0 ([r0-bitcount.txt](metadata/r0-bitcount.txt)) show that
+of the 401,567,166,000 permutations, 340,787,248,692 (84.86%) can be won in
+1 turn, and the remaining 60,779,917,308 (15.14%) are indeterminate. That means
+only about a sixth of the positions remain to be processed in phase 1.
+
 ## Future work
 
  * Are there any positions that are losing because there are no pushes
