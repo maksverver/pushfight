@@ -278,10 +278,7 @@ would cause on of his own pieces to be pushed off the board.
 
 ![Immediately lost position 2](images/immediately-lost-2.gif)
 
-Here, all the player's a pusher that can move freely, but any valid push move
-would cause on of his own pieces to be pushed off the board.
-
---------------------------------------------------------------------------------
+Here, all the player's pieces are locked in and no moves are possible at all.
 
 ### Immediately winning positions (phase 0)
 
