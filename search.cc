@@ -99,8 +99,9 @@ bool GenerateSuccessors(
       uint32_t visited = uint32_t{1} << i0;
       for (int j = 0; j < todo_size; ++j) {
         const int i1 = todo_data[j];
-        REP(d, 4) {
-          if (const int i2 = getNeighbourIndex(i1, d); i2 >= 0 && perm[i2] == EMPTY && (visited & (uint32_t{1} << i2)) == 0) {
+        for (const signed char *n = NEIGHBOURS[i1]; *n != -1; ++n) {
+          const int i2 = *n;
+          if (perm[i2] == EMPTY && (visited & (uint32_t{1} << i2)) == 0) {
             visited |= uint32_t{1} << i2;
             todo_data[todo_size++] = i2;
 
