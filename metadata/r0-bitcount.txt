@@ -1,0 +1,4 @@
+Zero bits:  60779917308
+One bits:   340787248692
+Total bits: 401567166000
+Fraction of ones: 0.848643
