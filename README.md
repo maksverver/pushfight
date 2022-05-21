@@ -10,7 +10,7 @@ Push Fight is a game for two players on a board with 4 rows and 8 columns, with 
 squares missing. Rows are labeled 1 through 4 (from bottom to top) and columns
 are labeled *a* through *h* (from left to righ), as in Chess. See below:
 
-![The empty board](images/empty-board.gif)
+![The empty board](images/empty-board.png)
 
 Each player controls five pieces: two round pieces and three square ones. The game
 starts with the first player (in my version, red) placing their pieces anywhere on
@@ -20,9 +20,9 @@ first player moves first.
 
 Below are two possible starting positions:
 
-![One starting position](images/start1.gif)
+![One starting position](images/start1.png)
 
-![Another starting position](images/start2.gif)
+![Another starting position](images/start2.png)
 
 During a turn, a player can make 0, 1 or 2 *moves* and then must end with exactly
 1 *push*. If a player cannot push, he or she loses the game immediately. A move
@@ -271,12 +271,12 @@ This occurs very rarely. Initially, it wasn't clear if there were any positions
 where a player cannot make any valid push (after using the two moves optimally),
 but it turns out there a few such cases. Two examples:
 
-![Immediately lost position 1](images/immediately-lost-1.gif)
+![Immediately lost position 1](images/immediately-lost-1.png)
 
 Here, the player has a pusher that can move freely, but any valid push move
 would cause on of his own pieces to be pushed off the board.
 
-![Immediately lost position 2](images/immediately-lost-2.gif)
+![Immediately lost position 2](images/immediately-lost-2.png)
 
 Here, all the player's pieces are locked in and no moves are possible at all.
 
