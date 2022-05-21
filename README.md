@@ -51,6 +51,7 @@ row of pieces back and forth.
 
 
 ## Notation of positions and moves
+
 For convenience, let's define human-readable textual representation for
 positions and moves. It's fairly easy to encode the board in text:
 
@@ -92,6 +93,7 @@ while pushes must move a piece to an occupied square.
 
 
 ## Number of positions
+
 Push Fight is an interesting game because of how constrained it is: the board
 consists of only 26 squares, with 10 total pieces (5 for each player). Although
 it's possible to push a piece off the board, this immediately ends the game,
@@ -261,6 +263,7 @@ We can summarize this in a new data structure, but to do so efficiently, we
 need to know exactly how many phases there are, since the number of phases
 corresponds with the maximum number of turns leading to a win.
 
+
 ## Results
 
 ### Immediately losing positions
@@ -269,16 +272,24 @@ If a player cannot end their turn with a push, he or she will lose the game.
 
 This occurs very rarely. Initially, it wasn't clear if there were any positions
 where a player cannot make any valid push (after using the two moves optimally),
-but it turns out there a few such cases. Two examples:
+but it turns out there a few such cases. 648 to be exact (see
+[solve-lost-output.txt](results/solve-lost-output.txt)), though most are
+variations of two basic patterns:
+
+Example 1: here, red has 1 square piece that can move freely, but any push would
+push one of red's own pieces off the board.
 
 ![Immediately lost position 1](images/immediately-lost-1.png)
 
-Here, the player has a pusher that can move freely, but any valid push move
-would cause on of his own pieces to be pushed off the board.
+Example 2: here, all of red's pieces are locked in and no moves are possible
+at all. The only possible push (h2-h3) would push red's own piece off the board.
 
 ![Immediately lost position 2](images/immediately-lost-2.png)
 
-Here, all the player's pieces are locked in and no moves are possible at all.
+It's clear that these are artificial positions that wouldn't come up naturally
+in a real game. The red player would never let their pieces get fenced in like
+this, and even if he would, the blue player would be able to win earlier by
+pushing a piece off the board, instead of waiting for red to lose on his turn.
 
 ### Immediately winning positions (phase 0)
 
