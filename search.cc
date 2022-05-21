@@ -17,23 +17,30 @@ bool IsValidPush(const Perm &perm, int i, int d) {
   int r = FIELD_ROW[i] + dr;
   int c = FIELD_COL[i] + dc;
   i = getBoardIndex(r, c);
-  if (i < 0 || perm[i] == EMPTY) {
+  int last_piece;
+  if (i < 0 || (last_piece = perm[i]) == EMPTY) {
     // Must push at least one piece.
     return false;
   }
-  while (i != -1 && perm[i] != EMPTY) {
-    if (perm[i] == BLACK_ANCHOR) {
+  while (last_piece != EMPTY) {
+    if (last_piece == BLACK_ANCHOR) {
       // Cannot push anchored piece.
       return false;
     }
     r += dr;
     c += dc;
     if (r < 0 || r >= H) {
-      // Canot push pieces past the anchor at the top/bottom of the board.
+      // Cannot push pieces past the railing at the top/bottom of the board.
       return false;
     }
     i = getBoardIndex(r, c);
+    if (i < 0) {
+      // Don't allow moves that push a player's own piece off the board.
+      return last_piece != WHITE_MOVER && last_piece != WHITE_PUSHER;
+    }
+    last_piece = perm[i];
   }
+  // Push ends on an empty field.
   return true;
 }
 
