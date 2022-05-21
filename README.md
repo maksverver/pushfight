@@ -263,6 +263,26 @@ corresponds with the maximum number of turns leading to a win.
 
 ## Results
 
+### Immediately losing positions
+
+If a player cannot end their turn with a push, he or she will lose the game.
+
+This occurs very rarely. Initially, it wasn't clear if there were any positions
+where a player cannot make any valid push (after using the two moves optimally),
+but it turns out there a few such cases. Two examples:
+
+![Immediately lost position 1](images/immediately-lost-1.gif)
+
+Here, the player has a pusher that can move freely, but any valid push move
+would cause on of his own pieces to be pushed off the board.
+
+![Immediately lost position 2](images/immediately-lost-2.gif)
+
+Here, all the player's a pusher that can move freely, but any valid push move
+would cause on of his own pieces to be pushed off the board.
+
+--------------------------------------------------------------------------------
+
 ### Immediately winning positions (phase 0)
 
 The results from phase 0 ([r0-bitcount.txt](metadata/r0-bitcount.txt)) show that
