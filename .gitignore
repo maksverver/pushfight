@@ -1,5 +1,6 @@
 /*.o
 /countbits
+/perms_test
 /print-perm
 /print-r1
 /solve-r0
