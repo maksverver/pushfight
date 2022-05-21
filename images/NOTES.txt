@@ -1,11 +1,12 @@
 Generated with:
 
 ./animate.py images/start1.png .OX.....oxX....Oox.....OX.
-./animate.py images/start2.png .OX...O..x.X...oox.....OX. 
+./animate.py images/start2.png .OX...O..x.X...oox.....OX.
 ./animate.py images/start2-move1.gif .OX...O..x.X...oox.....OX. c2-c3,d4-d3,b3-c3
 ./animate.py images/empty-board.png ..........................
-./animate.py images/immediately-lost-1.png .....OOxY....oxX.....oX..O  
-./animate.py images/immediately-lost-2.png ...xo.....xXo....YOOO....X
+./animate.py images/immediate-loss-1.png .....OOxY....oxX.....oX..O
+./animate.py images/immediate-loss-2.png ...xo.....xXo....YOOO....X
+./animate.py images/immediate-win.gif ....o....YOX...O.oO....xxX f3-c1,c1-d1
 
 To optimize the generated files afterwards, I use gifsicle
 (https://www.lcdf.org/gifsicle/) for GIF giles, and optipng

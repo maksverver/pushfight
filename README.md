@@ -279,12 +279,12 @@ variations of two basic patterns:
 Example 1: here, red has 1 square piece that can move freely, but any push would
 push one of red's own pieces off the board.
 
-![Immediately lost position 1](images/immediately-lost-1.png)
+![Immediately lost position 1](images/immediate-loss-1.png)
 
 Example 2: here, all of red's pieces are locked in and no moves are possible
 at all. The only possible push (h2-h3) would push red's own piece off the board.
 
-![Immediately lost position 2](images/immediately-lost-2.png)
+![Immediately lost position 2](images/immediate-loss-2.png)
 
 It's clear that these are artificial positions that wouldn't come up naturally
 in a real game. The red player would never let their pieces get fenced in like
@@ -297,6 +297,10 @@ The results from phase 0 ([r0-bitcount.txt](metadata/r0-bitcount.txt)) show that
 of the 401,567,166,000 permutations, 340,787,248,692 (84.86%) can be won in
 1 turn, and the remaining 60,779,917,308 (15.14%) are indeterminate. That means
 only about a sixth of the positions remain to be processed in phase 1.
+
+Most of these positions are really trivial, of course. Example:
+
+![Immediately won position 1](images/immediate-win-1.gif)
 
 ## Future work
 
