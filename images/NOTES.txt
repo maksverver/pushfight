@@ -4,6 +4,8 @@ Generated with:
 ./animate.py images/start2.gif .OX...O..x.X...oox.....OX. 
 ./animate.py images/start2-move1.gif .OX...O..x.X...oox.....OX. c2-c3,d4-d3,b3-c3
 ./animate.py images/empty-board.gif ..........................
+./animate.py images/immediately-lost-1.gif .....OOxY....oxX.....oX..O  
+./animate.py images/immediately-lost-2.gif ...xo.....xXo....YOOO....X
 
 I use gifsicle (https://www.lcdf.org/gifsicle/) to optimize the generated GIF
 files afterward.
