@@ -14,6 +14,11 @@ x = black mover
 X = black pusher without anchor
 Y = black pusher with anchor
 
+Note that the board has rotational symmetry. We could use this to normalize
+positions, cutting the number of different positions in half. The solvers don't
+do this, however, since it's hard to map normalized positions to a compact
+range of integers. We could still use rotations to speed up calculations by
+(at most) a factor 2, but it's not clear it's worth the complexity.
 
 401567166000 permutations
 401567166000 = 2^4 × 3^3 × 5^3 × 7 × 11 × 13
