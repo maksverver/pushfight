@@ -67,7 +67,7 @@ a3f3c0396fac84127925e78cc27a215a9a00189da3801a8b74bdd5df82a13ea5  results/chunk-
 107f972750452f85a1a358ac50ae7fddc3e77f75a2fbb46f1990d7255cb781a9  results/chunk-r0-0108.bin
 73fb27946f306151e47c4e0c7f83021fa1b2ae3afa92398eb8235d3b18a3bd62  results/chunk-r0-0109.bin
 
-$ ./countbits results/chunk-r0-010?.bin
+$ ./count-bits results/chunk-r0-010?.bin
 Zero bits:  175671731
 One bits:   364868269
 Total bits: 540540000
