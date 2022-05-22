@@ -113,13 +113,12 @@ multiple the number of positions by 7. However, if we're willing to treat the
 first turn specially and we only want to be able to represent positions from
 turn 2 and on, we can assume the anchor is in place.
 
-Additionally, we can assume without loss of generality that the anchor is
-always on one of the second player's squares, since the game board is
-symmetric, so we can always swap the colors of the pieces. So without loss
-of generality, we will assume it's the red player's turn to move, and the
-anchor is on one of the blue player's squares. This means we will replace
-one of the `X`s with an `Y`, and all positions are now some permutation of
-the string:
+Additionally, we can assume that the anchor is always on one of the second
+player's squares, since the game board is symmetric, so we can always swap the
+colors of the pieces. So without loss of generality, we will assume it's the
+red player's turn to move, and the anchor is on one of the blue player's squares.
+This means we will replace one of the `X`s with an `Y`, and all positions are
+now some permutation of the string:
 
 `................ooOOOxxXXY`
 
@@ -133,6 +132,42 @@ it's possible to efficiently convert between board positions and permutation
 indices. Efficiently here means O(N) where N is the number of squares on the
 board. See the logic in [perms.h](perms.h) and [perms.cc](perms.cc) for details.
 
+
+### Unreachable permutations
+
+Does every permutation represent a reachable position, in the sense that it can
+be reached from a starting position by some sequence of valid moves (no matter
+how improbable)? No, in fact, there are some permutations that are provably
+unreachable, due to the placement of the anchor.
+
+Recall that the anchor is placed on the opponent's piece that made the last
+push move. That implies there must be a preceding position where this piece was
+in a different place and pushed in a particular direction, moving at least on
+other piece. ThatIn the resulting position, there must be some direction that
+has a piece next to the anchor, and an empty piece on the opposite side.
+For example: a piece above the anchor and an empty square below the anchor
+implies the anchored piece could have pushed up from the square below.
+
+If there is no direction such that there is a piece on one side and an empty
+square on the other side, then the position is clearly unreachable. An example
+is given below:
+
+![Example of an unrachable position](images/unreachable-1.png)
+
+In the above position, the anchored piece on square *e3* could not have come
+from anywhere, so while this is a valid permutation, it is not reachable through
+normal play.
+
+It follows from the above that the anchor can never be on some squares
+(the eight corner squares: *a2*, *a3*, *b1*, *c4*, *f1*, *g4*, *h2*, and *h3*).
+
+A brute-force search (see
+[count-unreachable-output.txt](results/count-unreachable-output.txt)) shows that
+of 401,567,166,000 total permutations, 172,416,263,040 (42.94%) are reachable
+and 229,150,902,960 (57.06%) are unreachable.
+
+Note that it's possible that there are other unreachable permutations that 
+aren't identifiable as described above, but I'm not aware of any.
 
 ## Solving the game
 
@@ -304,9 +339,10 @@ Most of these positions are really trivial, of course. Example:
 
 ## Future work
 
- * Are there any positions that are losing because there are no pushes
-   available? Or the only pushes push one's owns pieces off the board?
  * Write about how to find optimal moves before turn 1.
  * List some stats from the final computation
  * Determining the best starting position
  * Finding a compact way to represent the optimal strategy
+ * Are there any unreachable positions that I haven't accounted for already?
+   If not, can I prove it? I could probably brute-force it with a breadth-first
+   search starting from all initial positions, but it would be expensive.
