@@ -199,7 +199,6 @@ void GeneratePredecessors(
     const Perm &input_perm,
     std::function<void(const Perm&)> callback) {
   REP(anchor_index, L) if (input_perm[anchor_index] == BLACK_ANCHOR) {
-    // Flip position (replaces BLACK_ANCHOR with WHITE_PUSHER).
     REP(d, 4) {
       int i = anchor_index;
       int r = FIELD_ROW[i];
@@ -212,6 +211,7 @@ void GeneratePredecessors(
       if (k < 0 || input_perm[k] == EMPTY) continue;
       // Anchor at field `i` could have been pushed in direction `d`.
 
+      // Flip position (replaces BLACK_ANCHOR with WHITE_PUSHER).
       Perm perm;
       REP(j, L) perm[j] = INVERSE_PIECE[int{input_perm[j]}];
       perm[j] = perm[i];
