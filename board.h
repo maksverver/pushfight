@@ -39,7 +39,9 @@ constexpr std::array<int, L> FIELD_COL = {
 const int DR[4] = { -1,  0,  0, 1 };
 const int DC[4] = {  0, -1, +1, 0 };
 
-const signed char NEIGHBOURS[26][5] = {
+// For each field, lists its neighbors (terminated by -1).
+// Generated with gen-neighbors.py
+const signed char NEIGHBORS[26][5] = {
   {  1,   7,  -1,  -1,  -1 },  //  0
   {  0,   2,   8,  -1,  -1 },  //  1
   {  1,   3,   9,  -1,  -1 },  //  2

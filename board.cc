@@ -9,6 +9,45 @@ namespace {
 
 constexpr char FIELD_CHARS[] = {'.', 'o', 'O', 'x', 'X', 'Y'};
 
+// For each field, lists pairs of neighbors in opposite directions
+// (terminated by a pair of -1s).
+//
+// For example, field 1 has neighbors 0 (to the left), 2 (to the right) and
+// 8 (below). The list below contains only the pair (0, 2) because the field
+// below doesn't have a matching field above.
+//
+// This is used to implement IsReachable() efficiently.
+//
+// Generated with gen-neighbor-pairs.py
+const signed char NEIGHBOR_PAIRS[26][6] = {
+  { -1,  -1,  -1,  -1,  -1,  -1 },  //  0
+  {  0,   2,  -1,  -1,  -1,  -1 },  //  1
+  {  1,   3,  -1,  -1,  -1,  -1 },  //  2
+  {  2,   4,  -1,  -1,  -1,  -1 },  //  3
+  { -1,  -1,  -1,  -1,  -1,  -1 },  //  4
+  { -1,  -1,  -1,  -1,  -1,  -1 },  //  5
+  {  5,   7,  -1,  -1,  -1,  -1 },  //  6
+  {  0,  15,   6,   8,  -1,  -1 },  //  7
+  {  1,  16,   7,   9,  -1,  -1 },  //  8
+  {  2,  17,   8,  10,  -1,  -1 },  //  9
+  {  3,  18,   9,  11,  -1,  -1 },  // 10
+  {  4,  19,  10,  12,  -1,  -1 },  // 11
+  { -1,  -1,  -1,  -1,  -1,  -1 },  // 12
+  { -1,  -1,  -1,  -1,  -1,  -1 },  // 13
+  {  6,  21,  13,  15,  -1,  -1 },  // 14
+  {  7,  22,  14,  16,  -1,  -1 },  // 15
+  {  8,  23,  15,  17,  -1,  -1 },  // 16
+  {  9,  24,  16,  18,  -1,  -1 },  // 17
+  { 10,  25,  17,  19,  -1,  -1 },  // 18
+  { 18,  20,  -1,  -1,  -1,  -1 },  // 19
+  { -1,  -1,  -1,  -1,  -1,  -1 },  // 20
+  { -1,  -1,  -1,  -1,  -1,  -1 },  // 21
+  { 21,  23,  -1,  -1,  -1,  -1 },  // 22
+  { 22,  24,  -1,  -1,  -1,  -1 },  // 23
+  { 23,  25,  -1,  -1,  -1,  -1 },  // 24
+  { -1,  -1,  -1,  -1,  -1,  -1 },  // 25
+};
+
 std::string FieldToId(int i) {
   std::string s(2, '\0');
   s[0] = 'a' + FIELD_COL[i];
@@ -37,23 +76,33 @@ bool IsReachable(const Perm &perm) {
   // piece there, and it cannot have pushed left or right, because it should
   // have left an empty space behind.
   REP(i, L) if (perm[i] == BLACK_ANCHOR) {
-    const int r = FIELD_ROW[i];
-    const int c = FIELD_COL[i];
+    if (true) {
+      // Implementation using NEIGHBOR_PAIRS as the lookup table.
+      for (const signed char *p = NEIGHBOR_PAIRS[i]; *p != -1; p += 2) {
+        if ((perm[p[0]] == EMPTY) != (perm[p[1]] == EMPTY)) {
+          return true;
+        }
+      }
+    } else {
+      // Implementation without using NEIGHBOR_PAIRS. Logically equivalent to the
+      // above, but may be less efficient.
+      const int r = FIELD_ROW[i];
+      const int c = FIELD_COL[i];
 
-    // Check vertical pushes.
-    if (r > 0 && r < H - 1) {
-      int j = BOARD_INDEX[r - 1][c];
-      int k = BOARD_INDEX[r + 1][c];
-      if (j >= 0 && k >= 0 && (perm[j] == EMPTY) != (perm[k] == EMPTY)) return true;
+      // Check vertical pushes.
+      if (r > 0 && r < H - 1) {
+        int j = BOARD_INDEX[r - 1][c];
+        int k = BOARD_INDEX[r + 1][c];
+        if (j >= 0 && k >= 0 && (perm[j] == EMPTY) != (perm[k] == EMPTY)) return true;
+      }
+
+      // Check horizontal pushes.
+      if (c > 0 && c < W - 1) {
+        int j = BOARD_INDEX[r][c - 1];
+        int k = BOARD_INDEX[r][c + 1];
+        if (j >= 0 && k >= 0 && (perm[j] == EMPTY) != (perm[k] == EMPTY)) return true;
+      }
     }
-
-    // Check horizontal pushes.
-    if (c > 0 && c < W - 1) {
-      int j = BOARD_INDEX[r][c - 1];
-      int k = BOARD_INDEX[r][c + 1];
-      if (j >= 0 && k >= 0 && (perm[j] == EMPTY) != (perm[k] == EMPTY)) return true;
-    }
-
     return false;
   }
   // No anchor found!
