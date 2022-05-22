@@ -1,0 +1,1 @@
+Processed 401567166000 permutations. 172416263040 reachable (42.94%). 229150902960 unreachable (57.06%).
