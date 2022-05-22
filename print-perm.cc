@@ -20,6 +20,8 @@ int64_t ParseInt64(const char *s) {
 void DumpPerm(const Perm &perm) {
   Dump(perm, std::cout) << std::endl;
 
+  std::cout << "This position is " << (IsReachable(perm) ? "likely" : "NOT") << " reachable.\n\n";
+
   std::cout << "Successors:\n\n";
 
   Outcome o = LOSS;

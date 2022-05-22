@@ -17,49 +17,6 @@
 #include <iomanip>
 #include <iostream>
 
-bool IsPossible(const Perm &perm) {
-  // A permutation is impossible if the anchor is on a piece that couldn't have
-  // pushed last turn. At a minimum, there must be a piece to one side and an
-  // empty space on the opposide side.
-  //
-  // For example:
-  //
-  //    ..Yo.
-  //
-  // is valid (the previous state would be .Ox..)
-  //
-  //    .....
-  //    .oYo.
-  //    .....
-  //
-  // is invalid: the pusher cannot have pushed up or down, because there is no
-  // piece there, and it cannot have pushed left or right, because it should
-  // have left an empty space behind.
-  REP(i, L) if (perm[i] == BLACK_ANCHOR) {
-    const int r = FIELD_ROW[i];
-    const int c = FIELD_COL[i];
-
-    // Check vertical pushes.
-    if (r > 0 && r < H - 1) {
-      int j = BOARD_INDEX[r - 1][c];
-      int k = BOARD_INDEX[r + 1][c];
-      if (j >= 0 && k >= 0 && (perm[j] == EMPTY) != (perm[k] == EMPTY)) return true;
-    }
-
-    // Check horizontal pushes.
-    if (c > 0 && c < W - 1) {
-      int j = BOARD_INDEX[r][c - 1];
-      int k = BOARD_INDEX[r][c + 1];
-      if (j >= 0 && k >= 0 && (perm[j] == EMPTY) != (perm[k] == EMPTY)) return true;
-    }
-
-    return false;
-  }
-  // No anchor found!
-  assert(false);
-  return false;
-}
-
 void Report(int64_t possible, int64_t total, std::ostream &os) {
   int64_t impossible = total - possible;
   os << "Processed " << total << " permutations. "
@@ -78,8 +35,8 @@ int main() {
   constexpr int reporting_interval = 1 << 30;
   auto start_time = std::chrono::system_clock::now();
   do {
-    //std::cerr << index << " " << (IsPossible(perm) ? "possible" : "impossible") << std::endl;
-    if (IsPossible(perm)) {
+    //std::cerr << index << " " << (IsReachable(perm) ? "possible" : "impossible") << std::endl;
+    if (IsReachable(perm)) {
       ++possible_count;
     }
     ++index;

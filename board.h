@@ -91,7 +91,6 @@ constexpr Perm initial_state = {
      0, 0, 2, 4, 0,
 };
 
-
 inline int getBoardIndex(int r, int c) {
   return r >= 0 && r < H && c >= 0 && c < W ? BOARD_INDEX[r][c] : -1;
 }
@@ -99,6 +98,13 @@ inline int getBoardIndex(int r, int c) {
 inline int getNeighbourIndex(int i, int d) {
   return getBoardIndex(FIELD_ROW[i] + DR[d], FIELD_COL[i] + DC[d]);
 }
+
+// Returns whether the given permutation can possibly be reached through a
+// sequence of valid moves from a valid starting position.
+//
+// A return value of `true` implies that the permutation is likely reachable,
+// while `false` implies that the permutation is definitly unreachable.
+bool IsReachable(const Perm &perm);
 
 enum Outcome {
   TIE  = 0,
