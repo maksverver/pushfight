@@ -20,6 +20,8 @@ int64_t ParseInt64(const char *s) {
 void DumpPerm(const Perm &perm) {
   Dump(perm, std::cout) << std::endl;
 
+  std::cout << "Successors:\n\n";
+
   Outcome o = LOSS;
   GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
     Dump(moves, std::cout) << std::endl;
@@ -27,6 +29,12 @@ void DumpPerm(const Perm &perm) {
     o = MaxOutcome(o, INVERSE_OUTCOME[state.outcome]);
     return true;
   });
+
+  std::cout << "Predecessors:\n\n";
+  GeneratePredecessors(perm, [](const Perm &perm) {
+    Dump(perm, std::cout) << "\n";
+  });
+
   std::cout << "Verdict: " << (o == WIN ? "win" : o == LOSS ? "loss" : "tie") << std::endl;
 }
 

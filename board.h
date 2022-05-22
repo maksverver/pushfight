@@ -81,7 +81,7 @@ constexpr const char INVERSE_PIECE[6] = {
   BLACK_PUSHER,
   WHITE_MOVER,
   WHITE_PUSHER,
-  WHITE_PUSHER,
+  WHITE_PUSHER,  // removes anchor!
 };
 
 constexpr Perm initial_state = {

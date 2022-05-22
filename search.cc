@@ -191,9 +191,89 @@ bool GenerateSuccessors(
   Perm mutable_perm = perm;
   Moves moves = {.size = 0, .moves={}};
   return
-    GenerateSuccessors(mutable_perm, moves, 0, callback) &&
-    GenerateSuccessors(mutable_perm, moves, 1, callback) &&
     GenerateSuccessors(mutable_perm, moves, 2, callback);
+}
+
+// NOT CORRECTLY IMPLEMENTED YET! DO NOT USE!
+void GeneratePredecessors(
+    const Perm &input_perm,
+    std::function<void(const Perm&)> callback) {
+  REP(anchor_index, L) if (input_perm[anchor_index] == BLACK_ANCHOR) {
+    // Flip position (replaces BLACK_ANCHOR with WHITE_PUSHER).
+    REP(d, 4) {
+      int i = anchor_index;
+      int r = FIELD_ROW[i];
+      int c = FIELD_COL[i];
+      const int dr = DR[d];
+      const int dc = DC[d];
+      int j = getBoardIndex(r + dr, c + dc);
+      if (j < 0 || input_perm[j] != EMPTY) continue;
+      int k = getBoardIndex(r - dr, c - dc);
+      if (k < 0 || input_perm[k] == EMPTY) continue;
+      // Anchor at field `i` could have been pushed in direction `d`.
+
+      Perm perm;
+      REP(j, L) perm[j] = INVERSE_PIECE[int{input_perm[j]}];
+      perm[j] = perm[i];
+      j = i;
+      i = k;
+      r -= dr;
+      c -= dc;
+      do {
+        perm[j] = perm[i];
+        j = i;
+        r -= dr;
+        c -= dc;
+        i = getBoardIndex(r, c);
+      } while (i >= 0 && perm[i] != EMPTY);
+      perm[j] = EMPTY;
+
+      REP(j, L) if (perm[j] == BLACK_PUSHER) {
+        // TODO: also allow up to two white moves
+        //
+        // TODO: (rule 1) anchor cannot be on a piece that was just pushed!
+        //
+        // TODO: (rule 2) anchor can only go on a piece that has a piece on one side
+        //       and an empty space on the other side!
+        //
+        // Example:
+        // ./print-perm by-perm ................OoYXoxOxXO
+        // Permutation index: 19995
+        //   .....
+        // ........
+        // ...OoYXo
+        //  xOxXO
+        //
+        // Predecessors:
+        //
+        //   .....
+        // .....O..
+        // ...YxXOx
+        //  oXoO.
+        //
+        // Above is potentially valid.
+        //
+        //   .....
+        // .....O..
+        // ...XxYOx
+        //  oXoO.
+        //
+        // Above is invalid because of rule 1.
+        //
+        //   .....
+        // .....O..
+        // ...XxXOx
+        //  oYoO.
+        //
+        // Above is invalid because of rule 2.
+        //
+
+        perm[j] = BLACK_ANCHOR;
+        callback(perm);
+        perm[j] = BLACK_PUSHER;
+      }
+    }
+  }
 }
 
 void Deduplicate(std::vector<std::pair<Moves, State>> &successors) {
