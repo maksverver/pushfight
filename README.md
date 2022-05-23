@@ -347,3 +347,11 @@ Most of these positions are really trivial, of course. Example:
  * Are there any unreachable positions that I haven't accounted for already?
    If not, can I prove it? I could probably brute-force it with a breadth-first
    search starting from all initial positions, but it would be expensive.
+
+## Puzzles
+
+In the position below, red is to move. It looks like red is in trouble, with two
+pieces about to be pushed off the board. However, there is a way for red to
+survive at least one more turn! Can you tell how?
+
+![Puzzle 1](images/puzzle-1.png)
