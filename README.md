@@ -8,7 +8,7 @@ designed by Brett Picotte, available from https://pushfightgame.com/
 
 Push Fight is a game for two players on a board with 4 rows and 8 columns, with some
 squares missing. Rows are labeled 1 through 4 (from bottom to top) and columns
-are labeled *a* through *h* (from left to righ), as in Chess. See below:
+are labeled *a* through *h* (from left to right), as in Chess. See below:
 
 ![The empty board](images/empty-board.png)
 
@@ -45,7 +45,7 @@ of squares like *b3*  and *g2*). The first player who manages to push an opponen
 piece off the board, wins.
 
 There is one final rule. After a player has performed their push move, a special piece
-called an *anchor* is placed on the pushing piece. The opponent may not move that piece
+called an *anchor* is placed on the pushing piece. The opponent may not push that piece
 during the next turn. This prevents obvious stalemates with players pushing the same
 row of pieces back and forth.
 
