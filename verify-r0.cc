@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -22,18 +21,6 @@ std::mt19937 rng(dev());
 
 const char *OutcomeToString(Outcome o) {
   return o == WIN ? "WIN" : o == LOSS ? "LOSS" : "TIE";
-}
-
-int GetChunkId(const char *filename) {
-  for (const char *p = filename; *p; ++p) if (*p == '/') filename = p + 1;
-  if (strncmp(filename, "chunk-r0-", 9) == 0) {
-    std::istringstream iss(filename + 9);
-    int i = 0;
-    if (iss >> i) return i;
-  }
-  std::cout << "Couldn't parse chunk id from filename: " << filename << std::endl;
-  exit(1);
-  return -1;
 }
 
 void VerifyFile(const char *filename) {
@@ -53,13 +40,17 @@ void VerifyFile(const char *filename) {
     }
   }
 
-  const int chunk = GetChunkId(filename);
-  if (chunk < 0 || chunk >= num_chunks) {
-    std::cout << "Invalid chunk id " << chunk << std::endl;
+  ChunkInfo chunk_info = GetChunkInfo(filename);
+  if (chunk_info.phase == -1 || chunk_info.chunk == -1) {
+    std::cout << "Failed to parse chunk info" << std::endl;
+    exit(1);
+  }
+  if (chunk_info.phase != 0) {
+    std::cout << "Invalid phase" << std::endl;
     exit(1);
   }
 
-  int64_t start_index = int64_t{chunk_size} * int64_t{chunk};
+  int64_t start_index = int64_t{chunk_size} * int64_t{chunk_info.chunk};
   REP(_, num_probes) {
     std::uniform_int_distribution<int> dist(0, chunk_size - 1);
     int offset = dist(rng);

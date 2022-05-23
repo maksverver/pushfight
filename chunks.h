@@ -28,4 +28,11 @@ void PrintChunkUpdate(int chunk, int part);
 
 void ClearChunkUpdate();
 
+struct ChunkInfo {
+  int phase;  // 0 or 1, or -1 for invalid
+  int chunk;  // between 0 and num_chunks (exclusive), or -1 if invalid
+};
+
+ChunkInfo GetChunkInfo(const char *filename);
+
 #endif  // ndef CHUNKS_H_INCLUDED

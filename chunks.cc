@@ -1,5 +1,6 @@
 #include "chunks.h"
 
+#include <cstring>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -31,4 +32,25 @@ void PrintChunkUpdate(int chunk, int part) {
 
 void ClearChunkUpdate() {
   std::cerr << "                                                            \r";
+}
+
+ChunkInfo GetChunkInfo(const char *filename) {
+  for (const char *p = filename; *p; ++p) if (*p == '/') filename = p + 1;
+
+  ChunkInfo result = { -1, -1 };
+  if (strncmp(filename, "chunk-r0-", 9) == 0) {
+    result.phase = 0;
+    filename += 9;
+  } else if (strncmp(filename, "chunk-r1-", 9) == 0) {
+    result.phase = 1;
+    filename += 9;
+  } else {
+    return result;
+  }
+  std::istringstream iss(filename);
+  int i = -1;
+  if ((iss >> i) && (i >= 0 && i < num_chunks)) {
+    result.chunk = i;
+  }
+  return result;
 }
