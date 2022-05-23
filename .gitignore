@@ -6,6 +6,7 @@
 /print-r1
 /solve-r0
 /solve-r1
+/solve-r1-chunked
 /solve-rN
 /solve-lost
 /verify-r0
