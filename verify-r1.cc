@@ -83,7 +83,7 @@ void VerifyFile(const char *filename) {
     std::cout << "Incorrect file size: " << filesize << " (expected: " << chunk_size / 5 << ")" << std::endl;
     exit(1);
   }
-  R1ChunkAccessor acc(filename);
+  RnChunkAccessor acc(filename);
 
   int count[3] = {0,0,0};
   int64_t start_index = int64_t{chunk_size} * int64_t{chunk_info.chunk};

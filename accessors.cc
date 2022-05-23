@@ -118,13 +118,13 @@ void MemUnmap(void *data, size_t length) {
 ChunkedR0Accessor::ChunkedR0Accessor() {
   maps.reserve(num_chunks);
   REP(chunk, num_chunks) {
-    maps.emplace_back(ChunkR0FileName("input", chunk).c_str());
+    maps.emplace_back(ChunkFileName(0, "input", chunk).c_str());
   }
 }
 
 ChunkedR1Accessor::ChunkedR1Accessor() {
   maps.reserve(num_chunks);
   REP(chunk, num_chunks) {
-    maps.emplace_back(ChunkR1FileName("input", chunk).c_str());
+    maps.emplace_back(ChunkFileName(1, "input", chunk).c_str());
   }
 }

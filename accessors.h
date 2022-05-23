@@ -3,6 +3,8 @@
 
 #include <cstdlib>
 #include <memory>
+#include <string>
+#include <sstream>
 #include <vector>
 
 #include "chunks.h"
@@ -88,9 +90,9 @@ private:
 // 2 for WIN). The results are encoded in ternary with 5 values per byte (or
 // 1.6 bits per value).
 template<size_t filesize>
-class R1AccessorBase {
+class RnAccessorBase {
 public:
-  explicit R1AccessorBase(const char *filename) : map(filename) {}
+  explicit RnAccessorBase(const char *filename) : map(filename) {}
 
   Outcome operator[](size_t i) const {
     uint8_t byte = map[i / 5];
@@ -108,14 +110,14 @@ private:
   MappedFile<uint8_t, filesize> map;
 };
 
-class R1Accessor : public R1AccessorBase<total_perms/5> {
+class RnAccessor : public RnAccessorBase<total_perms/5> {
 public:
-  explicit R1Accessor() : R1AccessorBase("input/r1.bin") {}
+  explicit RnAccessor(const char *filename) : RnAccessorBase(filename) {}
 };
 
-class R1ChunkAccessor : public R1AccessorBase<chunk_size/5> {
+class RnChunkAccessor : public RnAccessorBase<chunk_size/5> {
 public:
-  explicit R1ChunkAccessor(const char *filename) : R1AccessorBase(filename) {}
+  explicit RnChunkAccessor(const char *filename) : RnAccessorBase(filename) {}
 };
 
 // Accessor for result data of phase 1 (written by solve-r1) as separate

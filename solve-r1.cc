@@ -140,10 +140,9 @@ std::vector<uint8_t> EncodeOutcomes(const std::vector<Outcome> &outcomes) {
   return bytes;
 }
 
-void ProcessChunk(int chunk) {
+void ProcessChunk(const std::string &filename, int chunk) {
   std::vector<Outcome> outcomes = ComputeChunk(chunk);
   std::vector<uint8_t> bytes = EncodeOutcomes(outcomes);
-  std::string filename = ChunkR1FileName("output", chunk);
   std::ofstream os(filename, std::ofstream::binary);
   if (!os) {
     std::cerr << "Could not open output file: " << filename << std::endl;
@@ -172,12 +171,13 @@ int main(int argc, char *argv[]) {
 
   InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
-    if (std::filesystem::exists(ChunkR1FileName("output", chunk))) {
+    std::string filename = ChunkFileName(1, "output", chunk);
+    if (std::filesystem::exists(filename)) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
     }
     auto start_time = std::chrono::system_clock::now();
-    ProcessChunk(chunk);
+    ProcessChunk(filename, chunk);
     std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now() - start_time;
     std::cerr << "Chunk " << chunk << " done in " << elapsed_seconds.count() / 60 << " minutes." << std::endl;
   }

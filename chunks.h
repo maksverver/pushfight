@@ -20,9 +20,7 @@ constexpr int part_size = 240240;
 static_assert(part_size * num_parts  == chunk_size);
 static_assert(part_size % 16 == 0);
 
-std::string ChunkR0FileName(const std::string &dir, int chunk);
-
-std::string ChunkR1FileName(const std::string &dir, int chunk);
+std::string ChunkFileName(int phase, const std::string &dir, int chunk);
 
 void PrintChunkUpdate(int chunk, int part);
 

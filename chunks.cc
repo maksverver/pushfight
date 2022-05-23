@@ -6,17 +6,10 @@
 #include <sstream>
 #include <string>
 
-std::string ChunkR0FileName(const std::string &dir, int chunk) {
+std::string ChunkFileName(int phase, const std::string &dir, int chunk) {
   std::ostringstream oss;
   if (!dir.empty()) oss << dir << '/';
-  oss << "chunk-r0-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
-  return oss.str();
-}
-
-std::string ChunkR1FileName(const std::string &dir, int chunk) {
-  std::ostringstream oss;
-  if (!dir.empty()) oss << dir << '/';
-  oss << "chunk-r1-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
+  oss << "chunk-r" << phase << "-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
   return oss.str();
 }
 
