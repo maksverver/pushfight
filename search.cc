@@ -191,6 +191,8 @@ bool GenerateSuccessors(
   Perm mutable_perm = perm;
   Moves moves = {.size = 0, .moves={}};
   return
+    GenerateSuccessors(mutable_perm, moves, 0, callback) &&
+    GenerateSuccessors(mutable_perm, moves, 1, callback) &&
     GenerateSuccessors(mutable_perm, moves, 2, callback);
 }
 
