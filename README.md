@@ -143,10 +143,11 @@ unreachable, due to the placement of the anchor.
 Recall that the anchor is placed on the opponent's piece that made the last
 push move. That implies there must be a preceding position where this piece was
 in a different place and pushed in a particular direction, moving at least on
-other piece. ThatIn the resulting position, there must be some direction that
-has a piece next to the anchor, and an empty piece on the opposite side.
-For example: a piece above the anchor and an empty square below the anchor
-implies the anchored piece could have pushed up from the square below.
+other piece, and leaving an empty square behind. In the resulting position,
+there must be some direction that has a piece next to the anchor, and an empty
+piece on the opposite side. For example: a piece above the anchor and an empty
+square below the anchor implies the anchored piece could have pushed up from the
+square below.
 
 If there is no direction such that there is a piece on one side and an empty
 square on the other side, then the position is clearly unreachable. An example
