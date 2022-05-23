@@ -183,8 +183,9 @@ not clear if tying positions exist, but it seems likely.
 To compute results we need to consider the *successors* of a position: all
 positions that are reachable in exactly 1 turn. In Push Fight, a turn consists
 of up to two moves and one push, so the number of successors can be quite large
-($5 × 4 / 2 × 16 × 16 × 12 = 30720$ is an upper bound, though most positions
-have far fewer of course).
+($5 × 4 / 2 × 16 × 16 × 12 = 30720$ is an upper bound, though the average is
+somewhere around 5,000, with many practical positions below 2,000, since players
+tend to fence off part of the board to limit their opponent's moves).
 
 We can think of the game as a graph, with nodes representing board positions
 and (directed) edges as possible moves. In other words, the edge *(p, q)* is
