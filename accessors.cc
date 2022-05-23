@@ -2,12 +2,8 @@
 
 #include "macros.h"
 
-#include <fcntl.h>
-#include <iostream>
-#include <sys/mman.h>
-#include <unistd.h>
-
 #include <filesystem>
+#include <iostream>
 
 namespace {
 
@@ -29,11 +25,26 @@ void CheckFileSize(const char *filename, size_t size) {
   }
 }
 
-}  // namespace
+#if _WIN32
 
-void *MemMap(const char *filename, size_t length) {
-  CheckFileSize(filename, length);
+static_assert(sizeof(SIZE_T) >= 8);
 
+void *MemMapWindows(const char *filename, size_t length) {
+  abort(); // TODO
+  return nullptr;
+}
+
+void MemUnmapWindows(void *data, size_t length) {
+  abort(); // TODO
+}
+
+#else
+
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
+void *MemMapLinux(const char *filename, size_t length) {
   int fd = open(filename, O_RDONLY);
   if (fd == -1) {
     std::cerr << "Failed to open() " << filename << std::endl;
@@ -48,11 +59,33 @@ void *MemMap(const char *filename, size_t length) {
   return data;
 }
 
-void MemUnmap(void *data, size_t length) {
+void MemUnmapLinux(void *data, size_t length) {
   if (munmap(data, length) != 0) {
     std::cerr << "munmap() failed" << std::endl;
     // Don't abort.
   }
+}
+
+#endif // def __linux__
+
+}  // namespace
+
+void *MemMap(const char *filename, size_t length) {
+  CheckFileSize(filename, length);
+
+#if _WIN32
+  return MemMapWindows(filename, length);
+#else
+  return MemMapLinux(filename, length);
+#endif
+}
+
+void MemUnmap(void *data, size_t length) {
+#if _WIN32
+  return MemUnmapWindows(data, length);
+#else
+  return MemUnmapLinux(data, length);
+#endif
 }
 
 R0Accessor::R0Accessor() : map("input/r0.bin") {}

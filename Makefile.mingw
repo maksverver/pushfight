@@ -1,0 +1,14 @@
+# Makefile to build 64-bit Windows executables.
+#
+# This is intended to be run from Linux, and uses the MinGW toolchain
+# See: https://www.mingw-w64.org/
+#
+# Usage:
+#
+#  make -f Makefile.mingw
+
+include Makefile
+
+CXX = x86_64-w64-mingw32-c++
+LD = x86_64-w64-mingw32-c++
+CXXFLAGS += -static

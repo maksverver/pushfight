@@ -7,6 +7,8 @@
 
 #include "chunks.h"
 
+static_assert(sizeof(size_t) >= 8, "Need a 64-bit OS to map large files");
+
 void *MemMap(const char *filename, size_t length);
 
 void MemUnmap(void *data, size_t length);
