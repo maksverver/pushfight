@@ -45,7 +45,7 @@ void VerifyFile(const char *filename) {
     exit(1);
   }
   {
-    std::ifstream ifs(filename, std::ios::binary);
+    std::ifstream ifs(filename, std::ifstream::binary);
     ifs.read(reinterpret_cast<char*>(chunk_data.data()), chunk_data.size());
     if (ifs.gcount() != chunk_data.size()) {
       std::cout << "Failed to read full file!" << std::endl;

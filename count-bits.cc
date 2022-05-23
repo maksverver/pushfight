@@ -7,7 +7,7 @@ int main(int argc, char* argv[]) {
   int64_t ones = 0;
   int64_t zeros = 0;
   for (int i = 1; i < argc; ++i) {
-    std::ifstream ifs(argv[i]);
+    std::ifstream ifs(argv[i], std::ifstream::binary);
     while (ifs) {
       uint8_t buffer[409600];
       ifs.read(reinterpret_cast<char*>(&buffer), sizeof(buffer));

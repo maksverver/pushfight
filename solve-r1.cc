@@ -140,7 +140,7 @@ void ProcessChunk(int chunk) {
   std::vector<Outcome> outcomes = ComputeChunk(chunk);
   std::vector<uint8_t> bytes = EncodeOutcomes(outcomes);
   std::string filename = ChunkR1FileName(chunk);
-  std::ofstream os(filename, std::fstream::binary);
+  std::ofstream os(filename, std::ofstream::binary);
   if (!os) {
     std::cerr << "Could not open output file: " << filename << std::endl;
     exit(1);

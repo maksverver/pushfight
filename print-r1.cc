@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
   int64_t counts[3] = {0, 0, 0};
   int64_t byte_index = 0;
   for (int i = 1; i < argc; ++i) {
-    std::ifstream ifs(argv[i]);
+    std::ifstream ifs(argv[i], std::ifstream::binary);
     while (ifs) {
       uint8_t buffer[409600];
       ifs.read(reinterpret_cast<char*>(&buffer), sizeof(buffer));
@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
           Outcome o = static_cast<Outcome>(i);
           std::cout << (o == WIN ? 'W' : o == LOSS ? 'L' : o == TIE ? 'T' : '?');
         }
+        assert(byte == 0);
       }
       std::cout << std::endl;
     }
