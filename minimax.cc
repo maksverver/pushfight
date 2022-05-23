@@ -16,19 +16,22 @@ int64_t ParseInt64(const char *s) {
   return i;
 }
 
-Outcome Minimax(const Perm &perm, int max_depth) {
+Outcome Minimax(const Perm &perm, int max_depth, Moves *best_moves) {
+  if (best_moves) best_moves->size = 0;
   if (max_depth == 0) return TIE;
 
   Outcome o = LOSS;
-  GenerateSuccessors(perm, [&o, max_depth](const Moves &moves, const State &state) {
-    (void) moves;  // unused
-    Outcome p = state.outcome;
-    if (state.outcome == TIE) {
-      p = Minimax(state.perm, max_depth - 1);
-    }
-    o = MaxOutcome(o, INVERSE_OUTCOME[p]);
-    return o != WIN;
-  });
+  GenerateSuccessors(perm,
+    [&o, best_moves, max_depth](const Moves &moves, const State &state) {
+      Outcome p = state.outcome;
+      if (state.outcome == TIE) {
+        p = Minimax(state.perm, max_depth - 1, nullptr);
+      }
+      Outcome old_o = o;
+      o = MaxOutcome(o, INVERSE_OUTCOME[p]);
+      if (best_moves && o != old_o) *best_moves = moves;
+      return o != WIN;
+    });
   return o;
 }
 
@@ -49,8 +52,10 @@ int main(int argc, char *argv[]) {
   // move as LOSS in 1 (or 3, 5, etc.) instead of LOSS in 0 (or 2, 4, 6, etc.)
   // This shouldn't matter too much in practice.
   Outcome o = TIE;
+  Moves best_moves;
+  best_moves.size = 0;
   for (int depth = 1; depth <= 2; ++depth) {
-    o = Minimax(perm, depth);
+    o = Minimax(perm, depth, &best_moves);
     if (o != TIE) {
       std::cout << (o == WIN ? "WIN" : o == LOSS ? "LOSS" : "???") << " in " << depth << std::endl;
       break;
@@ -59,4 +64,6 @@ int main(int argc, char *argv[]) {
   if (o == TIE) {
     std::cout << "No solution found. Possibly TIE?" << std::endl;
   }
+  std::cout << "Best moves: ";
+  Dump(best_moves, std::cout) << std::endl;
 }
