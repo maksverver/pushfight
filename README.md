@@ -1,7 +1,7 @@
 # Solving Push Fight
 
 This repository contains code used to solve Push Fight, an abstract board game for
-designed by Brett Picotte, available from https://pushfightgame.com/
+two players designed by Brett Picotte, available from https://pushfightgame.com/
 
 
 ## Rules of the Game
