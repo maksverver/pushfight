@@ -85,7 +85,7 @@ bool GenerateSuccessors(
     Perm &perm,
     Moves &moves,
     int moves_left,
-    std::function<bool(const Moves&, const State&)> &callback) {
+    const std::function<bool(const Moves&, const State&)> &callback) {
   if (moves_left > 0) {
     // Generate moves.
     int todo_data[L];  // uninitialized for efficiency
@@ -183,11 +183,47 @@ bool HasWinningMove(const int danger[], Perm &perm, int moves_left, int last_mov
   return false;
 }
 
+void GeneratePredecessors(
+    Perm &perm,
+    int moves_left,
+    int last_dest,
+    const std::function<void(const Perm&)> &callback) {
+  if (moves_left > 0) {
+    // Generate moves.
+    int todo_data[L];  // uninitialized for efficiency
+    int todo_size;
+    REP(i0, L) if (perm[i0] == WHITE_MOVER || perm[i0] == WHITE_PUSHER) {
+      // Optimization: don't move the same piece twice. There is never any reason for it.
+      if (i0 == last_dest) continue;
+
+      todo_size = 0;
+      todo_data[todo_size++] = i0;
+      uint32_t visited = uint32_t{1} << i0;
+      for (int j = 0; j < todo_size; ++j) {
+        const int i1 = todo_data[j];
+        for (const signed char *n = NEIGHBORS[i1]; *n != -1; ++n) {
+          const int i2 = *n;
+          if (perm[i2] == EMPTY && (visited & (uint32_t{1} << i2)) == 0) {
+            visited |= uint32_t{1} << i2;
+            todo_data[todo_size++] = i2;
+
+            std::swap(perm[i0], perm[i2]);
+            GeneratePredecessors(perm, moves_left - 1, i2, callback);
+            std::swap(perm[i0], perm[i2]);
+          }
+        }
+      }
+    }
+  } else {
+    callback(perm);
+  }
+}
+
 }  // namespace
 
 bool GenerateSuccessors(
     const Perm &perm,
-    std::function<bool(const Moves&, const State&)> callback) {
+    const std::function<bool(const Moves&, const State&)> &callback) {
   Perm mutable_perm = perm;
   Moves moves = {.size = 0, .moves={}};
   return
@@ -196,10 +232,9 @@ bool GenerateSuccessors(
     GenerateSuccessors(mutable_perm, moves, 2, callback);
 }
 
-// NOT CORRECTLY IMPLEMENTED YET! DO NOT USE!
 void GeneratePredecessors(
     const Perm &input_perm,
-    std::function<void(const Perm&)> callback) {
+    const std::function<void(const Perm&)> &callback) {
   REP(anchor_index, L) if (input_perm[anchor_index] == BLACK_ANCHOR) {
     REP(d, 4) {
       int i = anchor_index;
@@ -221,59 +256,30 @@ void GeneratePredecessors(
       i = k;
       r -= dr;
       c -= dc;
+      uint32_t pushed = 0;
       do {
+        pushed |= uint32_t{1} << j;
         perm[j] = perm[i];
         j = i;
         r -= dr;
         c -= dc;
         i = getBoardIndex(r, c);
+        perm[j] = EMPTY;
+
+        // The push didn't necessarily end at an empty space or the edge of the
+        // board. For example, `.Yooo` has predecessors `Ox.xx`, `Oxx.x` and
+        // `Oxxx.`, not just `Oxxx.` as it might first appear.
+        REP(j, L) if (perm[j] == BLACK_PUSHER && ((pushed & (uint32_t{1} << j)) == 0)) {
+          // Note: this includes some unreachable positions!
+          perm[j] = BLACK_ANCHOR;
+
+          GeneratePredecessors(perm, 0, -1, callback);
+          GeneratePredecessors(perm, 1, -1, callback);
+          GeneratePredecessors(perm, 2, -1, callback);
+
+          perm[j] = BLACK_PUSHER;
+        }
       } while (i >= 0 && perm[i] != EMPTY);
-      perm[j] = EMPTY;
-
-      REP(j, L) if (perm[j] == BLACK_PUSHER) {
-        // TODO: also allow up to two white moves
-        //
-        // TODO: (rule 1) anchor cannot be on a piece that was just pushed!
-        //
-        // TODO: (rule 2) anchor can only go on a piece that has a piece on one side
-        //       and an empty space on the other side!
-        //
-        // Example:
-        // ./print-perm by-perm ................OoYXoxOxXO
-        // Permutation index: 19995
-        //   .....
-        // ........
-        // ...OoYXo
-        //  xOxXO
-        //
-        // Predecessors:
-        //
-        //   .....
-        // .....O..
-        // ...YxXOx
-        //  oXoO.
-        //
-        // Above is potentially valid.
-        //
-        //   .....
-        // .....O..
-        // ...XxYOx
-        //  oXoO.
-        //
-        // Above is invalid because of rule 1.
-        //
-        //   .....
-        // .....O..
-        // ...XxXOx
-        //  oYoO.
-        //
-        // Above is invalid because of rule 2.
-        //
-
-        perm[j] = BLACK_ANCHOR;
-        callback(perm);
-        perm[j] = BLACK_PUSHER;
-      }
     }
   }
 }

@@ -3,7 +3,7 @@ LDLIBS=-lpthread -lm
 
 COMMON_OBJS=accessors.o perms.o board.o chunks.o search.o
 BINARIES=count-bits count-unreachable minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 print-r1
-TESTS=perms_test
+TESTS=perms_test search_test
 
 all: $(BINARIES) $(TESTS)
 
@@ -11,7 +11,7 @@ perms.o: perms.h perms.cc
 	$(CXX) $(CXXFLAGS) -c perms.cc
 
 perms_test: perms_test.cc perms.o
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 accessors.o: accessors.h accessors.cc
 	$(CXX) $(CXXFLAGS) -c accessors.cc
@@ -24,6 +24,9 @@ chunks.o: chunks.h chunks.cc board.o
 
 search.o: search.h search.cc perms.o board.o
 	$(CXX) $(CXXFLAGS) -c search.cc
+
+search_test: search_test.cc board.o perms.o search.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 solve-r0: solve-r0.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
@@ -63,6 +66,7 @@ verify-r1: verify-r1.cc $(COMMON_OBJS)
 
 test: $(TESTS)
 	./perms_test
+	./search_test
 
 clean:
 	rm -f $(BINARIES) $(TESTS) *.o

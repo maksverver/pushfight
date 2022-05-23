@@ -15,14 +15,12 @@
 // then all successors are enumerated and this function returns true.
 bool GenerateSuccessors(
     const Perm &perm,
-    std::function<bool(const Moves&, const State&)> callback);
+    const std::function<bool(const Moves&, const State&)> &callback);
 
 // Enumerates the predecessors of `perm`.
-//
-// NOT CORRECTLY IMPLEMENTED YET! DO NOT USE!
 void GeneratePredecessors(
     const Perm &perm,
-    std::function<void(const Perm&)> callback);
+    const std::function<void(const Perm&)> &callback);
 
 // Deduplicates successors that lead to the same state.
 //
