@@ -5,15 +5,17 @@
 #include <sstream>
 #include <string>
 
-std::string ChunkR0FileName(int chunk) {
+std::string ChunkR0FileName(const std::string &dir, int chunk) {
   std::ostringstream oss;
-  oss << "output/chunk-r0-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
+  if (!dir.empty()) oss << dir << '/';
+  oss << "chunk-r0-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
   return oss.str();
 }
 
-std::string ChunkR1FileName(int chunk) {
+std::string ChunkR1FileName(const std::string &dir, int chunk) {
   std::ostringstream oss;
-  oss << "output/chunk-r1-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
+  if (!dir.empty()) oss << dir << '/';
+  oss << "chunk-r1-" << std::setfill('0') << std::setw(4) << chunk << ".bin";
   return oss.str();
 }
 

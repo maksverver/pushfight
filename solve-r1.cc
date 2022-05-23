@@ -37,7 +37,11 @@ struct ChunkStats {
   }
 };
 
+#ifdef CHUNKED_ACCESSOR
+ChunkedR0Accessor r0acc;
+#else
 R0Accessor r0acc;
+#endif
 
 // For r0, the result can only be LOSS (if all successors are WIN for the opponent)
 // or TIE, since the r0 chunks don't have losing information yet.
@@ -139,7 +143,7 @@ std::vector<uint8_t> EncodeOutcomes(const std::vector<Outcome> &outcomes) {
 void ProcessChunk(int chunk) {
   std::vector<Outcome> outcomes = ComputeChunk(chunk);
   std::vector<uint8_t> bytes = EncodeOutcomes(outcomes);
-  std::string filename = ChunkR1FileName(chunk);
+  std::string filename = ChunkR1FileName("output", chunk);
   std::ofstream os(filename, std::ofstream::binary);
   if (!os) {
     std::cerr << "Could not open output file: " << filename << std::endl;
@@ -168,7 +172,7 @@ int main(int argc, char *argv[]) {
 
   InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
-    if (std::filesystem::exists(ChunkR1FileName(chunk))) {
+    if (std::filesystem::exists(ChunkR1FileName("output", chunk))) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
     }

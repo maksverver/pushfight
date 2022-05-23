@@ -67,7 +67,7 @@ void ProcessChunk(int chunk) {
     assert(outcomes[i] == TIE || outcomes[i] == WIN);
     if (outcomes[i] == WIN) bytes[i / 8] |= 1 << (i % 8);
   }
-  std::string filename = ChunkR0FileName(chunk);
+  std::string filename = ChunkR0FileName("output", chunk);
   std::ofstream os(filename, std::ofstream::binary);
   if (!os) {
     std::cerr << "Could not open output file: " << filename << std::endl;
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
-    if (std::filesystem::exists(ChunkR0FileName(chunk))) {
+    if (std::filesystem::exists(ChunkR0FileName("output", chunk))) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
     }
