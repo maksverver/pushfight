@@ -2,7 +2,7 @@ CXXFLAGS=-std=c++20 -Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pth
 LDLIBS=-lpthread -lm
 
 COMMON_OBJS=accessors.o perms.o board.o chunks.o search.o
-BINARIES=count-bits count-unreachable minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 print-r1
+BINARIES=count-bits count-r1 count-unreachable minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 print-r1
 TESTS=perms_test search_test
 
 all: $(BINARIES) $(TESTS)
@@ -50,6 +50,9 @@ print-perm: print-perm.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 print-r1: print-r1.cc
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
+
+count-r1: count-r1.cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 count-bits: count-bits.cc

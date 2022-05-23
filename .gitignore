@@ -1,6 +1,7 @@
 /*.o
 /count-bits
 /count-unreachable
+/count-r1
 /minimax
 /perms_test
 /print-perm
