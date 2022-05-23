@@ -77,7 +77,9 @@ void *MemMapLinux(const char *filename, size_t length) {
     std::cerr << "Failed to open() " << filename << std::endl;
     exit(1);
   }
-  void *data = mmap(nullptr, length, PROT_READ, MAP_PRIVATE, fd, 0);
+  // Apparently MAP_SHARED works on Windows Subsystem for Linux
+  // while MAP_PRIVATE does not?
+  void *data = mmap(nullptr, length, PROT_READ, MAP_SHARED, fd, 0);
   close(fd);
   if (data == MAP_FAILED) {
     std::cerr << "Failed to mmap() " << filename << std::endl;
