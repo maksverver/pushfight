@@ -27,15 +27,42 @@ void CheckFileSize(const char *filename, size_t size) {
 
 #if _WIN32
 
+#include <windows.h>
+#include <memoryapi.h>
+
 static_assert(sizeof(SIZE_T) >= 8);
 
 void *MemMapWindows(const char *filename, size_t length) {
-  abort(); // TODO
-  return nullptr;
+  HANDLE hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL,
+      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  if (hFile == NULL) {
+    std::cerr << "CreateFile() failed on file " << filename
+        << " error code " << GetLastError() << std::endl;
+    exit(1);
+  }
+  HANDLE hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+  CloseHandle(hFile);
+  if (hMapping == NULL) {
+    std::cerr << "CreateFileMapping() failed on file " << filename
+        << " error code " << GetLastError() << std::endl;
+    exit(1);
+  }
+  LPVOID data = MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, SIZE_T{length});
+  CloseHandle(hMapping);
+  if (data == nullptr) {
+    std::cerr << "MapViewOfFile() failed on file " << filename
+        << " error code " << GetLastError() << std::endl;
+    exit(1);
+  }
+  return data;
 }
 
 void MemUnmapWindows(void *data, size_t length) {
-  abort(); // TODO
+  (void) length;  // unused
+  if (!UnmapViewOfFile(data)) {
+    std::cerr << "UnmapViewOfFile() failed" << std::endl;
+    // Don't abort.
+  }
 }
 
 #else
