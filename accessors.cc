@@ -115,16 +115,12 @@ void MemUnmap(void *data, size_t length) {
 #endif
 }
 
-R0Accessor::R0Accessor() : map("input/r0.bin") {}
-
 ChunkedR0Accessor::ChunkedR0Accessor() {
   maps.reserve(num_chunks);
   REP(chunk, num_chunks) {
     maps.emplace_back(ChunkR0FileName("input", chunk).c_str());
   }
 }
-
-R1Accessor::R1Accessor() : map("input/r1.bin") {}
 
 ChunkedR1Accessor::ChunkedR1Accessor() {
   maps.reserve(num_chunks);

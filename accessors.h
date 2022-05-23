@@ -37,18 +37,29 @@ private:
 // Accessor for result data of phase 0 (written by solve-r0) merged into a
 // single file.
 //
-// This data stores 1 bit per permutation,  encoded with 8 bits per byte.
+// This data stores 1 bit per permutation, encoded with 8 bits per byte.
 // 0 means TIE, 1 means WIN.
-class R0Accessor {
+template<size_t filesize>
+class R0AccessorBase {
 public:
-  explicit R0Accessor();
+  explicit R0AccessorBase(const char *filename) : map(filename) {}
 
   bool operator[](size_t i) const {
     return (map[i / 8] >> (i % 8)) & 1;
   }
 
 private:
-  MappedFile<uint8_t, total_perms/8> map;
+  MappedFile<uint8_t, filesize> map;
+};
+
+class R0Accessor : public R0AccessorBase<total_perms/8> {
+public:
+  explicit R0Accessor() : R0AccessorBase("input/r0.bin") {}
+};
+
+class R0ChunkAccessor : public R0AccessorBase<chunk_size/8> {
+public:
+  explicit R0ChunkAccessor(const char *filename) : R0AccessorBase(filename) {}
 };
 
 // Accessor for result data of phase 0 (written by solve-r0) as separate
@@ -76,9 +87,10 @@ private:
 // This data stores an Outcome value per permutation (0 for TIE, 1 for LOSS,
 // 2 for WIN). The results are encoded in ternary with 5 values per byte (or
 // 1.6 bits per value).
-class R1Accessor {
+template<size_t filesize>
+class R1AccessorBase {
 public:
-  explicit R1Accessor();
+  explicit R1AccessorBase(const char *filename) : map(filename) {}
 
   Outcome operator[](size_t i) const {
     uint8_t byte = map[i / 5];
@@ -93,7 +105,17 @@ public:
   }
 
 private:
-  MappedFile<uint8_t, total_perms/5> map;
+  MappedFile<uint8_t, filesize> map;
+};
+
+class R1Accessor : public R1AccessorBase<total_perms/5> {
+public:
+  explicit R1Accessor() : R1AccessorBase("input/r1.bin") {}
+};
+
+class R1ChunkAccessor : public R1AccessorBase<chunk_size/5> {
+public:
+  explicit R1ChunkAccessor(const char *filename) : R1AccessorBase(filename) {}
 };
 
 // Accessor for result data of phase 1 (written by solve-r1) as separate
