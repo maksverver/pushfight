@@ -1,4 +1,5 @@
 /*.o
+/backpropagate-losses
 /count-bits
 /count-unreachable
 /count-r1
