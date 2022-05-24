@@ -13,5 +13,6 @@
 /solve-r1-chunked
 /solve-rN
 /solve-lost
+/ternary_test
 /verify-r0
 /verify-r1

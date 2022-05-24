@@ -40,9 +40,7 @@
 
 namespace {
 
-// TODO: make this a mutable accessor that operates on A COPY OF r1.bin
-// and modifies it in place.
-RnAccessor acc = RnAccessor("input/r1.bin");
+MutableRnAccessor acc = MutableRnAccessor("input/r2.bin");
 
 void ProcessChunk(int chunk) {
   int64_t losses_found = 0;
