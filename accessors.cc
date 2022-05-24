@@ -32,27 +32,43 @@ void CheckFileSize(const char *filename, size_t size) {
 
 static_assert(sizeof(SIZE_T) >= 8);
 
-void *MemMapWindows(const char *filename, size_t length) {
-  HANDLE hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, NULL,
-      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  if (hFile == NULL) {
-    std::cerr << "CreateFile() failed on file " << filename
-        << " error code " << GetLastError() << std::endl;
-    exit(1);
+void *MemMapWindows(const char *filename, size_t length, bool writable) {
+  HANDLE hFile = NULL;
+  {
+    DWORD dwDesiredAccess = writable ? (GENERIC_READ | GENERIC_WRITE) : GENERIC_READ;
+    DWORD dwShareMode = writable ? 0 : FILE_SHARE_READ;
+    DWORD dwCreationDisposition = OPEN_EXISTING;
+    DWORD dwFlagsAndAttributes = writable ? FILE_ATTRIBUTE_NORMAL : FILE_ATTRIBUTE_READONLY;
+    hFile = CreateFile(
+        filename, dwDesiredAccess, dwShareMode, NULL,
+        dwCreationDisposition, dwFlagsAndAttributes, NULL);
+    if (hFile == NULL) {
+      std::cerr << "CreateFile() failed on file " << filename
+          << " error code " << GetLastError() << std::endl;
+      exit(1);
+    }
   }
-  HANDLE hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-  CloseHandle(hFile);
-  if (hMapping == NULL) {
-    std::cerr << "CreateFileMapping() failed on file " << filename
-        << " error code " << GetLastError() << std::endl;
-    exit(1);
+  HANDLE hMapping = NULL;
+  {
+    DWORD protect = writable ? PAGE_READWRITE : PAGE_READONLY;
+    hMapping = CreateFileMapping(hFile, NULL, protect, 0, 0, NULL);
+    CloseHandle(hFile);
+    if (hMapping == NULL) {
+      std::cerr << "CreateFileMapping() failed on file " << filename
+          << " error code " << GetLastError() << std::endl;
+      exit(1);
+    }
   }
-  LPVOID data = MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, SIZE_T{length});
-  CloseHandle(hMapping);
-  if (data == nullptr) {
-    std::cerr << "MapViewOfFile() failed on file " << filename
-        << " error code " << GetLastError() << std::endl;
-    exit(1);
+  LPVOID data = NULL;
+  {
+    DWORD dwDesiredAccess = writable ? (FILE_MAP_WRITE | FILE_MAP_READ) : FILE_MAP_READ;
+    data = MapViewOfFile(hMapping, dwDesiredAccess, 0, 0, SIZE_T{length});
+    CloseHandle(hMapping);
+    if (data == NULL) {
+      std::cerr << "MapViewOfFile() failed on file " << filename
+          << " error code " << GetLastError() << std::endl;
+      exit(1);
+    }
   }
   return data;
 }
@@ -71,15 +87,17 @@ void MemUnmapWindows(void *data, size_t length) {
 #include <sys/mman.h>
 #include <unistd.h>
 
-void *MemMapLinux(const char *filename, size_t length) {
-  int fd = open(filename, O_RDONLY);
+void *MemMapLinux(const char *filename, size_t length, bool writable) {
+  int mode = writable ? O_RDWR : O_RDONLY;
+  int fd = open(filename, mode);
   if (fd == -1) {
     std::cerr << "Failed to open() " << filename << std::endl;
     exit(1);
   }
   // Apparently MAP_SHARED works on Windows Subsystem for Linux
   // while MAP_PRIVATE does not?
-  void *data = mmap(nullptr, length, PROT_READ, MAP_SHARED, fd, 0);
+  int prot = writable ? (PROT_READ | PROT_WRITE) : PROT_READ;
+  void *data = mmap(nullptr, length, prot, MAP_SHARED, fd, 0);
   close(fd);
   if (data == MAP_FAILED) {
     std::cerr << "Failed to mmap() " << filename << std::endl;
@@ -99,13 +117,13 @@ void MemUnmapLinux(void *data, size_t length) {
 
 }  // namespace
 
-void *MemMap(const char *filename, size_t length) {
+void *MemMap(const char *filename, size_t length, bool writable) {
   CheckFileSize(filename, length);
 
 #if _WIN32
-  return MemMapWindows(filename, length);
+  return MemMapWindows(filename, length, writable);
 #else
-  return MemMapLinux(filename, length);
+  return MemMapLinux(filename, length, writable);
 #endif
 }
 

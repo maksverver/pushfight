@@ -11,17 +11,19 @@
 
 static_assert(sizeof(size_t) >= 8, "Need a 64-bit OS to map large files");
 
-void *MemMap(const char *filename, size_t length);
+void *MemMap(const char *filename, size_t length, bool writable);
 
 void MemUnmap(void *data, size_t length);
 
 template<class T, size_t size>
 class MappedFile {
 public:
+  enum Access { READONLY, READWRITE };
+
   static const size_t filesize = sizeof(T) * size;
 
-  explicit MappedFile(const char *filename)
-    : data_(reinterpret_cast<T*>(MemMap(filename, filesize))) {};
+  explicit MappedFile(const char *filename, Access access = READONLY)
+    : data_(reinterpret_cast<T*>(MemMap(filename, filesize, access == READWRITE))) {};
 
   const T* data() const { return data_.get(); }
   const T& operator[](size_t i) const { return data()[i]; }
