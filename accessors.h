@@ -127,27 +127,58 @@ public:
   explicit RnChunkAccessor(const char *filename) : RnAccessorBase(filename) {}
 };
 
+
+template<class T>
+class AccessorReference {
+public:
+  AccessorReference(T *acc, size_t i) : acc(acc), i(i) {}
+
+  operator Outcome() const {
+    return acc->get(i);
+  }
+
+  AccessorReference<T>& operator=(Outcome o) {
+    acc->set(i, o);
+    return *this;
+  }
+
+private:
+  T *acc;
+  size_t i;
+};
+
 class MutableRnAccessor {
 public:
-  class Reference {
-  public:
-    Reference(MutableRnAccessor *acc, size_t i) : acc(acc), i(i) {}
-
-    operator Outcome() const {
-      return acc->get(i);
-    }
-
-    Reference& operator=(Outcome o) {
-      acc->set(i, o);
-      return *this;
-    }
-
-  private:
-    MutableRnAccessor *acc;
-    size_t i;
-  };
+  using Reference = AccessorReference<MutableRnAccessor>;
 
   explicit MutableRnAccessor(const char *filename) : map(filename) {}
+
+  Outcome get(size_t i) const {
+    return static_cast<Outcome>(DecodeTernary(map[i / 5], i));
+  }
+
+  void set(size_t i, Outcome o) {
+    uint8_t &byte = map[i / 5];
+    byte = EncodeTernary(byte, i, static_cast<int>(o));
+  }
+
+  Outcome operator[](size_t i) const {
+    return get(i);
+  }
+
+  Reference operator[](size_t i) {
+    return Reference(this, i);
+  }
+
+private:
+  MutableMappedFile<uint8_t, chunk_size/5> map;
+};
+
+class ThreadSafeMutableRnAccessor {
+public:
+  using Reference = AccessorReference<ThreadSafeMutableRnAccessor>;
+
+  explicit ThreadSafeMutableRnAccessor(const char *filename) : map(filename) {}
 
   Outcome get(size_t i) const {
     std::lock_guard<std::mutex> guard(mutex);
