@@ -40,10 +40,13 @@ int main(int argc, char *argv[]) {
     const Moves &moves = elem.first;
     const State &state = elem.second;
 
-    Outcome p = acc[IndexOf(state.perm)];
-    assert(state.outcome == TIE || p == state.outcome);
-    std::cout << IndexOf(state.perm) << ' ';
-    std::cout << moves << ' ' << OutcomeToString(p) << '\n';
+    Outcome p = state.outcome;
+    int64_t succ_i = -1;
+    if (p == TIE) {
+      succ_i = IndexOf(state.perm);
+      p = acc[succ_i];
+    }
+    std::cout << ' ' << moves << ' ' << succ_i << ' ' << OutcomeToString(p) << '\n';
 
     Outcome old_o = o;
     o = MaxOutcome(o, Invert(p));
