@@ -138,6 +138,7 @@ int main(int argc, char *argv[]) {
   FOR(chunk, start_chunk, end_chunk) {
     if (output_acc.IsChunkComplete(chunk)) {
       std::cerr << "Chunk " << chunk << " already done. Skipping..." << std::endl;
+      continue;
     }
     auto start_time = std::chrono::system_clock::now();
     ProcessChunk(chunk);
