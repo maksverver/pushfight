@@ -29,10 +29,6 @@ constexpr int num_probes = 100000;
 std::random_device dev;
 std::mt19937 rng(dev());
 
-const char *OutcomeToString(Outcome o) {
-  return o == WIN ? "WIN" : o == LOSS ? "LOSS" : "TIE";
-}
-
 // Does a 2-ply minimax search to calculate the exact answer.
 //
 // This only works for phase up to 1 because after that the number of positions

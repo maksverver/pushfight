@@ -122,6 +122,8 @@ inline Outcome MaxOutcome(Outcome a, Outcome b) {
 
 constexpr const Outcome INVERSE_OUTCOME[3] = { TIE, WIN, LOSS };
 
+const char *OutcomeToString(Outcome o);
+
 struct State {
   Perm perm;
   Outcome outcome;

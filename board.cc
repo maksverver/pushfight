@@ -110,6 +110,10 @@ bool IsReachable(const Perm &perm) {
   return false;
 }
 
+const char *OutcomeToString(Outcome o) {
+  return o == WIN ? "WIN" : o == LOSS ? "LOSS" : o == TIE ? "TIE" : "INVALID OUTCOME";
+}
+
 std::ostream &Dump(const Perm &p, std::ostream &os) {
   REP(r, H) {
     REP(c, W) {

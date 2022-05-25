@@ -19,10 +19,6 @@ constexpr int num_probes = 1000;
 std::random_device dev;
 std::mt19937 rng(dev());
 
-const char *OutcomeToString(Outcome o) {
-  return o == WIN ? "WIN" : o == LOSS ? "LOSS" : "TIE";
-}
-
 void VerifyFile(const char *filename) {
   std::cout << "Verifying " << filename << "... ";
   int64_t filesize = std::filesystem::file_size(filename);
