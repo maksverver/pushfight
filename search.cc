@@ -232,6 +232,15 @@ bool GenerateSuccessors(
     GenerateSuccessors(mutable_perm, moves, 2, callback);
 }
 
+std::vector<std::pair<Moves, State>> GenerateAllSuccessors(const Perm &perm) {
+  std::vector<std::pair<Moves, State>> result;
+  GenerateSuccessors(perm, [&result](const Moves &moves, const State &state) {
+    result.emplace_back(moves, state);
+    return true;
+  });
+  return result;
+}
+
 void GeneratePredecessors(
     const Perm &input_perm,
     const std::function<void(const Perm&)> &callback) {
@@ -286,7 +295,9 @@ void GeneratePredecessors(
 
 void Deduplicate(std::vector<std::pair<Moves, State>> &successors) {
   auto lt = [](const std::pair<Moves, State> &a, const std::pair<Moves, State> &b) {
-    return a.second.perm < b.second.perm;
+    return a.second.perm < b.second.perm ||
+      // In case of a tie, prefer to keep the shortest move sequence.
+      (a.second.perm == b.second.perm && a.first.size < b.first.size);
   };
   auto eq = [](const std::pair<Moves, State> &a, const std::pair<Moves, State> &b) {
     return a.second.perm == b.second.perm;

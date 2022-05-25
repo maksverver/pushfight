@@ -22,9 +22,10 @@ void GeneratePredecessors(
     const Perm &perm,
     const std::function<void(const Perm&)> &callback);
 
+// Enumerates the successors of `perm` and collects them in a vector.
+std::vector<std::pair<Moves, State>> GenerateAllSuccessors(const Perm &perm);
+
 // Deduplicates successors that lead to the same state.
-//
-// Unused? TODO: delete this?
 void Deduplicate(std::vector<std::pair<Moves, State>> &successors);
 
 // Returns whether there is an immediately-winning move in the given permutation.
