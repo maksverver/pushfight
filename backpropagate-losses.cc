@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
   const int start_chunk = argc > 1 ? std::max(0, ParseInt(argv[1])) : 0;
   const int end_chunk = argc > 2 ? std::min(ParseInt(argv[2]), num_chunks) : num_chunks;
 
-  std::cout << "Backprogating losses in " << end_chunk - start_chunk << " chunks "
+  std::cout << "Backpropagating losses in " << end_chunk - start_chunk << " chunks "
       << "from " << start_chunk << " to " << end_chunk << " (exclusive)." << std::endl;
 
   InitializePerms();
