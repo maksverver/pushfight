@@ -3,18 +3,11 @@
 #include <sstream>
 
 #include "board.h"
+#include "parse-int.h"
 #include "perms.h"
 #include "search.h"
 
 namespace {
-
-int64_t ParseInt64(const char *s) {
-  std::istringstream iss(s);
-  int64_t i = -1;
-  iss >> i;
-  assert(iss);
-  return i;
-}
 
 Outcome Minimax(const Perm &perm, int max_depth, Moves *best_moves) {
   if (best_moves) best_moves->size = 0;

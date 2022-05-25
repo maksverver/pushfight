@@ -24,6 +24,7 @@
 #include "board.h"
 #include "chunks.h"
 #include "macros.h"
+#include "parse-int.h"
 #include "perms.h"
 #include "search.h"
 
@@ -73,14 +74,6 @@ void ProcessChunk(int chunk) {
   if (losses_found > 0) {
     std::cerr << "Average number of predecessors: " << total_predecessors / losses_found << ".\n";
   }
-}
-
-int ParseInt(const char *s) {
-  int i = -1;
-  std::istringstream iss(s);
-  iss >> i;
-  assert(iss);
-  return i;
 }
 
 }  // namespace

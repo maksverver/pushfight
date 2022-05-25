@@ -1,6 +1,7 @@
 #include "board.h"
 #include "chunks.h"
 #include "macros.h"
+#include "parse-int.h"
 #include "perms.h"
 #include "search.h"
 
@@ -74,14 +75,6 @@ void ProcessChunk(const std::string &filename, int chunk) {
   }
   os.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
   assert(os);
-}
-
-int ParseInt(const char *s) {
-  int i = -1;
-  std::istringstream iss(s);
-  iss >> i;
-  assert(iss);
-  return i;
 }
 
 }  // namespace

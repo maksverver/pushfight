@@ -1,5 +1,6 @@
 #include "board.h"
 #include "macros.h"
+#include "parse-int.h"
 #include "perms.h"
 #include "search.h"
 
@@ -8,14 +9,6 @@
 #include <sstream>
 
 namespace {
-
-int64_t ParseInt64(const char *s) {
-  std::istringstream iss(s);
-  int64_t index = -1;
-  iss >> index;
-  assert(iss);
-  return index;
-}
 
 void DumpPerm(const Perm &perm) {
   Dump(perm, std::cout) << std::endl;
