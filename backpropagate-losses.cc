@@ -49,7 +49,7 @@ void ProcessChunk(int chunk) {
   const int64_t start_index = int64_t{chunk} * int64_t{chunk_size};
   Perm perm = PermAtIndex(start_index);
   REP(i, chunk_size) {
-    if (acc[i] == LOSS) {
+    if (acc[start_index + i] == LOSS) {
       ++losses_found;
       GeneratePredecessors(
         perm,
