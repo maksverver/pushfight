@@ -1,6 +1,7 @@
 // Tool to look up a value at a specific index in a rN output file,
 // along with successor information.
 
+#include <cassert>
 #include <iostream>
 #include <iomanip>
 
@@ -39,12 +40,14 @@ int main(int argc, char *argv[]) {
     const Moves &moves = elem.first;
     const State &state = elem.second;
 
-    Outcome old_o = o;
-    o = MaxOutcome(o, Invert(state.outcome));
-    if (o != old_o) best_moves = moves;
-
+    Outcome p = acc[IndexOf(state.perm)];
+    assert(state.outcome == TIE || p == state.outcome);
     std::cout << IndexOf(state.perm) << ' ';
-    Dump(moves, std::cout) << ' ' << OutcomeToString(state.outcome) << '\n';
+    Dump(moves, std::cout) << ' ' << OutcomeToString(p) << '\n';
+
+    Outcome old_o = o;
+    o = MaxOutcome(o, Invert(p));
+    if (o != old_o) best_moves = moves;
   };
 
   std::cout << "\nComputed outcome: " << OutcomeToString(o) << "\nBest moves: ";
