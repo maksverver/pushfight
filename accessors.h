@@ -284,25 +284,24 @@ public:
   LossPropagationAccessor(const char *filename) : acc(CheckOutputFile(filename)) {}
 
   void MarkWinning(int64_t index) {
-    acc[index] = true;
+    acc[winning_offset + index] = true;
   }
 
   bool IsChunkComplete(int chunk) const {
-    return acc[ChunkBit(chunk)];
+    return acc[chunk];
   }
 
   void MarkChunkComplete(int chunk) {
-    acc[ChunkBit(chunk)] = true;
+    acc[chunk] = true;
   }
 
 private:
-  static size_t ChunkBit(int chunk) {
-    return size_t{total_perms} + chunk;
-  }
-
   const char *CheckOutputFile(const char *filename);
 
+  static constexpr size_t winning_offset = 4096;
   static constexpr size_t filesize = total_perms/8 + (num_chunks + 7)/8;
+
+  static_assert(winning_offset * 8 >= num_chunks);
 
   ThreadSafeMutableBinaryAccessor<filesize> acc;
 };
