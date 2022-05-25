@@ -39,7 +39,7 @@ Outcome Calculate(const Perm &perm) {
     Outcome o = LOSS;
     GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
       (void) moves;  // unused
-      o = MaxOutcome(o, INVERSE_OUTCOME[state.outcome]);
+      o = MaxOutcome(o, Invert(state.outcome));
       return o != WIN;
     });
     if (o != TIE) return o;
@@ -53,10 +53,10 @@ Outcome Calculate(const Perm &perm) {
       Outcome p = LOSS;
       GenerateSuccessors(state.perm, [&o, &p](const Moves &moves, const State &state) {
         (void) moves;  // unused
-        p = MaxOutcome(p, INVERSE_OUTCOME[state.outcome]);
+        p = MaxOutcome(p, Invert(state.outcome));
         return p != WIN && !(p == TIE && o == TIE);  // alpha-beta pruning
       });
-      o = MaxOutcome(o, INVERSE_OUTCOME[p]);
+      o = MaxOutcome(o, Invert(p));
       return o != WIN;
     });
     return o;

@@ -21,7 +21,7 @@ void DumpPerm(const Perm &perm) {
   GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
     Dump(moves, std::cout) << std::endl;
     Dump(state, std::cout) << std::endl;
-    o = MaxOutcome(o, INVERSE_OUTCOME[state.outcome]);
+    o = MaxOutcome(o, Invert(state.outcome));
     return true;
   });
 

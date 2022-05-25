@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     const State &state = elem.second;
 
     Outcome old_o = o;
-    o = MaxOutcome(o, INVERSE_OUTCOME[state.outcome]);
+    o = MaxOutcome(o, Invert(state.outcome));
     if (o != old_o) best_moves = moves;
 
     std::cout << IndexOf(state.perm) << ' ';

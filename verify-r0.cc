@@ -59,7 +59,7 @@ void VerifyFile(const char *filename) {
     Outcome expected = LOSS;
     GenerateSuccessors(perm, [&expected](const Moves &moves, const State &state) {
       (void) moves;  // unused
-      expected = MaxOutcome(expected, INVERSE_OUTCOME[state.outcome]);
+      expected = MaxOutcome(expected, Invert(state.outcome));
       return true;
     });
     if (actual != expected) {

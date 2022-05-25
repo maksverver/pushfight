@@ -63,7 +63,7 @@ Outcome Compute(const Perm &perm) {
     assert(state.outcome == TIE);
 
     Outcome p = (*acc)[IndexOf(state.perm)];
-    o = MaxOutcome(o, INVERSE_OUTCOME[p]);
+    o = MaxOutcome(o, Invert(p));
     return o != WIN;
   });
   assert(complete == (o != WIN));

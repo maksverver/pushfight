@@ -21,7 +21,7 @@ Outcome Minimax(const Perm &perm, int max_depth, Moves *best_moves) {
         p = Minimax(state.perm, max_depth - 1, nullptr);
       }
       Outcome old_o = o;
-      o = MaxOutcome(o, INVERSE_OUTCOME[p]);
+      o = MaxOutcome(o, Invert(p));
       if (best_moves && o != old_o) *best_moves = moves;
       return o != WIN;
     });
