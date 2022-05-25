@@ -339,6 +339,22 @@ Most of these positions are really trivial, of course. Example:
 
 ![Immediately won position 1](images/immediate-win-1.gif)
 
+### Loss in 1 (phase 1)
+
+The results from phase 1 ([r1-counts.txt](metadata/r1-counts)) show that
+of the 401,567,166,000 permutations, 54,546,852,886 (13.58%) are lost in 1
+move (or 2 turns if we count each player's turn separately).
+
+Due to how these results are computed, this includes the 648 immediately
+lost positions, so very strictly speaking the count is only 54,546,852,238.
+
+Most of these positions are still very simple. For example:
+
+![Loss in 1](images/loss-in-1-1.png)
+
+Here red (to move) can save the piece at *a1* or the piece at *f1*, but
+not both, so blue will be able to win in the next turn.
+
 ## Future work
 
  * Write about how to find optimal moves before turn 1.
