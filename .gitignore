@@ -3,6 +3,7 @@
 /count-bits
 /count-unreachable
 /count-r1
+/lookup-rN
 /minimax
 /perms_test
 /print-perm
