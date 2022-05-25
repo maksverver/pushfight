@@ -342,11 +342,13 @@ Most of these positions are really trivial, of course. Example:
 ### Loss in 1 (phase 1)
 
 The results from phase 1 ([r1-counts.txt](metadata/r1-counts)) show that
-of the 401,567,166,000 permutations, 54,546,852,886 (13.58%) are lost in 1
-move (or 2 turns if we count each player's turn separately).
+of the 401,567,166,000 permutations, 6,233,064,422 (1.55%) are lost in 1
+move (or 2 turns if we count each player's turn separately). This is 10.26% of
+the undecided positions after phase 1, with 54,546,852,886 (89.74%) positions
+remaining undecided.
 
 Due to how these results are computed, this includes the 648 immediately
-lost positions, so very strictly speaking the count is only 54,546,852,238.
+lost positions, so very strictly speaking the count is only 6,233,063,774.
 
 Most of these positions are still very simple. For example:
 
