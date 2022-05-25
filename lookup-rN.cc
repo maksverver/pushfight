@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   Outcome o = LOSS;
   std::vector<std::pair<Moves, State>> successors = GenerateAllSuccessors(perm);
   Deduplicate(successors);
-  std::cout << "\n" << successors.size() << "Distinct successors:\n";
+  std::cout << "\n" << successors.size() << " distinct successors:\n";
   Moves best_moves;
   best_moves.size = 0;
   for (const std::pair<Moves, State> &elem : successors) {
