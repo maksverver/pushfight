@@ -135,7 +135,7 @@ class AccessorReference {
 public:
   AccessorReference(A *acc, size_t i) : acc(acc), i(i) {}
 
-  operator Outcome() const {
+  operator T() const {
     return acc->get(i);
   }
 
@@ -284,7 +284,11 @@ public:
   LossPropagationAccessor(const char *filename) : acc(CheckOutputFile(filename)) {}
 
   void MarkWinning(int64_t index) {
-    acc[winning_offset + index] = true;
+    acc[winning_offset_bits + index] = true;
+  }
+
+  bool IsWinning(int64_t index) {
+    return acc[winning_offset_bits + index];
   }
 
   bool IsChunkComplete(int chunk) const {
@@ -298,10 +302,10 @@ public:
 private:
   const char *CheckOutputFile(const char *filename);
 
-  static constexpr size_t winning_offset = 4096;
+  static constexpr size_t winning_offset_bits = 4096 * 8;
   static constexpr size_t filesize = total_perms/8 + (num_chunks + 7)/8;
 
-  static_assert(winning_offset * 8 >= num_chunks);
+  static_assert(winning_offset_bits >= num_chunks);
 
   ThreadSafeMutableBinaryAccessor<filesize> acc;
 };
