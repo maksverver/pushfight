@@ -303,9 +303,10 @@ private:
   const char *CheckOutputFile(const char *filename);
 
   static constexpr size_t winning_offset_bits = 4096 * 8;
-  static constexpr size_t filesize = total_perms/8 + (num_chunks + 7)/8;
+  static constexpr size_t filesize = (winning_offset_bits + total_perms)/8;
 
   static_assert(winning_offset_bits >= num_chunks);
+  static_assert(total_perms % 8 == 0);
 
   ThreadSafeMutableBinaryAccessor<filesize> acc;
 };
