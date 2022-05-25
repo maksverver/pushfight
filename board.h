@@ -120,11 +120,13 @@ inline Outcome MaxOutcome(Outcome a, Outcome b) {
   return LOSS;
 }
 
-constexpr const Outcome INVERSE_OUTCOME[3] = { TIE, WIN, LOSS };
-
-inline Outcome Invert(Outcome o) {
-  return INVERSE_OUTCOME[o];
+constexpr inline Outcome Invert(Outcome o) {
+  return static_cast<Outcome>((4 >> o) & 3);
 }
+
+static_assert(Invert(TIE) == TIE);
+static_assert(Invert(LOSS) == WIN);
+static_assert(Invert(WIN) == LOSS);
 
 const char *OutcomeToString(Outcome o);
 
