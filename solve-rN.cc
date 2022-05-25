@@ -57,17 +57,29 @@ std::optional<RnAccessor> acc;
 Outcome expected_outcome = TIE;
 
 Outcome Compute(const Perm &perm) {
-  Outcome o = LOSS;
-  bool complete = GenerateSuccessors(perm, [&o](const Moves&, const State& state) {
-    // If there is an immediately winning/losing move, we should have skipped the computation.
-    assert(state.outcome == TIE);
-
-    Outcome p = (*acc)[IndexOf(state.perm)];
-    o = MaxOutcome(o, Invert(p));
-    return o != WIN;
-  });
-  assert(complete == (o != WIN));
-  return o;
+  if (expected_outcome == LOSS) {
+    // A permutation is losing if all successors are winning (for the opponent).
+    // So we can abort the search as soon as we find one non-winning successor.
+    bool complete = GenerateSuccessors(perm, [](const Moves&, const State& state) {
+      // If there is an immediately winning/losing move, we should have skipped the computation.
+      assert(state.outcome == TIE);
+      Outcome p = (*acc)[IndexOf(state.perm)];
+      assert(p != LOSS);
+      return p == WIN;
+    });
+    return complete ? LOSS : TIE;
+  } else {
+    // A permutation is winning is any successor is losing (for the opponent).
+    // So we can abort the search as soon as we find a losing position.
+    assert(expected_outcome == WIN);
+    bool complete = GenerateSuccessors(perm, [](const Moves&, const State& state) {
+      // If there is an immediately winning/losing move, we should have skipped the computation.
+      assert(state.outcome == TIE);
+      Outcome p = (*acc)[IndexOf(state.perm)];
+      return p != LOSS;
+    });
+    return complete ? TIE : WIN;
+  }
 }
 
 void ComputeChunkThread(int chunk, std::atomic<int> *next_part, Outcome outcomes[], ChunkStats *stats) {
