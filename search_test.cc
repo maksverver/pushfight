@@ -49,9 +49,9 @@ int main() {
         if (!found) {
           std::cerr << "Failed to find predecessor of a successor!\n\n";
           std::cerr << "Original permutation (index " << index << "):\n";
-          Dump(perm, std::cerr) << '\n';
+          std::cerr << perm << '\n';
           std::cerr << "Successor (index " << IndexOf(successor) << "):\n";
-          Dump(successor, std::cerr) << '\n';
+          std::cerr << successor << '\n';
           exit(1);
         }
         return true;
@@ -68,9 +68,9 @@ int main() {
           if (complete) {
             std::cerr << "Failed to find successor of a predecessor!\n\n";
             std::cerr << "Original permutation (index " << index << "):\n";
-            Dump(perm, std::cerr) << '\n';
+            std::cerr << perm << '\n';
             std::cerr << "Predecessor (index " << IndexOf(predecessor) << "):\n";
-            Dump(predecessor, std::cerr) << '\n';
+            std::cerr << predecessor << '\n';
             exit(1);
           }
           return true;

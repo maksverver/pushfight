@@ -57,6 +57,5 @@ int main(int argc, char *argv[]) {
   if (o == TIE) {
     std::cout << "No solution found. Possibly TIE?" << std::endl;
   }
-  std::cout << "Best moves: ";
-  Dump(best_moves, std::cout) << std::endl;
+  std::cout << "Best moves: " << best_moves << std::endl;
 }

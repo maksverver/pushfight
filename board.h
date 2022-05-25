@@ -146,8 +146,8 @@ struct Moves {
   std::array<std::pair<int, int>, 3> moves;
 };
 
-std::ostream &Dump(const Perm &p, std::ostream &os);
-std::ostream &Dump(const State &s, std::ostream &os);
-std::ostream &Dump(const Moves &moves, std::ostream &os);
+std::ostream &operator<<(std::ostream &os, const Perm &p);
+std::ostream &operator<<(std::ostream &os, const State &s);
+std::ostream &operator<<(std::ostream &os, const Moves &moves);
 
 #endif  // ndef BOARD_H_INCLUDED

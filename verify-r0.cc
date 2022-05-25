@@ -66,7 +66,7 @@ void VerifyFile(const char *filename) {
       std::cout << "Invalid outcome at offset " << offset << " (permutation index " << index << "): "
           << "expected " << OutcomeToString(expected) << "; "
           << "actual " << OutcomeToString(actual) << "!" << std::endl;
-      Dump(perm, std::cout) << std::endl;
+      std::cout << perm << std::endl;
       exit(1);
     }
   }

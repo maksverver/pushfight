@@ -28,7 +28,7 @@ int main() {
     if (complete) {
       ++num_found;
       std::cout << "Found losing permutation: " << index << std::endl;
-      Dump(perm, std::cout);
+      std::cout << perm << std::endl;
     }
     ++index;
     if (index % reporting_interval == 0) {

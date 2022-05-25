@@ -114,7 +114,7 @@ const char *OutcomeToString(Outcome o) {
   return o == WIN ? "WIN" : o == LOSS ? "LOSS" : o == TIE ? "TIE" : "INVALID OUTCOME";
 }
 
-std::ostream &Dump(const Perm &p, std::ostream &os) {
+std::ostream &operator<<(std::ostream &os, const Perm &p) {
   REP(r, H) {
     REP(c, W) {
       int i = BOARD_INDEX[r][c];
@@ -133,13 +133,14 @@ std::ostream &Dump(const Perm &p, std::ostream &os) {
   return os;
 }
 
-std::ostream &Dump(const State &s, std::ostream &os) {
+
+std::ostream &operator<<(std::ostream &os, const State &s) {
   Outcome o = s.outcome;
-  return Dump(s.perm, os) <<
+  return os << s.perm <<
       "Outcome: " << (o == WIN ? "win" : o == LOSS ? "loss" : "indeterminate") << '\n';
 }
 
-std::ostream &Dump(const Moves &moves, std::ostream &os) {
+std::ostream &operator<<(std::ostream &os, const Moves &moves) {
   REP(i, moves.size) {
     if (i > 0) os << ',';
     os << FieldToId(moves.moves[i].first) << '-' << FieldToId(moves.moves[i].second);

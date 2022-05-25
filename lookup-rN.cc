@@ -43,13 +43,13 @@ int main(int argc, char *argv[]) {
     Outcome p = acc[IndexOf(state.perm)];
     assert(state.outcome == TIE || p == state.outcome);
     std::cout << IndexOf(state.perm) << ' ';
-    Dump(moves, std::cout) << ' ' << OutcomeToString(p) << '\n';
+    std::cout << moves << ' ' << OutcomeToString(p) << '\n';
 
     Outcome old_o = o;
     o = MaxOutcome(o, Invert(p));
     if (o != old_o) best_moves = moves;
   };
 
-  std::cout << "\nComputed outcome: " << OutcomeToString(o) << "\nBest moves: ";
-  Dump(best_moves, std::cout) << std::endl;
+  std::cout << "\nComputed outcome: " << OutcomeToString(o)
+      << "\nBest moves: " << best_moves << std::endl;
 }

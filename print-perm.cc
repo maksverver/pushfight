@@ -11,7 +11,7 @@
 namespace {
 
 void DumpPerm(const Perm &perm) {
-  Dump(perm, std::cout) << std::endl;
+  std::cout << perm << std::endl;
 
   std::cout << "This position is " << (IsReachable(perm) ? "likely" : "NOT") << " reachable.\n\n";
 
@@ -19,15 +19,15 @@ void DumpPerm(const Perm &perm) {
 
   Outcome o = LOSS;
   GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
-    Dump(moves, std::cout) << std::endl;
-    Dump(state, std::cout) << std::endl;
+    std::cout << moves << std::endl;
+    std::cout << state << std::endl;
     o = MaxOutcome(o, Invert(state.outcome));
     return true;
   });
 
   std::cout << "Predecessors:\n\n";
   GeneratePredecessors(perm, [](const Perm &perm) {
-    Dump(perm, std::cout) << "\n";
+    std::cout << perm << "\n";
   });
 
   std::cout << "Verdict: " << (o == WIN ? "win" : o == LOSS ? "loss" : "tie") << std::endl;
