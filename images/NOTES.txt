@@ -9,6 +9,7 @@ Generated with:
 ./animate.py images/immediate-win-1.gif ....o....YOX...O.oO....xxX f3-c1,c1-d1
 ./animate.py images/unreachable-1.png .OX.....oYx....Oox.....OX.
 ./animate.py images/puzzle-1.png ox...X.YO....o.x..OO..X...
+./animate.py images/loss-in-1-1.png .xXO.......O.....YO..ox.Xo
 
 To optimize the generated files afterwards, I use gifsicle
 (https://www.lcdf.org/gifsicle/) for GIF giles, and optipng
