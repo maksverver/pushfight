@@ -181,8 +181,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  const int start_chunk = argc > 1 ? std::max(0, ParseInt(argv[2])) : 0;
-  const int end_chunk = argc > 2 ? std::min(ParseInt(argv[3]), num_chunks) : num_chunks;
+  const int start_chunk = argc > 2 ? std::max(0, ParseInt(argv[2])) : 0;
+  const int end_chunk = argc > 3 ? std::min(ParseInt(argv[3]), num_chunks) : num_chunks;
 
   std::cout << "Calculating " << end_chunk - start_chunk << " R" << phase << " chunks "
       << "from " << start_chunk << " to " << end_chunk << " (exclusive) "
