@@ -1,4 +1,4 @@
-CXXFLAGS=-std=c++20 -Wall -Wextra -Wno-sign-compare -Og -march=native -flto -pthread
+CXXFLAGS=-std=c++20 -Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread
 LDLIBS=-lpthread -lm
 
 COMMON_OBJS=accessors.o parse-int.o perms.o board.o chunks.o search.o

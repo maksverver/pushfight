@@ -2,7 +2,9 @@
 
 #include "macros.h"
 
+#include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 
 namespace {
@@ -147,4 +149,29 @@ ChunkedR1Accessor::ChunkedR1Accessor() {
   REP(chunk, num_chunks) {
     maps.emplace_back(ChunkFileName(1, "input", chunk).c_str());
   }
+}
+
+const char *LossPropagationAccessor::CheckOutputFile(const char *filename) {
+  auto expected_size = LossPropagationAccessor::filesize;
+  if (std::filesystem::exists(filename)) {
+    std::cerr << "Reusing existing output file " << filename << std::endl;
+  } else {
+    std::cerr << "Creating new output file " << filename << "..."
+        << " (" << (expected_size / 1e9) << " GB)" << std::endl;
+    std::ofstream ofs(filename, std::ofstream::binary);
+    if (!ofs) {
+      std::cerr << "Failed to create file!" << std::endl;
+      abort();
+    }
+    ofs.close();
+    std::filesystem::resize_file(filename, expected_size);
+  }
+  auto actual_size = std::filesystem::file_size(filename);
+  if (actual_size != expected_size) {
+    std::cerr << "Output file " << filename << " has incorrect filesize! "
+        << "Expected: " << expected_size << ". "
+        << "Actual: " << actual_size << "." << std::endl;
+    abort();
+  }
+  return filename;
 }

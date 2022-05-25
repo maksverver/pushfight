@@ -3,8 +3,10 @@
 
 #include <cstdlib>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 #include "chunks.h"
@@ -128,28 +130,28 @@ public:
 };
 
 
-template<class T>
+template<class A, class T>
 class AccessorReference {
 public:
-  AccessorReference(T *acc, size_t i) : acc(acc), i(i) {}
+  AccessorReference(A *acc, size_t i) : acc(acc), i(i) {}
 
   operator Outcome() const {
     return acc->get(i);
   }
 
-  AccessorReference<T>& operator=(Outcome o) {
-    acc->set(i, o);
+  AccessorReference<A, T>& operator=(T v) {
+    acc->set(i, v);
     return *this;
   }
 
 private:
-  T *acc;
+  A *acc;
   size_t i;
 };
 
 class MutableRnAccessor {
 public:
-  using Reference = AccessorReference<MutableRnAccessor>;
+  using Reference = AccessorReference<MutableRnAccessor, Outcome>;
 
   explicit MutableRnAccessor(const char *filename) : map(filename) {}
 
@@ -174,24 +176,25 @@ private:
   MutableMappedFile<uint8_t, chunk_size/5> map;
 };
 
-class ThreadSafeMutableRnAccessor {
+// Accessor wrapper that wraps get() and set() calls with a mutex guard.
+template<class T, class A>
+class ThreadSafeAccessor {
 public:
-  using Reference = AccessorReference<ThreadSafeMutableRnAccessor>;
+  using Reference = AccessorReference<ThreadSafeAccessor<T, A>, T>;
 
-  explicit ThreadSafeMutableRnAccessor(const char *filename) : map(filename) {}
+  ThreadSafeAccessor(const char *filename) : delegate_accessor(filename) {}
 
-  Outcome get(size_t i) const {
+  T get(size_t i) const {
     std::lock_guard<std::mutex> guard(mutex);
-    return static_cast<Outcome>(DecodeTernary(map[i / 5], i));
+    return delegate_accessor.get(i);
   }
 
-  void set(size_t i, Outcome o) {
+  void set(size_t i, T v) {
     std::lock_guard<std::mutex> guard(mutex);
-    uint8_t &byte = map[i / 5];
-    byte = EncodeTernary(byte, i, static_cast<int>(o));
+    delegate_accessor.set(i, v);
   }
 
-  Outcome operator[](size_t i) const {
+  T operator[](size_t i) const {
     return get(i);
   }
 
@@ -201,8 +204,10 @@ public:
 
 private:
   mutable std::mutex mutex;
-  MutableMappedFile<uint8_t, chunk_size/5> map;
+  A delegate_accessor;
 };
+
+using ThreadSafeMutableRnAccessor = ThreadSafeAccessor<Outcome, MutableRnAccessor>;
 
 // Accessor for result data of phase 1 (written by solve-r1) as separate
 // chunk files.
@@ -230,6 +235,76 @@ public:
 
 private:
   std::vector<MappedFile<uint8_t, chunk_size/5>> maps;
+};
+
+// Mutable accessor for binary data stored in a single file.
+//
+// Similar to R0AccessorBase except this also supports mutations.
+template<size_t filesize>
+class MutableBinaryAccessor {
+public:
+  using Reference = AccessorReference<MutableBinaryAccessor, bool>;
+
+  explicit MutableBinaryAccessor(const char *filename) : map(filename) {}
+
+  bool get(size_t i) const {
+    return (map[i / 8] >> (i % 8)) & 1;
+  }
+
+  void set(size_t i, bool v) {
+    uint8_t &byte = map[i / 8];
+    uint8_t new_byte = (byte & ~(uint8_t{1} << (i % 8))) | (uint8_t{v} << (i % 8));
+    // Only assigning when the byte changed might be more efficient for memory
+    // mapped files, since fewer pages end up being marked dirty?
+    if (byte != new_byte) byte = new_byte;
+  }
+
+  Outcome operator[](size_t i) const {
+    return get(i);
+  }
+
+  Reference operator[](size_t i) {
+    return Reference(this, i);
+  }
+
+private:
+  MutableMappedFile<uint8_t, filesize> map;
+};
+
+template<size_t filesize>
+using ThreadSafeMutableBinaryAccessor = ThreadSafeAccessor<bool, MutableBinaryAccessor<filesize>>;
+
+// Accessor used to generate output files in backprogate-losses.cc.
+//
+// For each permutation, it stores a single bit indicating whether this
+// permutation is newly won. Additionaly, it stores a bitmask of
+// previously-processed chunks. This allows output files to be merged.
+class LossPropagationAccessor {
+public:
+  LossPropagationAccessor(const char *filename) : acc(CheckOutputFile(filename)) {}
+
+  void MarkWinning(int64_t index) {
+    acc[index] = true;
+  }
+
+  bool IsChunkComplete(int chunk) const {
+    return acc[ChunkBit(chunk)];
+  }
+
+  void MarkChunkComplete(int chunk) {
+    acc[ChunkBit(chunk)] = true;
+  }
+
+private:
+  static size_t ChunkBit(int chunk) {
+    return size_t{total_perms} + chunk;
+  }
+
+  const char *CheckOutputFile(const char *filename);
+
+  static constexpr size_t filesize = total_perms/8 + (num_chunks + 7)/8;
+
+  ThreadSafeMutableBinaryAccessor<filesize> acc;
 };
 
 #endif  // ndef ACCESSORS_H_INCLUDED
