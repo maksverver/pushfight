@@ -26,7 +26,7 @@ int main() {
   int64_t num_successors = 0;
   int64_t num_predecessors = 0;
   REP(n, num_cases) {
-    std::uniform_int_distribution<int64_t> dist(0, total_perms - 1000);
+    std::uniform_int_distribution<int64_t> dist(0, total_perms - 1);
     int64_t index = dist(rng);
     Perm perm = PermAtIndex(index);
 
