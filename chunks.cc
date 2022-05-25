@@ -24,7 +24,7 @@ void PrintChunkUpdate(int chunk, int part) {
 }
 
 void ClearChunkUpdate() {
-  std::cerr << "                                                            \r";
+  std::cerr << "\n";
 }
 
 ChunkInfo GetChunkInfo(const char *filename) {
