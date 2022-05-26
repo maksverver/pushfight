@@ -94,7 +94,7 @@ void ComputeChunkThread(int chunk, std::atomic<int> *next_part, ChunkStats *stat
   }
 }
 
-void ProcessChunk(int chunk) {
+ChunkStats ProcessChunk(int chunk) {
   std::atomic<int> next_part = 0;
   ChunkStats stats;
   if (num_threads == 0) {
@@ -115,15 +115,8 @@ void ProcessChunk(int chunk) {
     for (const ChunkStats &s : thread_stats) stats.Merge(s);
   }
   ClearChunkUpdate();
-
-  std::cerr << "Chunk stats: "
-      << stats.losses_found << " losses found. "
-      << stats.wins_written << " wins written.\n";
-  if (stats.losses_found > 0) {
-    std::cerr << "Average number of predecessors: " << stats.total_predecessors / stats.losses_found << ".\n";
-  }
+  return stats;
 }
-
 
 }  // namespace
 
@@ -141,9 +134,17 @@ int main(int argc, char *argv[]) {
       continue;
     }
     auto start_time = std::chrono::system_clock::now();
-    ProcessChunk(chunk);
+    ChunkStats stats = ProcessChunk(chunk);
     std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now() - start_time;
-    std::cerr << "Chunk " << chunk << " done in " << elapsed_seconds.count() / 60 << " minutes." << std::endl;
+    double elapsed_minutes = elapsed_seconds.count() / 60;
+    std::cerr << "Chunk stats: "
+      << stats.losses_found << " losses found. "
+      << stats.wins_written << " wins written.\n";
+    if (stats.losses_found > 0) {
+      std::cerr << "Average number of predecessors: " << stats.total_predecessors / stats.losses_found << ".\n";
+    }
+    std::cerr << "Chunk " << chunk << " done in " << elapsed_minutes << " minutes. "
+        << "Solving speed: " << stats.losses_found / elapsed_minutes << " losses / minute." << std::endl;
     output_acc.MarkChunkComplete(chunk);
   }
 }
