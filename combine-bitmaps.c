@@ -60,9 +60,12 @@ static void Combine(FILE *output, FILE **inputs, int ninput) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
+  // Require at least two filename arguments... combining a single file is
+  // technically possible, but practically useless.
+  if (argc < 3) {
     printf("Usage: combine-bitmaps <file1> <file2> .. <fileN>\n\n"
       "Note: writes combined bitmap to standard output!\n");
+    exit(0);
   }
 
   int nfile = argc - 1;
