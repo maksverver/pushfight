@@ -32,7 +32,7 @@ if len(data) != size_bytes:
   sys.exit(1)
 
 def GetBit(i):
-  return (data[i // 8] > (i % 8)) & 1
+  return (data[i // 8] >> (i % 8)) & 1
 
 i = 0
 while i < size_bits:
