@@ -1,5 +1,6 @@
 /*.o
 /backpropagate-losses
+/combine-bitmaps
 /count-bits
 /count-unreachable
 /count-r1
