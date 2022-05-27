@@ -274,7 +274,7 @@ private:
 template<size_t filesize>
 using ThreadSafeMutableBinaryAccessor = ThreadSafeAccessor<bool, MutableBinaryAccessor<filesize>>;
 
-// Accessor used to generate output files in backprogate-losses.cc.
+// Accessor used to generate output files in backpropagate-losses.cc.
 //
 // For each permutation, it stores a single bit indicating whether this
 // permutation is newly won. Additionaly, it stores a bitmask of
