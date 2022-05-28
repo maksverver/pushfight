@@ -357,6 +357,31 @@ Most of these positions are still very simple. For example:
 Here red (to move) can save the piece at *a1* or the piece at *f1*, but
 not both, so blue will be able to win in the next turn.
 
+### Win in 2 (phase 2)
+
+For phase 2, I backpropagated the losses discovered in phase 1 using the
+[backpropagate-losses](backpropagate-losses.cc) tool (i.e., for every losing
+position, find the predecessors, and mark them winning, if they weren't before).
+This approach was faster than the forward search, probably because to prove a
+position is winning, we have to look at all successors and find one that is
+losing for the opponent, but since losses are relatively rare (1.55% after
+fase 1) most of these searches are exhaustive.
+
+In this phase we discovered another 16,766,295,470 winning positions (see
+[r2-wins-bitcount.txt](metadata/r2-wins-bitcount.txt)) which is 4.18% of the
+total number of permutations, but 30.7% of the permutations that were still
+undecided after phase 1.
+
+After this phase, 37,780,557,416 positions (69.3%) remain undecided and will
+need to be re-evaluated in phase 3. Hopefully, this will be faster since to
+prove a LOSS we have to check that all successors are won by the opponent.
+If we find a tie, we can abort the search. Since there is still a large number
+of ties remaining, we can probably abort a lot of searches early, and all the
+searches that are exhaustive will discover an actual loss. This means either
+the phase will be fast, or we will discover a lot of lost positions, both of
+which are good.
+
+
 ## Future work
 
  * Write about how to find optimal moves before turn 1.
