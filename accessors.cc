@@ -154,7 +154,9 @@ ChunkedR1Accessor::ChunkedR1Accessor() {
 const char *CheckLossPropagationOutputFile(const char *filename, bool writable) {
   auto expected_size = loss_propagation_filesize;
   if (std::filesystem::exists(filename)) {
-    std::cerr << "Reusing existing output file " << filename << std::endl;
+    if (writable) {
+      std::cerr << "Reusing existing output file " << filename << std::endl;
+    }
   } else if (writable) {
     std::cerr << "Creating new output file " << filename << "..."
         << " (" << (expected_size / 1e9) << " GB)" << std::endl;
