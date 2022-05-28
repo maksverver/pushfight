@@ -372,6 +372,16 @@ In this phase we discovered another 16,766,295,470 winning positions (see
 total number of permutations, but 30.7% of the permutations that were still
 undecided after phase 1.
 
+Some of the winning positions have quite interesting moves. An example:
+
+![Won by red in 2 turns](images/win-in-2-1.gif)
+
+After e4-g4, a3-e3, d3-e3:
+
+![Lost by blue in 1 turn](images/win-in-2-1-after.png)
+
+Blue can't possible save the piece at h3.
+
 After this phase, 37,780,557,416 positions (69.3%) remain undecided and will
 need to be re-evaluated in phase 3. Hopefully, this will be faster since to
 prove a LOSS we have to check that all successors are won by the opponent.
