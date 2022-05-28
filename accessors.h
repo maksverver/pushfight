@@ -59,9 +59,9 @@ public:
 // This data stores 1 bit per permutation, encoded with 8 bits per byte.
 // 0 means TIE, 1 means WIN.
 template<size_t filesize>
-class R0AccessorBase {
+class BinaryAccessor {
 public:
-  explicit R0AccessorBase(const char *filename) : map(filename) {}
+  explicit BinaryAccessor(const char *filename) : map(filename) {}
 
   bool operator[](size_t i) const {
     return (map[i / 8] >> (i % 8)) & 1;
@@ -71,14 +71,14 @@ private:
   MappedFile<uint8_t, filesize> map;
 };
 
-class R0Accessor : public R0AccessorBase<total_perms/8> {
+class R0Accessor : public BinaryAccessor<total_perms/8> {
 public:
-  explicit R0Accessor() : R0AccessorBase("input/r0.bin") {}
+  explicit R0Accessor() : BinaryAccessor("input/r0.bin") {}
 };
 
-class R0ChunkAccessor : public R0AccessorBase<chunk_size/8> {
+class R0ChunkAccessor : public BinaryAccessor<chunk_size/8> {
 public:
-  explicit R0ChunkAccessor(const char *filename) : R0AccessorBase(filename) {}
+  explicit R0ChunkAccessor(const char *filename) : BinaryAccessor(filename) {}
 };
 
 // Accessor for result data of phase 0 (written by solve-r0) as separate
@@ -274,41 +274,62 @@ private:
 template<size_t filesize>
 using ThreadSafeMutableBinaryAccessor = ThreadSafeAccessor<bool, MutableBinaryAccessor<filesize>>;
 
-// Accessor used to generate output files in backpropagate-losses.cc.
+
+// Properties of the output files written by backpropagate-losses.cc.
+static constexpr size_t loss_propagation_winning_offset_bits = 4096 * 8;
+static constexpr size_t loss_propagation_filesize =
+    (loss_propagation_winning_offset_bits + total_perms)/8;
+
+static_assert(loss_propagation_winning_offset_bits >= num_chunks);
+static_assert(total_perms % 8 == 0);
+
+const char *CheckLossPropagationOutputFile(const char *filename, bool writable);
+
+// Accessor used to read output files in backpropagate-losses.cc.
 //
 // For each permutation, it stores a single bit indicating whether this
 // permutation is newly won. Additionaly, it stores a bitmask of
 // previously-processed chunks. This allows output files to be merged.
-class LossPropagationAccessor {
+template <class A>
+class LossPropagationAccessorBase {
 public:
-  LossPropagationAccessor(const char *filename) : acc(CheckOutputFile(filename)) {}
+  LossPropagationAccessorBase(const char *filename) : acc(filename) {}
 
-  void MarkWinning(int64_t index) {
-    acc[winning_offset_bits + index] = true;
-  }
-
-  bool IsWinning(int64_t index) {
-    return acc[winning_offset_bits + index];
+  bool IsWinning(int64_t index) const {
+    return acc[loss_propagation_winning_offset_bits + index];
   }
 
   bool IsChunkComplete(int chunk) const {
     return acc[chunk];
   }
 
-  void MarkChunkComplete(int chunk) {
-    acc[chunk] = true;
-  }
+protected:
+  A acc;
 
 private:
   const char *CheckOutputFile(const char *filename);
+};
 
-  static constexpr size_t winning_offset_bits = 4096 * 8;
-  static constexpr size_t filesize = (winning_offset_bits + total_perms)/8;
+class LossPropagationAccessor
+  : public LossPropagationAccessorBase<BinaryAccessor<loss_propagation_filesize>> {
+public:
+  LossPropagationAccessor(const char *filename)
+    : LossPropagationAccessorBase(CheckLossPropagationOutputFile(filename, false)) {}
+};
 
-  static_assert(winning_offset_bits >= num_chunks);
-  static_assert(total_perms % 8 == 0);
+class MutableLossPropagationAccessor
+  : public LossPropagationAccessorBase<ThreadSafeMutableBinaryAccessor<loss_propagation_filesize>> {
+public:
+  MutableLossPropagationAccessor(const char *filename)
+    : LossPropagationAccessorBase(CheckLossPropagationOutputFile(filename, true)) {}
 
-  ThreadSafeMutableBinaryAccessor<filesize> acc;
+  void MarkWinning(int64_t index) {
+    acc[loss_propagation_winning_offset_bits + index] = true;
+  }
+
+  void MarkChunkComplete(int chunk) {
+    acc[chunk] = true;
+  }
 };
 
 #endif  // ndef ACCESSORS_H_INCLUDED

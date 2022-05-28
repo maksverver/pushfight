@@ -151,11 +151,11 @@ ChunkedR1Accessor::ChunkedR1Accessor() {
   }
 }
 
-const char *LossPropagationAccessor::CheckOutputFile(const char *filename) {
-  auto expected_size = LossPropagationAccessor::filesize;
+const char *CheckLossPropagationOutputFile(const char *filename, bool writable) {
+  auto expected_size = loss_propagation_filesize;
   if (std::filesystem::exists(filename)) {
     std::cerr << "Reusing existing output file " << filename << std::endl;
-  } else {
+  } else if (writable) {
     std::cerr << "Creating new output file " << filename << "..."
         << " (" << (expected_size / 1e9) << " GB)" << std::endl;
     std::ofstream ofs(filename, std::ofstream::binary);
@@ -165,6 +165,9 @@ const char *LossPropagationAccessor::CheckOutputFile(const char *filename) {
     }
     ofs.close();
     std::filesystem::resize_file(filename, expected_size);
+  } else {
+    std::cerr << "Output file " << filename << " does not exist!" << std::endl;
+    abort();
   }
   auto actual_size = std::filesystem::file_size(filename);
   if (actual_size != expected_size) {

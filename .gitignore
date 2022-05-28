@@ -4,6 +4,7 @@
 /count-bits
 /count-unreachable
 /count-r1
+/integrate-wins
 /lookup-rN
 /minimax
 /perms_test

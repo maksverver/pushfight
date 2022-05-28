@@ -44,7 +44,7 @@ int num_threads = std::thread::hardware_concurrency();
 RnAccessor input_acc = RnAccessor("input/r1.bin");
 
 // This accessor is thread-safe.
-LossPropagationAccessor output_acc = LossPropagationAccessor("output/r2-wins.bin");
+MutableLossPropagationAccessor output_acc = MutableLossPropagationAccessor("output/r2-wins.bin");
 
 struct ChunkStats {
   int64_t losses_found = 0;

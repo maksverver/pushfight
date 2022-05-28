@@ -3,8 +3,8 @@ CCFLAGS=$(COMMON_FLAGS) -std=c17
 CXXFLAGS=$(COMMON_FLAGS) -std=c++20
 LDLIBS=-lpthread -lm
 
-COMMON_OBJS=accessors.o parse-int.o perms.o board.o chunks.o search.o
-BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1
+COMMON_OBJS=accessors.o codec.o parse-int.o perms.o board.o chunks.o search.o
+BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1
 TESTS=perms_test search_test ternary_test
 
 all: $(BINARIES) $(TESTS)
@@ -37,6 +37,9 @@ ternary_test: ternary_test.cc ternary.h
 	$(CXX) $(CXXFLAGS) -o $@ ternary_test.cc
 
 backpropagate-losses: backpropagate-losses.cc $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
+
+integrate-wins: integrate-wins.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 combine-bitmaps: combine-bitmaps.c
