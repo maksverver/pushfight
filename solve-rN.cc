@@ -70,7 +70,7 @@ Outcome Compute(const Perm &perm) {
     });
     return complete ? LOSS : TIE;
   } else {
-    // A permutation is winning is any successor is losing (for the opponent).
+    // A permutation is winning if any successor is losing (for the opponent).
     // So we can abort the search as soon as we find a losing position.
     assert(expected_outcome == WIN);
     bool complete = GenerateSuccessors(perm, [](const Moves&, const State& state) {
