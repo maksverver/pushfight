@@ -193,7 +193,6 @@ if moves is None:
   images[0].save(output_arg)
 else:
   # Create animation
-  pushing_piece = None
   for i, ((r1, c1), (r2, c2)) in enumerate(moves):
     # If this fails, the piece was not found on the selected location!
     piece = FindPiece(r1, c1)
@@ -218,9 +217,11 @@ else:
 
     else:
       # Push move.
+      for p in pieces:
+        p.anchor = 0
+      piece.anchor = 1
       dr = r2 - r1
       dc = c2 - c1
-      pushing_piece = piece
       moved_pieces = [piece]
       while True:
         piece = FindPiece(r1 + len(moved_pieces)*dr, c1 + len(moved_pieces)*dc)
@@ -232,10 +233,7 @@ else:
         piece.r += dr
         piece.c += dc
 
-  # Move anchor and show final state for 2 seconds
-  for piece in pieces:
-    piece.anchor = 0
-    pushing_piece.anchor = 1
+  # Show final state for 2 seconds
   AddImage(2000)
 
   # Save animated image
