@@ -1,0 +1,7 @@
+Zero bits:  384800895869
+One bits:   16766302899
+Total bits: 401567198768
+Fraction of ones: 0.0417522
+
+Note: that means 16766295470 new wins, since the bitcount above also includes
+7429 bits for the finished chunks.
