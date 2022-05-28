@@ -100,7 +100,6 @@ void ComputeChunkThread(int chunk, std::atomic<int> *next_part, Outcome outcomes
 }
 
 std::vector<Outcome> ComputeChunk(int chunk) {
-  std::vector<uint8_t> bits(chunk_size / 8);
   std::vector<Outcome> outcomes(chunk_size, TIE);
   std::atomic<int> next_part = 0;
   ChunkStats stats;
