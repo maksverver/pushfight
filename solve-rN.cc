@@ -178,8 +178,10 @@ int main(int argc, char *argv[]) {
       << "from " << start_chunk << " to " << end_chunk << " (exclusive) "
       << "using " << num_threads << " threads." << std::endl;
 
-  acc.emplace(PhaseInputFilename(phase - 1).c_str());
   expected_outcome = phase % 2 == 0 ? WIN : LOSS;
+  std::cout << "Expected outcome: " << OutcomeToString(expected_outcome) << "." << std::endl;
+
+  acc.emplace(PhaseInputFilename(phase - 1).c_str());
 
   InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
