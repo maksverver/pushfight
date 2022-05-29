@@ -7,14 +7,12 @@
 // significantly fewer LOSSes than remaining TIEs, while the number of
 // predecessors of a position is similar to the number of successors.
 //
+// For phase 2, this will use the losses in r1.bin directly. For phase 4 and up,
+// it also needs a delta file from phase r(N-2).bin to phase r(N-1).bin, which
+// marks the new losses discovered in the previous phase (N-1).
+//
 // The downside is that this approach doesn't allow generating output in chunks,
 // because predecessors may appear anywhere in the output.
-//
-// In theory the same approach can be used for later even phases (4, 6, 8, etc.)
-// however, to avoid doing unnecessary work, we need to know which losses are
-// new! So some additional diffing may be necessary, i.e. to calculate phase N
-// (where N is even) we need to diff phase (N - 1) and (N - 3) to find new
-// losses to backpropagate.
 
 #include "accessors.h"
 #include "board.h"
@@ -41,10 +39,11 @@ namespace {
 // Number of threads to use for calculations. 0 to disable multithreading.
 int num_threads = std::thread::hardware_concurrency();
 
-RnAccessor input_acc = RnAccessor("input/r1.bin");
+std::optional<RnAccessor> prev_input_acc;
+std::optional<BinaryAccessor<total_perms / 8>> delta_input_acc;
 
 // This accessor is thread-safe.
-MutableLossPropagationAccessor output_acc = MutableLossPropagationAccessor("output/r2-wins.bin");
+std::optional<MutableLossPropagationAccessor> output_acc;
 
 struct ChunkStats {
   int64_t losses_found = 0;
@@ -59,16 +58,20 @@ struct ChunkStats {
 };
 
 void ProcessPerm(int64_t perm_index, const Perm &perm, ChunkStats *stats) {
-  if (input_acc[perm_index] == LOSS) {
+  if (delta_input_acc ?
+      // phase 4, 6, 8 etc. require a delta file marking the new losses
+      (*delta_input_acc)[perm_index] :
+      // phase 2 can use the input from r1.bin directly.
+      ((*prev_input_acc)[perm_index] == LOSS)) {
     ++stats->losses_found;
     GeneratePredecessors(
       perm,
       [stats](const Perm &pred){
         ++stats->total_predecessors;
         int64_t pred_index = IndexOf(pred);
-        Outcome o = input_acc[pred_index];
+        Outcome o = (*prev_input_acc)[pred_index];
         if (o == TIE) {
-          output_acc.MarkWinning(pred_index);
+          output_acc->MarkWinning(pred_index);
           ++stats->wins_written;
         } else {
           assert(o == WIN);
@@ -118,18 +121,55 @@ ChunkStats ProcessChunk(int chunk) {
   return stats;
 }
 
+const std::string PhaseInputFilename(int phase) {
+  std::ostringstream oss;
+  oss << "input/r" << (phase - 1) << ".bin";
+  return oss.str();
+}
+
+const std::string DeltaInputFilename(int phase) {
+  std::ostringstream oss;
+  oss << "input/r" << phase << "-delta.bin";
+  return oss.str();
+}
+
+const std::string OutputFilename(int phase) {
+  std::ostringstream oss;
+  oss << "output/r" << phase << "-wins.bin";
+  return oss.str();
+}
+
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  const int start_chunk = argc > 1 ? std::max(0, ParseInt(argv[1])) : 0;
-  const int end_chunk = argc > 2 ? std::min(ParseInt(argv[2]), num_chunks) : num_chunks;
+  if (argc < 2 || argc > 4) {
+    std::cout << "Usage: backpropagate-losses <phase> <start-chunk> <end-chunk>" << std::endl;
+    return 0;
+  }
+
+  const int phase = ParseInt(argv[1]);
+  if (phase < 2) {
+    std::cout << "Invalid phase. Must be 2 or higher.\n";
+    return 1;
+  }
+  if (phase % 2 != 0) {
+    std::cout << "Invalid phase. Must be an even number.\n";
+    return 1;
+  }
+
+  prev_input_acc.emplace(PhaseInputFilename(phase).c_str());
+  if (phase > 2) delta_input_acc.emplace(DeltaInputFilename(phase).c_str());
+  output_acc.emplace(OutputFilename(phase).c_str());
+
+  const int start_chunk = argc > 1 ? std::max(0, ParseInt(argv[2])) : 0;
+  const int end_chunk = argc > 2 ? std::min(ParseInt(argv[3]), num_chunks) : num_chunks;
 
   std::cout << "Backpropagating losses in " << end_chunk - start_chunk << " chunks "
       << "from " << start_chunk << " to " << end_chunk << " (exclusive)." << std::endl;
 
   InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
-    if (output_acc.IsChunkComplete(chunk)) {
+    if (output_acc->IsChunkComplete(chunk)) {
       std::cerr << "Chunk " << chunk << " already done. Skipping..." << std::endl;
       continue;
     }
@@ -145,6 +185,6 @@ int main(int argc, char *argv[]) {
     }
     std::cerr << "Chunk " << chunk << " done in " << elapsed_minutes << " minutes. "
         << "Solving speed: " << stats.losses_found / elapsed_minutes << " losses / minute." << std::endl;
-    output_acc.MarkChunkComplete(chunk);
+    output_acc->MarkChunkComplete(chunk);
   }
 }

@@ -53,24 +53,30 @@ public:
   const T& operator[](size_t i) const { return data()[i]; }
 };
 
-// Accessor for result data of phase 0 (written by solve-r0) merged into a
-// single file.
-//
-// This data stores 1 bit per permutation, encoded with 8 bits per byte.
-// 0 means TIE, 1 means WIN.
+// Accessor for binary data. Note that file size is in bytes, so the number of
+// bits is filesize * 8.
 template<size_t filesize>
 class BinaryAccessor {
 public:
   explicit BinaryAccessor(const char *filename) : map(filename) {}
 
-  bool operator[](size_t i) const {
+  bool get(size_t i) const {
     return (map[i / 8] >> (i % 8)) & 1;
+  }
+
+  bool operator[](size_t i) const {
+    return get(i);
   }
 
 private:
   MappedFile<uint8_t, filesize> map;
 };
 
+// Accessor for result data of phase 0 (written by solve-r0) merged into a
+// single file.
+//
+// This data stores 1 bit per permutation, encoded with 8 bits per byte.
+// 0 means TIE, 1 means WIN.
 class R0Accessor : public BinaryAccessor<total_perms/8> {
 public:
   explicit R0Accessor() : BinaryAccessor("input/r0.bin") {}
@@ -251,16 +257,16 @@ public:
     return (map[i / 8] >> (i % 8)) & 1;
   }
 
+  bool operator[](size_t i) const {
+    return get(i);
+  }
+
   void set(size_t i, bool v) {
     uint8_t &byte = map[i / 8];
     uint8_t new_byte = (byte & ~(uint8_t{1} << (i % 8))) | (uint8_t{v} << (i % 8));
     // Only assigning when the byte changed might be more efficient for memory
     // mapped files, since fewer pages end up being marked dirty?
     if (byte != new_byte) byte = new_byte;
-  }
-
-  Outcome operator[](size_t i) const {
-    return get(i);
   }
 
   Reference operator[](size_t i) {
