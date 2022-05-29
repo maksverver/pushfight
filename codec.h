@@ -42,7 +42,6 @@ void DecodeOutcomes(const std::vector<uint8_t> &bytes, std::vector<Outcome> &out
 // Version of the above that returns outcomes in a new given vector.
 std::vector<Outcome> DecodeOutcomes(const std::vector<uint8_t> &bytes);
 
-
 class TernaryReader {
 public:
   // Note this is the buffer size in bytes. The number of outcomes will be five
@@ -88,6 +87,97 @@ private:
 
   size_t i = 0;
   std::vector<Outcome> outcomes;
+  std::vector<uint8_t> bytes;
+  std::istream &is;
+};
+
+class TernaryWriter {
+public:
+  // Note this is the buffer size in number of Outcome values.
+  // It must be a multiple of 5.
+  static constexpr int buffer_size = 5000000;
+
+  TernaryWriter(std::ostream &os) : os(os) {
+    outcomes.reserve(buffer_size);
+  }
+
+  ~TernaryWriter() {
+    FlushBuffer();
+  }
+
+  void Write(Outcome o) {
+    outcomes.push_back(o);
+    if (outcomes.size() == buffer_size) Flush();
+  }
+
+  void Flush() {
+    FlushBuffer();
+    ClearBuffer();
+  }
+
+private:
+  void FlushBuffer() {
+    assert(outcomes.size() % 5 == 0);
+    size_t n = outcomes.size() / 5;
+    bytes.resize(n);
+    EncodeOutcomes(outcomes.data(), bytes.data(), n);
+    if (!os.write(reinterpret_cast<char*>(bytes.data()), n)) {
+      std::cerr << "TernaryWriter: write failed!" << std::endl;
+      abort();
+    }
+  }
+
+  void ClearBuffer() {
+    outcomes.clear();
+  }
+
+  std::vector<Outcome> outcomes;
+  std::vector<uint8_t> bytes;
+  std::ostream &os;
+};
+
+
+class BinaryReader {
+public:
+  // Note this is the buffer size in bytes. The number of outcomes will be five
+  // times this. So 1,000,000 bytes is about 6 MB total.
+  static constexpr int buffer_size = 1000000;
+
+  BinaryReader(std::istream &is) : is(is) {
+    RefillBuffer();
+  }
+
+  bool HasNext() {
+    return i < bytes.size() * 8;
+  }
+
+  bool Next() {
+    assert(i < bytes.size() * 8);
+    bool bit = (bytes[i / 8] >> (i % 8)) & 1;
+    if (++i == bytes.size() *8 ) {
+      RefillBuffer();
+      i = 0;
+    }
+    return bit;
+  }
+
+private:
+  bool RefillBuffer() {
+    // Try to read up to `buffer_size` bytes.
+    bytes.resize(buffer_size);
+    is.read(reinterpret_cast<char*>(bytes.data()), bytes.size());
+    bytes.resize(is.gcount());
+
+    if (bytes.empty()) {
+      // EOF reached.
+      assert(is.eof() && !is.bad());
+      return false;
+    }
+
+    return true;
+  }
+
+  size_t i = 0;
   std::vector<uint8_t> bytes;
   std::istream &is;
 };

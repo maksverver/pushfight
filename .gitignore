@@ -4,6 +4,7 @@
 /count-bits
 /count-unreachable
 /count-r1
+/decode-delta
 /encode-delta
 /integrate-wins
 /lookup-rN

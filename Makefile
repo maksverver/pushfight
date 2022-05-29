@@ -4,7 +4,7 @@ CXXFLAGS=$(COMMON_FLAGS) -std=c++20
 LDLIBS=-lpthread -lm -lprofiler
 
 COMMON_OBJS=accessors.o codec.o parse-int.o perms.o board.o chunks.o search.o
-BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1
+BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1
 TESTS=perms_test search_test ternary_test
 
 all: $(BINARIES) $(TESTS)
@@ -20,6 +20,9 @@ accessors.o: accessors.h accessors.cc chunks.h ternary.h
 
 board.o: board.h board.cc perms.o
 	$(CXX) $(CXXFLAGS) -c board.cc
+
+codec.o: codec.h codec.cc board.o
+	$(CXX) $(CXXFLAGS) -c codec.cc
 
 chunks.o: chunks.h chunks.cc board.o
 	$(CXX) $(CXXFLAGS) -c chunks.cc
@@ -44,6 +47,9 @@ integrate-wins: integrate-wins.cc $(COMMON_OBJS)
 
 combine-bitmaps: combine-bitmaps.c
 	$(CC) $(CCFLAGS) -o $@ $^ $(LDLIBS)
+
+decode-delta: decode-delta.cc $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 encode-delta: encode-delta.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
