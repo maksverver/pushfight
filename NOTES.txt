@@ -25,6 +25,8 @@ range of integers. We could still use rotations to speed up calculations by
 
 401567166000 = 7429 × 54054000
 
+401,567,166,000 = 7429 × 54,054,000
+
 At 54054000 permutations per chunk, and 10,000 permutations/second, each chunk takes 1.5 hours to process.
 
 For r0, it looks chunks can be computed in ~1 minute or 7429/60/24 = ~5 days wall clock time.
