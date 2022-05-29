@@ -1,10 +1,10 @@
-COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread
+COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread -g
 CCFLAGS=$(COMMON_FLAGS) -std=c17
 CXXFLAGS=$(COMMON_FLAGS) -std=c++20
-LDLIBS=-lpthread -lm
+LDLIBS=-lpthread -lm -lprofiler
 
 COMMON_OBJS=accessors.o codec.o parse-int.o perms.o board.o chunks.o search.o
-BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1
+BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1
 TESTS=perms_test search_test ternary_test
 
 all: $(BINARIES) $(TESTS)
@@ -44,6 +44,9 @@ integrate-wins: integrate-wins.cc $(COMMON_OBJS)
 
 combine-bitmaps: combine-bitmaps.c
 	$(CC) $(CCFLAGS) -o $@ $^ $(LDLIBS)
+
+encode-delta: encode-delta.cc $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 solve-r0: solve-r0.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)

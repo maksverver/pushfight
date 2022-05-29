@@ -5,19 +5,52 @@
 #include <vector>
 
 #include "board.h"
+#include "macros.h"
 
-// Encodes outcomes into bytes, with 5 ternary values per byte (i.e., 8/5 = 1.6 bits per value).
-std::vector<uint8_t> EncodeOutcomes(const std::vector<Outcome> &outcomes) {
-  assert(outcomes.size() % 5 == 0);
-  std::vector<uint8_t> bytes;
-  bytes.reserve(outcomes.size() * 8 / 5);
-  for (size_t i = 0; i < outcomes.size(); i += 5) {
-    uint8_t byte = outcomes[i] +
-        outcomes[i + 1]*3 +
-        outcomes[i + 2]*3*3 +
-        outcomes[i + 3]*3*3*3 +
-        outcomes[i + 4]*3*3*3*3;
-    bytes.push_back(byte);
+void EncodeOutcomes(const Outcome *outcomes, uint8_t *bytes, size_t bytes_size) {
+  while (bytes_size-- > 0) {
+    *bytes++ =
+        outcomes[0] +
+        outcomes[1]*3 +
+        outcomes[2]*3*3 +
+        outcomes[3]*3*3*3 +
+        outcomes[4]*3*3*3*3;
+    outcomes += 5;
   }
+}
+
+void EncodeOutcomes(const std::vector<Outcome> &outcomes, std::vector<uint8_t> &bytes) {
+  assert(outcomes.size() % 5 == 0);
+  size_t i = bytes.size();
+  size_t n = outcomes.size() / 5;
+  bytes.resize(i + n);
+  EncodeOutcomes(outcomes.data(), bytes.data() + i, n);
+}
+
+std::vector<uint8_t> EncodeOutcomes(const std::vector<Outcome> &outcomes) {
+  std::vector<uint8_t> bytes;
+  EncodeOutcomes(outcomes, bytes);
   return bytes;
+}
+
+void DecodeOutcomes(const uint8_t *bytes, size_t bytes_size, Outcome *outcomes) {
+  while (bytes_size-- > 0) {
+    uint8_t byte = *bytes++;
+    REP(_, 5) {
+      *outcomes++ = static_cast<Outcome>(byte % 3);
+      byte /= 3;
+    }
+  }
+}
+
+void DecodeOutcomes(const std::vector<uint8_t> &bytes, std::vector<Outcome> &outcomes) {
+  size_t i = outcomes.size();
+  outcomes.resize(i + bytes.size() * 5);
+  DecodeOutcomes(bytes.data(), bytes.size(), outcomes.data() + i);
+}
+
+std::vector<Outcome> DecodeOutcomes(const std::vector<uint8_t> &bytes) {
+  std::vector<Outcome> outcomes;
+  DecodeOutcomes(bytes, outcomes);
+  return outcomes;
 }

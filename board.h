@@ -108,7 +108,7 @@ inline int getNeighbourIndex(int i, int d) {
 // while `false` implies that the permutation is definitly unreachable.
 bool IsReachable(const Perm &perm);
 
-enum Outcome {
+enum Outcome : char {
   TIE  = 0,
   LOSS = 1,
   WIN  = 2,
