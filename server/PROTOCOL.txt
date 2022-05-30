@@ -1,0 +1,82 @@
+SIMPLE IDEA.
+
+Each request/response message must be able to fit in memory.
+
+Each bytestring starts with one length byte b.
+
+  if b < 248, it is the length of the data that follows.
+  if b >= 248, then (b - 247) bytes follow encoding the length in little-endian.
+
+Then the next bytes are the content of the string. The interpretation
+is context-dependent.
+
+  - binary data: as is.
+  - strings: UTF-8 encoded.
+  - lists: parse the content recursively; each value is an element.
+  - dictionaries: parse the content recursively; values alternate between keys and values.
+  - unsigned integers: little endian (empty string = 0)
+
+Client starts with a message:
+
+  protocol: "Push Fight 0 client"
+  solver: string
+  user: string
+  machine: string
+
+Server response:
+
+  protocol: "Push Fight 0 server"
+
+Then a number of requests follow.
+
+GetChunks
+---------
+Request
+
+  method: "GetChunks"
+  phase: integer
+
+RESPONSE
+
+chunks: list of integers
+
+In the above, each integer is encoded as a string, then the strings
+are encoded as a string, e.g.:
+
+  [] == 0:
+  [42] == 4:2:42
+  [1,2,3] == 9:1:11:21:3
+
+
+PostResult
+----------
+
+Request
+
+  phase: integer
+  chunk: integer
+  byte_size: integer
+  sha256sum: bytestring
+
+
+Response has exactly 1 part:
+
+  upload: integer
+
+If upload=1 then the client should upload the result.
+
+
+UploadChunk
+-----------
+
+Request
+
+  phase: integer
+  chunk: integer
+  byte_size: int
+  sha256sum: bytestring
+  deflated_data: bytestring
+
+Response
+
+(empty)
