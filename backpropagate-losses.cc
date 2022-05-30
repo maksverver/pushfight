@@ -123,7 +123,7 @@ ChunkStats ProcessChunk(int chunk) {
 
 const std::string PhaseInputFilename(int phase) {
   std::ostringstream oss;
-  oss << "input/r" << (phase - 1) << ".bin";
+  oss << "input/r" << phase << ".bin";
   return oss.str();
 }
 
@@ -157,8 +157,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  prev_input_acc.emplace(PhaseInputFilename(phase).c_str());
-  if (phase > 2) delta_input_acc.emplace(DeltaInputFilename(phase).c_str());
+  prev_input_acc.emplace(PhaseInputFilename(phase - 1).c_str());
+  if (phase > 2) delta_input_acc.emplace(DeltaInputFilename(phase - 1).c_str());
   output_acc.emplace(OutputFilename(phase).c_str());
 
   const int start_chunk = argc > 1 ? std::max(0, ParseInt(argv[2])) : 0;
