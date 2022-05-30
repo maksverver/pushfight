@@ -5,7 +5,7 @@ LDLIBS=-lpthread -lm
 
 COMMON_OBJS=accessors.o codec.o flags.o parse-int.o perms.o board.o chunks.o search.o
 CLIENT_OBJS=client/codec.o client/socket.o client/socket_codec.o
-BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1 client/test-client
+BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1 client/test-client
 TESTS=perms_test search_test ternary_test
 
 all: $(BINARIES) $(TESTS)
@@ -74,9 +74,6 @@ solve-r0: solve-r0.cc $(COMMON_OBJS)
 
 solve-r1: solve-r1.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
-
-solve-r1-chunked: solve-r1.cc $(COMMON_OBJS)
-	$(CXX) $(CXXFLAGS) -DCHUNKED_ACCESSOR -o $@ $^ $(LDLIBS)
 
 solve-rN: solve-rN.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)

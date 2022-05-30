@@ -39,11 +39,7 @@ struct ChunkStats {
   }
 };
 
-#ifdef CHUNKED_ACCESSOR
-ChunkedR0Accessor r0acc;
-#else
 R0Accessor r0acc;
-#endif
 
 // For r0, the result can only be LOSS (if all successors are WIN for the opponent)
 // or TIE, since the r0 chunks don't have losing information yet.
