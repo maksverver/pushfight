@@ -392,6 +392,31 @@ the phase will be fast, or we will discover a lot of lost positions, both of
 which are good.
 
 
+### Win in 2 (phase 3)
+
+--------------------------------------------------------------------------------
+In phase 3, we discovered 2,943,252,774 positions that were lost in 2 moves
+(or 4 turns). That's less than half of the number of losses discovered in
+phase 1, but still 7.8% of the ties remaining after phase 2.
+
+The losses found this way are starting to become interesting. Consider the
+position below. It looks like red is in trouble with pieces on the edge at *b1*
+and *f1*, but it seems that red should be able to salvage the situation with
+something like f1-e1,b1-f3,f3-f2:
+
+![Loss in 2 (before red's move)](images/loss-in-2-1-before-move-1.png)
+![Loss in 2 (red's move)](images/loss-in-2-1-move-1.gif)
+
+The situation afterwards looks much better, with none of red's pieces on the
+edge, and blue's piece now in the danger zone on square *f1*! However, blue
+can respond with *e4-d2,d4-b2,d1-c1*:
+
+![Loss in 2 (before blue's move)](images/loss-in-2-1-before-move-2.png)
+![Loss in 2 (blue's move)](images/loss-in-2-1-move-2.gif)
+
+Blue has trapped red's round piece at *b1*. Note that the move *e4-d2* was
+necessary to protect the piece at *f1*.
+
 ## Future work
 
  * Write about how to find optimal moves before turn 1.
