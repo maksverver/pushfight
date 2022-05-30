@@ -3,8 +3,9 @@ CCFLAGS=$(COMMON_FLAGS) -std=c17
 CXXFLAGS=$(COMMON_FLAGS) -std=c++20
 LDLIBS=-lpthread -lm
 
-COMMON_OBJS=accessors.o codec.o parse-int.o perms.o board.o chunks.o search.o
-BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1
+COMMON_OBJS=accessors.o codec.o flags.o parse-int.o perms.o board.o chunks.o search.o
+CLIENT_OBJS=client/codec.o client/socket.o client/socket_codec.o
+BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1 client/test-client
 TESTS=perms_test search_test ternary_test
 
 all: $(BINARIES) $(TESTS)
@@ -27,6 +28,9 @@ codec.o: codec.h codec.cc board.o
 chunks.o: chunks.h chunks.cc board.o
 	$(CXX) $(CXXFLAGS) -c chunks.cc
 
+flags.o: flags.h flags.cc
+	$(CXX) $(CXXFLAGS) -c flags.cc
+
 parse-int.o: parse-int.h parse-int.cc
 	$(CXX) $(CXXFLAGS) -c parse-int.cc
 
@@ -38,6 +42,17 @@ search_test: search_test.cc board.o perms.o search.o
 
 ternary_test: ternary_test.cc ternary.h
 	$(CXX) $(CXXFLAGS) -o $@ ternary_test.cc
+
+# Must use -o $@ otherwise the object file gets written in the
+# current directory instead of in the client subdirectory!
+client/codec.o: client/codec.h client/codec.cc client/bytes.h client/byte_span.h
+	$(CXX) $(CXXFLAGS) -o $@ -c client/codec.cc
+
+client/socket.o: client/socket.h client/socket.cc
+	$(CXX) $(CXXFLAGS) -o $@ -c client/socket.cc
+
+client/socket_codec.o: client/socket_codec.h client/socket_codec.cc client/codec.o client/socket.o
+	$(CXX) $(CXXFLAGS) -o $@ -c client/socket_codec.cc
 
 backpropagate-losses: backpropagate-losses.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
@@ -99,10 +114,13 @@ verify-r1: verify-r1.cc $(COMMON_OBJS)
 verify-rN: verify-rN.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
+client/test-client: client/test-client.cc $(CLIENT_OBJS) flags.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
+
 test: $(TESTS)
 	./perms_test
 	./search_test
 	./ternary_test
 
 clean:
-	rm -f $(BINARIES) $(TESTS) *.o
+	rm -f $(BINARIES) $(TESTS) *.o client/*.o
