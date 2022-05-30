@@ -1,3 +1,38 @@
+DEFAULT_MAX_MESSAGE_SIZE = 100 << 20  # 100 MiB
+
+class CodecError(Exception):
+  pass
+
+class DecodeError(CodecError):
+  pass
+
+class EndOfInput(DecodeError):
+  def __init__(self, missing_bytes):
+    self.missing_bytes = missing_bytes
+
+  def __str__(self):
+    return 'Unexpected end of input. Needed at least %s more bytes!' % self.missing_bytes
+
+class InvalidDict(DecodeError):
+  pass
+
+class DuplicateDictKey(InvalidDict):
+  def __str__(self):
+    return 'Dictionary encoding contained a duplicate key.'
+
+class MissingDictValue(InvalidDict):
+  def __str__(self):
+    return 'Dictionary encoding is missing a value.'
+
+class MessageTooLarge(DecodeError):
+  def __init__(self, size, max_size):
+    self.size = size
+    self.max_size = max_size
+
+  def __str__(self):
+    return 'Message size of %s bytes exceeds maximum of %s bytes!' % (self.size, self.max_size)
+
+
 def EncodeInt(i):
   assert i >= 0
   buf = bytearray()
@@ -38,19 +73,23 @@ def DecodeInt(data):
     shift += 8
   return i
 
+def CheckInputSize(data, size):
+  if len(data) < size:
+    raise EndOfInput(size - len(data))
+
 # Returns a pair (part, rest).
 def DecodeBytes(data):
-  assert data  # should return error instead
+  CheckInputSize(data, 1)
   b = data[0]
   if b < 248:
     begin = 1
     end = begin + b
   else:
     k = b - 247
-    assert k + 1 <= len(data)  # should return error instead
+    CheckInputSize(data, k + 1)
     begin = k + 1
     end = begin + DecodeInt(data[1:k + 1])
-  assert end <= len(data)  # should return error instead
+  CheckInputSize(data, end)
   return (data[begin:end], data[end:])
 
 def DecodeList(data):
@@ -63,9 +102,44 @@ def DecodeList(data):
 
 def DecodeDict(data):
   l = DecodeList(data)
-  assert len(l) % 2 == 0  # should return error instead.
+  if len(l) % 2:
+    raise MissingDictValue()
   d = {}
   for i in range(0, len(l), 2):
-    assert l[i] not in d  # should return error instead
-    d[l[i]] = l[i + 1]
+    k = l[i]
+    v = l[i + 1]
+    if k in d:
+      raise DuplicateDictKey()
+    d[l[i]] = v
   return d
+
+
+def DecodeBytesFromSocket(s, max_message_size=DEFAULT_MAX_MESSAGE_SIZE):
+  '''
+    Version of DecodeByes() that reads data from a socket instead of parsing
+    an existing bytestring.
+
+    Returns None if EOF has been reached (no data read from the socket).
+    Otherwise, tries to parse a message of length up to max_message_size.
+  '''
+  # Read length byte
+  data = s.recv(1)
+  if not data:
+    return None  # EOF
+  length = data[0]
+  if length > 247:
+    # Read additional length bytes
+    data = s.recv(length - 247)
+    CheckInputSize(data, length - 247)
+    length = DecodeInt(data)
+    if length > max_message_size:
+      raise MessageTooLarge(length, max_message_size)
+
+  # Read fixed message size
+  buf = bytearray()
+  while len(buf) < length:
+    data = s.recv(length - len(buf))
+    CheckInputSize(data, length - len(buf))
+    buf.extend(data)
+  assert len(buf) == length
+  return bytes(buf)
