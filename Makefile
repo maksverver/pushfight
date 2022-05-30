@@ -1,4 +1,4 @@
-COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread -g
+COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread
 CCFLAGS=$(COMMON_FLAGS) -std=c17
 CXXFLAGS=$(COMMON_FLAGS) -std=c++20
 LDLIBS=-lpthread -lm -lprofiler
