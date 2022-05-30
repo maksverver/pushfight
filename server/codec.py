@@ -114,7 +114,19 @@ def DecodeDict(data):
   return d
 
 
-def DecodeBytesFromSocket(s, max_message_size=DEFAULT_MAX_MESSAGE_SIZE):
+def ReceiveAll(socket, length):
+  # Repeatedly calls socket.recv() until `length` bytes have been read,
+  # or throws EndOfInput if end of file is reached.'''
+  buf = bytearray()
+  while len(buf) < length:
+    data = socket.recv(length - len(buf))
+    if not data:
+      raise EndOfInput()
+    buf.extend(data)
+  return bytes(buf)
+
+
+def DecodeBytesFromSocket(socket, max_message_size=DEFAULT_MAX_MESSAGE_SIZE):
   '''
     Version of DecodeByes() that reads data from a socket instead of parsing
     an existing bytestring.
@@ -123,23 +135,12 @@ def DecodeBytesFromSocket(s, max_message_size=DEFAULT_MAX_MESSAGE_SIZE):
     Otherwise, tries to parse a message of length up to max_message_size.
   '''
   # Read length byte
-  data = s.recv(1)
+  data = socket.recv(1)
   if not data:
     return None  # EOF
   length = data[0]
   if length > 247:
-    # Read additional length bytes
-    data = s.recv(length - 247)
-    CheckInputSize(data, length - 247)
-    length = DecodeInt(data)
+    length = DecodeInt(ReceiveAll(socket, length - 247))
     if length > max_message_size:
       raise MessageTooLarge(length, max_message_size)
-
-  # Read fixed message size
-  buf = bytearray()
-  while len(buf) < length:
-    data = s.recv(length - len(buf))
-    CheckInputSize(data, length - len(buf))
-    buf.extend(data)
-  assert len(buf) == length
-  return bytes(buf)
+  return ReceiveAll(socket, length)
