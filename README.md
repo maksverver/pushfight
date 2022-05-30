@@ -394,7 +394,6 @@ which are good.
 
 ### Win in 2 (phase 3)
 
---------------------------------------------------------------------------------
 In phase 3, we discovered 2,943,252,774 positions that were lost in 2 moves
 (or 4 turns). That's less than half of the number of losses discovered in
 phase 1, but still 7.8% of the ties remaining after phase 2.
