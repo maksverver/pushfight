@@ -1,7 +1,7 @@
 COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread
 CCFLAGS=$(COMMON_FLAGS) -std=c17
 CXXFLAGS=$(COMMON_FLAGS) -std=c++20
-LDLIBS=-lpthread -lm -lprofiler
+LDLIBS=-lpthread -lm
 
 COMMON_OBJS=accessors.o codec.o parse-int.o perms.o board.o chunks.o search.o
 BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-r1-chunked solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1
