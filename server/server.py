@@ -27,26 +27,32 @@ class RequestHandler(socketserver.BaseRequestHandler):
       solver = info.get(b'solver').decode('utf-8')
       user = info.get(b'user').decode('utf-8')
       machine = info.get(b'machine').decode('utf-8')
+      error = None
       if protocol != 'Push Fight 0 client':
-        print('Wrong protocol', protocol)
+        print('Received incorrect protocol:', protocol)
+        error = 'Wrong protocol'
       elif not solver:
-        # TODO: check for known solver?
-        print('Missing solver')
+        error = 'Missing solver'
       elif not user:
-        print('Missing user')
+        error = 'Missing user'
       elif not machine:
-        print('Missing machine')
+        error ='Missing machine'
+
+      if error:
+        # Something bad happened! Send an error response.
+        response = {b'error': bytes(error, 'utf-8')}
+        self.request.sendall(EncodeBytes(EncodeDict(response)))
       else:
+        # All good. Send handshake response.
         response = {b'protocol': b'Push Fight 0 server'}
         self.request.sendall(EncodeBytes(EncodeDict(response)))
 
-        # All good. Handle requests.
+        print('Handshake completed (solver: "%s" user: "%s" machine="%s")' % (solver, user, machine))
+
         while True:
           data = DecodeBytesFromSocket(self.request)
           if data is None:
             break
-
-    print('EOF reached. Disconnecting.')
 
   def finish(self):
     print("{} disconnected".format(self.client_address[0]))

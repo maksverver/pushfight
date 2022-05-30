@@ -121,7 +121,7 @@ def ReceiveAll(socket, length):
   while len(buf) < length:
     data = socket.recv(length - len(buf))
     if not data:
-      raise EndOfInput()
+      raise EndOfInput(length - len(buf))
     buf.extend(data)
   return bytes(buf)
 

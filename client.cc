@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <optional>
@@ -20,14 +21,28 @@ using bytes_t = std::vector<uint8_t>;
 //
 // I wrote this because I couldn't figure out how to get std::span to work :/
 struct byte_span_t {
+  byte_span_t() : data_(nullptr), size_(0) {}
   byte_span_t(const uint8_t *data, size_t size) : data_(data), size_(size) {}
   byte_span_t(const uint8_t *begin, const uint8_t *end) : data_(begin), size_(end - begin) {}
-  template<class T> byte_span_t(const T &v) : data_(v.data()), size_(v.size()) {}
+
+  byte_span_t(const bytes_t &b) : data_(b.data()), size_(b.size()) {}
+
+  explicit byte_span_t(const char *s)
+      : data_(reinterpret_cast<const uint8_t*>(s)), size_(strlen(s)) {
+    static_assert(sizeof(*s) == sizeof(uint8_t));
+  }
+
+  static_assert(sizeof(std::string::value_type) == sizeof(uint8_t));
+  explicit byte_span_t(const std::string &s)
+      : data_(reinterpret_cast<const uint8_t*>(s.data())), size_(s.size()) {
+    static_assert(sizeof(*s.data()) == sizeof(uint8_t));
+  }
 
   const uint8_t *begin() const { return data_; }
   const uint8_t *end() const { return data_ + size_; }
   const uint8_t *data() const { return data_; }
   size_t size() const { return size_; }
+  bool empty() const { return size_ == 0; }
 
   byte_span_t slice(size_t start_index) {
     return byte_span_t(data_ + start_index, size_ - start_index);
@@ -38,10 +53,24 @@ struct byte_span_t {
     return byte_span_t(data_ + start_index, new_size);
   }
 
+  bool operator==(const byte_span_t &other) const {
+    return size_ == other.size_ && memcmp(data_, other.data_, size_) == 0;
+  }
+
+  int operator<=>(const byte_span_t &other) const {
+    int diff = memcmp(data_, other.data_, std::min(size_, other.size_));
+    if (diff == 0) diff = (other.size_ < size_) - (size_ < other.size_);
+    return diff;
+  }
+
 private:
   const uint8_t *data_;
   size_t size_;
 };
+
+std::ostream &operator<<(std::ostream &os, byte_span_t bytes) {
+  return os.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+}
 
 // TODO: a lot of these should probably take a byte_span_t instead of const bytes_t.
 bytes_t operator+=(bytes_t &dst, const bytes_t &src) {
@@ -142,29 +171,30 @@ std::optional<std::pair<byte_span_t, byte_span_t>> DecodeBytes(byte_span_t span)
   return {{byte_span_t(part_begin, part_end), byte_span_t(part_end, end)}};
 }
 
-// TODO:
-/*
-def DecodeList(data):
-  result = []
-  pos = 0
-  while data:
-    elem, data = DecodeBytes(data)
-    result.append(elem)
-  return result
+std::optional<std::vector<byte_span_t>> DecodeList(byte_span_t span) {
+  std::vector<byte_span_t> result;
+  while (!span.empty()) {
+    auto decoded = DecodeBytes(span);
+    if (!decoded) return {};
+    result.push_back(decoded->first);
+    span = decoded->second;
+  }
+  return {std::move(result)};
+}
 
-def DecodeDict(data):
-  l = DecodeList(data)
-  if len(l) % 2:
-    raise MissingDictValue()
-  d = {}
-  for i in range(0, len(l), 2):
-    k = l[i]
-    v = l[i + 1]
-    if k in d:
-      raise DuplicateDictKey()
-    d[l[i]] = v
-  return d
-*/
+std::optional<std::map<byte_span_t, byte_span_t>> DecodeDict(byte_span_t span) {
+  std::optional<std::vector<byte_span_t>> decoded = DecodeList(span);
+  if (!decoded) return {};
+  const auto &list = *decoded;
+  if (list.size() % 2 != 0) return {};  // odd number of elements
+  std::map<byte_span_t, byte_span_t> result;
+  for (size_t i = 0; i + 1 < list.size(); i += 2) {
+    if (!result.insert({std::move(list[i]), std::move(list[i + 1])}).second) {
+      return {};  // duplicate key
+    }
+  }
+  return {std::move(result)};
+}
 
 bytes_t Concatenate(const std::vector<bytes_t> &parts) {
   return Concatenate(parts, TotalSize(parts));
@@ -210,7 +240,10 @@ bytes_t ToBytes(const std::string &s) {
   return bytes_t(s.begin(), s.end());
 }
 
-std::string ToString(const bytes_t &b) {
+byte_span_t ToByteSpan(const std::string &s) {
+  return byte_span_t(reinterpret_cast<const uint8_t*>(s.data()), s.size());
+}
+std::string ToString(byte_span_t b) {
   return std::string(b.begin(), b.end());
 }
 
@@ -244,7 +277,6 @@ int Connect(const char *hostname, const char *portname) {
       if (connect(s, ai->ai_addr, ai->ai_addrlen) == -1) {
         std::cerr << "client: Failed to connect to host " << hostname << " IP address " << AddrInfoToString(ai) << std::endl;
       } else {
-        std::cerr << "client: Connected to host " << hostname << " IP address " << AddrInfoToString(ai) << std::endl;
         freeaddrinfo(ai);
         return s;
       }
@@ -310,30 +342,108 @@ std::optional<bytes_t> DecodeBytesFromSocket(
   return {std::move(data)};
 }
 
+struct Flag {
+  enum Requirement : char { OPTIONAL, REQUIRED };
 
-int main() {
-  //const char *hostname = "styx.verver.ch";
-  int socket = Connect("localhost", "7429");
+  static Flag required(std::string &value) { return Flag(value, REQUIRED); }
+  static Flag optional(std::string &value) { return Flag(value, OPTIONAL); }
+
+  Flag(std::string &value, Requirement requirement)
+    : value(value), requirement(requirement) {}
+
+  std::string &value;
+  Requirement requirement;
+  bool provided = false;
+};
+
+// Parses all flags of the form --key=value and removes them from the argument list.
+bool ParseFlags(int &argc, char **&argv, std::map<std::string, Flag> &flags) {
+  int pos_out = 1;
+  for (int pos_in = 1; pos_in < argc; ++pos_in) {
+    char *arg = argv[pos_in];
+    if (arg[0] == '-') {
+      if (arg[1] != '-') {
+        std::cerr << "Invalid argument: " << arg << std::endl;
+        return false;
+      }
+      const char *start = arg + 2;
+      const char *sep = strchr(start, '=');
+      std::string key;
+      std::string value;
+      if (!sep) {
+        key = std::string(start);
+        value = "true";
+      } else {
+        key = std::string(start, sep);
+        value = std::string(sep + 1);
+      }
+      if (auto it = flags.find(key); it == flags.end()) {
+        std::cerr << "Unknown flag: " << key << std::endl;
+        return false;
+      } else if (it->second.provided) {
+        std::cerr << "Duplicate value for flag: " << key << std::endl;
+        return false;
+      } else {
+        it->second.provided = true;
+        it->second.value = std::move(value);
+      }
+    } else {
+      argv[pos_out++] = arg;
+    }
+  }
+
+  // Delete removed arguments.
+  for (int i = pos_out; i < argc; ++i) argv[i] = nullptr;
+  argc = pos_out;
+
+  // Check for missing flags.
+  bool missing = false;
+  for (auto const &entry : flags) {
+    const Flag &flag = entry.second;
+    if (flag.requirement == Flag::REQUIRED && !flag.provided) {
+      std::cerr << "Missing required flag --" << entry.first << "!" << std::endl;
+      missing = true;
+    }
+  }
+  return !missing;
+}
+
+int main(int argc, char *argv[]) {
+  std::string host = "styx.verver.ch";
+  std::string port = "7429";
+  std::string user;
+  std::string machine;
+  std::map<std::string, Flag> flags = {
+    {"host", Flag::optional(host)},
+    {"port", Flag::optional(port)},
+    {"user", Flag::required(user)},
+    {"machine", Flag::required(machine)},
+  };
+  if (!ParseFlags(argc, argv, flags)) return 1;
+
+  int socket = Connect(host.c_str(), port.c_str());
   if (socket != -1) {
 
     std::map<bytes_t, bytes_t> first_message;
     first_message[ToBytes("protocol")] = ToBytes("Push Fight 0 client");
-    first_message[ToBytes("solver")] = ToBytes("some-solver");
-    first_message[ToBytes("user")] = ToBytes("maks");
-    first_message[ToBytes("machine")] = ToBytes("styx");
+    first_message[ToBytes("solver")] = ToBytes("test-client");
+    first_message[ToBytes("user")] = ToBytes(user);
+    first_message[ToBytes("machine")] = ToBytes(machine);
 
     if (Send(socket, EncodeBytes(EncodeDict(first_message)))) {
-      std::optional<bytes_t> data = DecodeBytesFromSocket(socket);
-      if (!data) {
+      if (std::optional<bytes_t> data = DecodeBytesFromSocket(socket); !data) {
         std::cerr << "I said hello but received no response :-(" << std::endl;
+      } else if (auto info = DecodeDict(*data); !info) {
+        std::cerr << "Couldn't parse response dictionary!" << std::endl;
+      } else if (auto it = info->find(byte_span_t("error")); it != info->end()) {
+        std::cerr << "Handshake failed! Server returned error: \"" << it->second << "\"!" << std::endl;
+      } else if (auto it = info->find(byte_span_t("protocol"));
+          it == info->end() || it->second != byte_span_t("Push Fight 0 server")) {
+        std::cerr << "Unsupported server protocol: " << (it == info->end() ? byte_span_t("unknown") : it->second) << std::endl;
       } else {
-        // TODO: decode dict etc.
-        std::string s((const char*)data->data(), data->size());
-        std::cout << s << std::endl;
+        std::cout << "Connection succesful!" << std::endl;
       }
     }
-
-    //send(s, const void *msg, int len, int flags);
     close(socket);
   }
 }

@@ -16,7 +16,7 @@ is context-dependent.
   - dictionaries: parse the content recursively; values alternate between keys and values.
   - unsigned integers: little endian (empty string = 0)
 
-Client starts with a message:
+Client starts with a handshake:
 
   protocol: "Push Fight 0 client"
   solver: string
