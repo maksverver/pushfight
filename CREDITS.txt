@@ -1,2 +1,6 @@
-Special thanks to Jonathan Peeman ("thec0mpler") for contributing CPU time to
-compute r0 chunks.
+Special thanks to Tweakers.net users who contributed CPU time!
+
+ - Jonathan Peeman ("thec0mpler")
+ - asterix78
+ - dylan111111
+ - __R__
