@@ -85,7 +85,8 @@ std::optional<Socket> Socket::Connect(const char *hostname, const char *portname
 
 void Socket::Close() {
   if (fd >= 0) {
-    shutdown(fd, SHUT_RDWR);
+    // 2 == SHUT_RDWR on Linux == SD_BOTH on Windows
+    shutdown(fd, 2);
     close(fd);
   }
   fd = -1;
