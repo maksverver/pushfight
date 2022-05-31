@@ -23,6 +23,9 @@ MAX_CHUNKS_PER_MACHINE = 10
 #WORK_EXPIRATION_SECONDS = 10
 #MAX_CHUNKS_PER_MACHINE = 3
 
+DATABASE_FILE = 'chunks.db'
+assert os.path.exists(DATABASE_FILE)
+
 UPLOAD_DIR = 'incoming'
 assert os.path.isdir(UPLOAD_DIR)
 
@@ -40,7 +43,7 @@ def ChunkFilename(sha256sum):
 
 
 def ConnectDb():
-  return sqlite3.connect('chunks.db', isolation_level='EXCLUSIVE')
+  return sqlite3.connect(DATABASE_FILE, isolation_level='EXCLUSIVE')
 
 
 class RequestHandler(socketserver.BaseRequestHandler):
