@@ -5,6 +5,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "bytes.h"
@@ -43,11 +44,11 @@ bytes_t EncodeDict(const std::map<bytes_t, bytes_t> &dict) ;
 
 static_assert(sizeof(std::string::value_type) == sizeof(bytes_t::value_type));
 
-inline bytes_t ToBytes(const std::string &s) {
+inline bytes_t ToBytes(std::string_view s) {
   return bytes_t(s.begin(), s.end());
 }
 
-inline byte_span_t ToByteSpan(const std::string &s) {
+inline byte_span_t ToByteSpan(std::string_view s) {
   return byte_span_t(reinterpret_cast<const uint8_t*>(s.data()), s.size());
 }
 

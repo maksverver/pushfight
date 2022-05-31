@@ -4,7 +4,7 @@ CXXFLAGS=$(COMMON_FLAGS) -std=c++20
 LDLIBS=-lpthread -lm
 
 COMMON_OBJS=accessors.o codec.o flags.o parse-int.o perms.o board.o chunks.o search.o
-CLIENT_OBJS=client/codec.o client/socket.o client/socket_codec.o
+CLIENT_OBJS=client/codec.o client/client.cc client/socket.o client/socket_codec.o
 BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1 client/test-client
 TESTS=perms_test search_test ternary_test
 
@@ -42,6 +42,9 @@ search_test: search_test.cc board.o perms.o search.o
 
 ternary_test: ternary_test.cc ternary.h
 	$(CXX) $(CXXFLAGS) -o $@ ternary_test.cc
+
+client/client.o: client/client.h client/client.cc client/error.h client/bytes.h client/codec.o client/socket.o client/socket_codec.o
+	$(CXX) $(CXXFLAGS) -o $@ -c client/client.cc
 
 # Must use -o $@ otherwise the object file gets written in the
 # current directory instead of in the client subdirectory!
