@@ -53,8 +53,13 @@ std::optional<Socket> Socket::Connect(const char *hostname, const char *portname
   assert(wsa_startup_return_value == 0);
 #endif
 
+  struct addrinfo hints = {};
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = IPPROTO_TCP;
+
   struct addrinfo *ai = nullptr;
-  if (getaddrinfo(hostname, portname, nullptr, &ai) != 0) {
+  if (getaddrinfo(hostname, portname, &hints, &ai) != 0) {
     std::cerr << "client: Lookup of hostname " << hostname << " failed!" << std::endl;
     return {};
   }
