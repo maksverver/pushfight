@@ -26,11 +26,7 @@ public:
     std::swap(fd, o.fd);
   }
 
-  void Close() {
-    if (fd >= 0) close(fd);
-    fd = -1;
-  }
-
+  void Close();
 
   // Send all bytes and return true, or return false if an error occurred.
   bool SendAll(const uint8_t *data, size_t len);

@@ -83,6 +83,14 @@ std::optional<Socket> Socket::Connect(const char *hostname, const char *portname
   return {};
 }
 
+void Socket::Close() {
+  if (fd >= 0) {
+    shutdown(fd, SHUT_RDWR);
+    close(fd);
+  }
+  fd = -1;
+}
+
 bool Socket::SendAll(const uint8_t *data, size_t size) {
   while (size > 0) {
     ssize_t n = send(fd, reinterpret_cast<const char*>(data), size, 0);
