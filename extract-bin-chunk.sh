@@ -1,11 +1,11 @@
 #!/bin/sh
 
-# Extract a chunk from a ternary file.
+# Extract a chunk from a binary file
 
 set -e
 
 if [ $# != 2 ]; then
-  echo 'Usage: extract-rN-chunk <rN.bin> <chunk>'
+  echo 'Usage: extract-bin-chunk <rN.bin> <chunk>'
   exit 0
 fi
 
@@ -27,4 +27,4 @@ if test -t 1; then
     exit 1
 fi
 
-tail -c +$((10810800 * $chunk + 1)) "$filename" | head -c 10810800
+tail -c +$((6756750 * $chunk + 1)) "$filename" | head -c 6756750
