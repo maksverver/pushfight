@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 import socket
 import socketserver
+
 from codec import *
 
 class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -15,7 +17,7 @@ class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
 class RequestHandler(socketserver.BaseRequestHandler):
   def handle(self):
     # self.request is the TCP socket connected to the client
-    print("{} connected".format(self.client_address[0]))
+    print("{}: {} connected".format(datetime.now(), self.client_address[0]))
 
     protocol = solver = user = machine = None
     data = DecodeBytesFromSocket(self.request)
@@ -55,7 +57,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
             break
 
   def finish(self):
-    print("{} disconnected".format(self.client_address[0]))
+    print("{}: {} disconnected".format(datetime.now(), self.client_address[0]))
 
 
 
