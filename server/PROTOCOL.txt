@@ -48,16 +48,15 @@ are encoded as a string, e.g.:
   [1,2,3] == 9:1:11:21:3
 
 
-PostResult
-----------
+ReportChunkComplete
+-------------------
 
 Request
 
   phase: integer
   chunk: integer
   byte_size: integer
-  sha256sum: bytestring
-
+  sha256sum: bytestring (exactly 32 bytes)
 
 Response has exactly 1 part:
 
@@ -75,7 +74,8 @@ Request
   chunk: integer
   byte_size: int
   sha256sum: bytestring
-  deflated_data: bytestring
+  encoding: bytestring ("deflate"?)
+  encoded_data: bytestring
 
 Response
 

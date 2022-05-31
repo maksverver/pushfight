@@ -8,22 +8,10 @@ CREATE TABLE WorkQueue(
     
     assigned INTEGER,
     completed INTEGER,
-
-    PRIMARY KEY(phase, chunk)
-);
-
-CREATE TABLE WorkResults(
-    phase INTEGER NOT NULL,
-    chunk INTEGER NOT NULL,
-
     received INTEGER,
 
-    solver TEXT,
-    user TEXT,
-    machine TEXT,
-
     bytesize INTEGER,
-    sha256sum TEXT,
+    sha256sum BLOB,
 
     PRIMARY KEY(phase, chunk)
 );
