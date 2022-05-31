@@ -4,13 +4,14 @@
 
 set -e
 
-if [ $# != 2 ]; then
-  echo 'Usage: extract-bin-chunk <rN.bin> <chunk>' >&2
+if [ $# -lt 2 ] || [ $# -ge 3 ]; then
+  echo 'Usage: extract-bin-chunk <rN.bin> <chunk> [<count>]' >&2
   exit 0
 fi
 
 filename=$1
 chunk=$2
+count=${3:-1}
 
 if ! test -r "$filename"; then
     echo "$filename is not readable" >&2
@@ -27,4 +28,4 @@ if test -t 1; then
     exit 1
 fi
 
-tail -c +$((6756750 * $chunk + 1)) "$filename" | head -c 6756750
+tail -c +$((6756750 * $chunk + 1)) "$filename" | head -c $((6756750 * $count))
