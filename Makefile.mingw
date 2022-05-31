@@ -17,3 +17,6 @@ LDLIBS += -lws2_32
 
 clean:
 	rm -f *.exe *.o client/*.o client/*.exe
+
+dist: all
+	zip pushfight-windows-$$(date +%Y-%m-%d)-$$(git rev-parse --short HEAD).zip *.exe *.py *.sh client/*.exe
