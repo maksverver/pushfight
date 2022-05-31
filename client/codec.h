@@ -1,3 +1,11 @@
+// Binary encoding/decoding of strings, integers, lists and dictionaries.
+//
+// The format is inspired by Bencoding, but simpler (using no ASCII delimiters).
+//
+// Note: the current functions make it hard to construct large nested
+// data structures efficiently. (The deeper in the data structure your values
+// occur the more times they need to be copied.)
+
 #ifndef CODEC_H_INCLUDED
 #define CODEC_H_INCLUDED
 

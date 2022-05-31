@@ -1,10 +1,10 @@
 COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread
 CCFLAGS=$(COMMON_FLAGS) -std=c17
 CXXFLAGS=$(COMMON_FLAGS) -std=c++20
-LDLIBS=-lpthread -lm
+LDLIBS=-lpthread -lm -lcrypto -lz
 
 COMMON_OBJS=accessors.o codec.o flags.o parse-int.o perms.o board.o chunks.o search.o
-CLIENT_OBJS=client/codec.o client/client.cc client/socket.o client/socket_codec.o
+CLIENT_OBJS=client/codec.o client/compress.o client/client.cc client/socket.o client/socket_codec.o
 BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN minimax print-perm solve-r0 solve-r1 solve-rN solve-lost verify-r0 verify-r1 verify-rN print-r1 client/test-client
 TESTS=perms_test search_test ternary_test
 
@@ -43,13 +43,16 @@ search_test: search_test.cc board.o perms.o search.o
 ternary_test: ternary_test.cc ternary.h
 	$(CXX) $(CXXFLAGS) -o $@ ternary_test.cc
 
-client/client.o: client/client.h client/client.cc client/error.h client/bytes.h client/codec.o client/socket.o client/socket_codec.o
+client/client.o: client/client.h client/client.cc  client/error.h client/bytes.h client/codec.o client/compress.o client/socket.o client/socket_codec.o
 	$(CXX) $(CXXFLAGS) -o $@ -c client/client.cc
 
 # Must use -o $@ otherwise the object file gets written in the
 # current directory instead of in the client subdirectory!
 client/codec.o: client/codec.h client/codec.cc client/bytes.h client/byte_span.h
 	$(CXX) $(CXXFLAGS) -o $@ -c client/codec.cc
+
+client/compress.o: client/compress.h client/compress.cc client/bytes.h client/byte_span.h
+	$(CXX) $(CXXFLAGS) -o $@ -c client/compress.cc
 
 client/socket.o: client/socket.h client/socket.cc
 	$(CXX) $(CXXFLAGS) -o $@ -c client/socket.cc

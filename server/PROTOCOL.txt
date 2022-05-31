@@ -72,7 +72,7 @@ Request
 
   phase: integer
   chunk: integer
-  encoding: bytestring ("deflate"?)
+  encoding: bytestring ("zlib")
   encoded_data: bytestring
 
 Response

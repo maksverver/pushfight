@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+import hashlib
 import socket
 import socketserver
 import sqlite3
+import os
 import time
+import zlib
 
 from codec import *
+
+# 54054000 items in ternary encoding
+MAX_CHUNK_BYTESIZE = 10810800
 
 BIND_ADDR = ('', 7429)
 WORK_EXPIRATION_SECONDS = 2*60*60  # 2 hour
@@ -17,12 +23,20 @@ MAX_CHUNKS_PER_MACHINE = 10
 #WORK_EXPIRATION_SECONDS = 10
 #MAX_CHUNKS_PER_MACHINE = 3
 
+UPLOAD_DIR = 'incoming'
+assert os.path.isdir(UPLOAD_DIR)
+
+
 class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
   allow_reuse_address = True
 
   # Bind on an IPv6 address. This should also work with IPv4 on dualstack
   # systems. To listen only on IPv4, change the value to AF_INET.
   address_family = socket.AF_INET6
+
+
+def ChunkFilename(sha256sum):
+  return os.path.join(UPLOAD_DIR, sha256sum.hex())
 
 
 def ConnectDb():
@@ -76,6 +90,8 @@ class RequestHandler(socketserver.BaseRequestHandler):
             self.handle_get_chunks(info)
           elif method == 'ReportChunkComplete':
             self.handle_report_chunk_complete(info)
+          elif method == 'UploadChunk':
+            self.handle_upload_chunk(info)
           else:
             self.send_error('Unknown method')
 
@@ -116,7 +132,15 @@ class RequestHandler(socketserver.BaseRequestHandler):
     phase = DecodeInt(info.get(b'phase'))
     chunk = DecodeInt(info.get(b'chunk'))
     bytesize = DecodeInt(info.get(b'bytesize'))
+    if not (0 < bytesize <= MAX_CHUNK_BYTESIZE):
+      self.send_error('Invalid chunk size')
+      return
+
     sha256sum = info.get(b'sha256sum')
+    if len(sha256sum) != 32:
+      self.send_error('Invalid SHA256 checksum length')
+      return
+
     now = time.time()
     with self.con:
       cur = self.con.cursor()
@@ -125,12 +149,67 @@ class RequestHandler(socketserver.BaseRequestHandler):
           SET completed=?, bytesize=?, sha256sum=?
           WHERE phase=? AND chunk=? AND solver=? AND user=? AND machine=? AND completed IS NULL
       ''', (now, bytesize, sha256sum, phase, chunk, self.solver, self.user, self.machine))
-    print((now, bytesize, sha256sum, phase, chunk, self.solver, self.user, self.machine))
-    print(cur.rowcount)
+    if cur.rowcount != 1:
+      self.send_error('Chunk not assigned')
+      return
     print('ReportChunkComplete: received a report!')
-    self.send_response({b'upload': EncodeInt(0)})
 
+    # Ask the client to upload the file if we don't already have it.
+    request_upload = 0 if os.path.exists(ChunkFilename(sha256sum)) else 1
+
+    self.send_response({b'upload': EncodeInt(request_upload)})
+
+  def handle_upload_chunk(self, info):
+    phase = DecodeInt(info.get(b'phase'))
+    chunk = DecodeInt(info.get(b'chunk'))
+    encoding = info.get(b'encoding')
+    encoded_data = info.get(b'encoded_data')
+    if encoding != b'zlib':
+      self.send_error('Unknown encoding')
+      return
+    if not encoded_data:
+      self.send_error('Missing data')
+      return
+
+    # Note: this risks memory overflow!
+    decoded_content = zlib.decompress(encoded_data)
+
+    now = time.time()
+    with self.con:
+      # Fetch expected byte size and sha256sum
+      cur = self.con.cursor()
+      cur.execute('''
+          SELECT bytesize, sha256sum FROM WorkQueue
+          WHERE phase=? AND chunk=? AND solver=? AND user=? AND machine=? AND received IS NULL
+      ''', (phase, chunk, self.solver, self.user, self.machine))
+      row = cur.fetchone()
+      if not row:
+        self.send_error('Chunk not assigned')
+        return
+
+      # Check the uploaded content matches the expected size and checksum.
+      bytesize, sha256sum = row
+      if len(decoded_content) != bytesize:
+        self.send_error('Incorrect file size')
+        return
+      if hashlib.sha256(decoded_content).digest() != sha256sum:
+        self.send_error('Incorrect SHA256 checksum')
+        return
+
+      # Save file.
+      with open(ChunkFilename(sha256sum), 'w+b') as f:
+        f.write(decoded_content)
+
+      # Store received timestamp.
+      self.con.execute('''
+          UPDATE WorkQueue
+          SET received=?
+          WHERE phase=? AND chunk=? AND received IS NULL
+      ''', (now, phase, chunk))
+
+    print('UploadChunk: received an upload!')
+    self.send_response({})
 
 if __name__ == "__main__":
-  server = Server(addr, RequestHandler)
+  server = Server(BIND_ADDR, RequestHandler)
   server.serve_forever()

@@ -1,4 +1,5 @@
 #include <array>
+#include <cassert>
 #include <iostream>
 #include <map>
 
@@ -35,12 +36,14 @@ int main(int argc, char *argv[]) {
       std::cerr << i << '\n';
     }
     if (chunks->size() > 0) {
-      std::array<uint8_t, 32> hash = {};
-      ErrorOr<bool> upload = client->ReportChunkComplete(phase, chunks->front(), 31337, hash);
-      if (!upload) {
-        std::cerr << "Failed to report chunk complete: " << upload.Error().message << std::endl;
+      byte_span_t content = byte_span_t("Hello, world!\n");
+      ErrorOr<size_t> result = client->SendChunk(phase, chunks->front(), content);
+      if (!result) {
+        std::cerr << "Failed to report chunk complete: " << result.Error().message << std::endl;
+      } else if (*result == 0) {
+        std::cerr << "Chunk reported! (But not uploaded.)" << std::endl;
       } else {
-        std::cerr << "Upload requested? " << (*upload ? "Yes!" : "No.") << std::endl;
+        std::cerr << "Chunk uploaded! (" << *result << " bytes after compression.)" << std::endl;
       }
     }
   }

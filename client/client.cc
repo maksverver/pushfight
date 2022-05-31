@@ -1,5 +1,7 @@
 #include "client.h"
 
+#include <openssl/sha.h>
+
 #include <cassert>
 #include <map>
 #include <string>
@@ -9,6 +11,7 @@
 #include "../chunks.h"
 #include "bytes.h"
 #include "codec.h"
+#include "compress.h"
 #include "socket.h"
 #include "socket_codec.h"
 
@@ -81,9 +84,25 @@ ErrorOr<std::vector<int>> Client::GetChunks(int phase) {
   }
 }
 
+ErrorOr<size_t> Client::SendChunk(int phase, int chunk, byte_span_t content) {
+  static_assert(SHA256_DIGEST_LENGTH == 32);
+  std::array<uint8_t, 32> hash;
+  SHA256(content.data(), content.size(), hash.data());
+
+  ErrorOr<bool> upload = ReportChunkComplete(phase, chunk, content.size(), hash);
+  if (upload.IsError()) {
+    return std::move(upload.Error());
+  }
+
+  if (!upload.Value()) {
+    return size_t{0};
+  }
+
+  return UploadChunk(phase, chunk, content);
+}
+
 ErrorOr<bool> Client::ReportChunkComplete(
-    int phase, int chunk, int64_t bytesize, const std::array<uint8_t, 32> &hash) {
-  assert(phase >= 0);
+    int phase, int chunk, int64_t bytesize, sha256sum_t &hash) {
   std::map<bytes_t, bytes_t> request;
   request[ToBytes("method")] = ToBytes("ReportChunkComplete");
   request[ToBytes("phase")] = EncodeInt(phase);
@@ -105,5 +124,31 @@ ErrorOr<bool> Client::ReportChunkComplete(
     return Error("Couldn't parse field 'upload'.");
   } else {
     return bool(upload);
+  }
+}
+
+ErrorOr<size_t> Client::UploadChunk(
+    int phase, int chunk, byte_span_t content) {
+  bytes_t compressed_bytes = Compress(content);
+  // Save this here because we will move out of `compressed_bytes` below.
+  const size_t compressed_size = compressed_bytes.size();
+
+  std::map<bytes_t, bytes_t> request;
+  request[ToBytes("method")] = ToBytes("UploadChunk");
+  request[ToBytes("phase")] = EncodeInt(phase);
+  request[ToBytes("chunk")] = EncodeInt(chunk);
+  request[ToBytes("encoding")] = ToBytes("zlib");
+  request[ToBytes("encoded_data")] = std::move(compressed_bytes);
+
+  if (!socket.SendAll(EncodeBytes(EncodeDict(request)))) {
+    return Error("Failed to send request");
+  } else if (std::optional<bytes_t> data = DecodeBytesFromSocket(socket); !data) {
+    return Error("No response");
+  } else if (auto response = DecodeDict(*data); !response) {
+    return Error("Couldn't parse response dictionary");
+  } else if (auto it = response->find(byte_span_t("error")); it != response->end()) {
+    return Error("Server returned error: \"" + ToString(it->second) + "\"");
+  } else {
+    return compressed_size;
   }
 }
