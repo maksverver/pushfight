@@ -1,3 +1,9 @@
+# Schema for the server.
+#
+# Create the database with:
+#
+#  sqlite3 chunks.db < chunks-schema.sql
+
 CREATE TABLE WorkQueue(
     phase INTEGER NOT NULL,
     chunk INTEGER NOT NULL,

@@ -1,6 +1,10 @@
 # Prints the content of the WorkQueue table in a human-readable format.
 #
 # Note that SHA256 sums are truncated!
+#
+# Run with:
+#
+#  sqlite3 chunks.db < chunks-print-WorkQueue.sql
 
 .mode column
 .headers on
