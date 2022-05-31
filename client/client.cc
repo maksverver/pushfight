@@ -1,5 +1,12 @@
 #include "client.h"
 
+#include <cassert>
+#include <map>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "../chunks.h"
 #include "bytes.h"
 #include "codec.h"
 #include "socket.h"
@@ -40,5 +47,63 @@ ErrorOr<Client> Client::Connect(
         (it == server_handshake->end() ? std::string("unknown") : ToString(it->second)));
   } else {
     return Client(std::move(*socket));
+  }
+}
+
+ErrorOr<std::vector<int>> Client::GetChunks(int phase) {
+  assert(phase >= 0);
+  std::map<bytes_t, bytes_t> request;
+  request[ToBytes("method")] = ToBytes("GetChunks");
+  request[ToBytes("phase")] = EncodeInt(phase);
+
+  if (!socket.SendAll(EncodeBytes(EncodeDict(request)))) {
+    return Error("Failed to send request");
+  } else if (std::optional<bytes_t> data = DecodeBytesFromSocket(socket); !data) {
+    return Error("No response");
+  } else if (auto response = DecodeDict(*data); !response) {
+    return Error("Couldn't parse response dictionary");
+  } else if (auto it = response->find(byte_span_t("error")); it != response->end()) {
+    return Error("Server returned error: \"" + ToString(it->second) + "\"");
+  } else if (auto it = response->find(byte_span_t("chunks")); it == response->end()) {
+    return Error("Response is missing field 'chunks'.");
+  } else if (auto parts = DecodeList(it->second); !parts) {
+    return Error("Couldn't parse field 'chunks'.");
+  } else {
+    std::vector<int> results;
+    for (const byte_span_t part : *parts) {
+      uint64_t i = DecodeInt(part);
+      if (i >= num_chunks) {
+        return Error("Server returned invalid chunk number!");
+      }
+      results.push_back(i);
+    }
+    return results;
+  }
+}
+
+ErrorOr<bool> Client::ReportChunkComplete(
+    int phase, int chunk, int64_t bytesize, const std::array<uint8_t, 32> &hash) {
+  assert(phase >= 0);
+  std::map<bytes_t, bytes_t> request;
+  request[ToBytes("method")] = ToBytes("ReportChunkComplete");
+  request[ToBytes("phase")] = EncodeInt(phase);
+  request[ToBytes("chunk")] = EncodeInt(chunk);
+  request[ToBytes("bytesize")] = EncodeInt(bytesize);
+  request[ToBytes("sha256sum")] = bytes_t(hash.begin(), hash.end());
+
+  if (!socket.SendAll(EncodeBytes(EncodeDict(request)))) {
+    return Error("Failed to send request");
+  } else if (std::optional<bytes_t> data = DecodeBytesFromSocket(socket); !data) {
+    return Error("No response");
+  } else if (auto response = DecodeDict(*data); !response) {
+    return Error("Couldn't parse response dictionary");
+  } else if (auto it = response->find(byte_span_t("error")); it != response->end()) {
+    return Error("Server returned error: \"" + ToString(it->second) + "\"");
+  } else if (auto it = response->find(byte_span_t("upload")); it == response->end()) {
+    return Error("Response is missing field 'upload'.");
+  } else if (auto upload = DecodeInt(it->second); upload > 1) {
+    return Error("Couldn't parse field 'upload'.");
+  } else {
+    return bool(upload);
   }
 }

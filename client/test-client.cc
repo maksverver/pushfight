@@ -1,3 +1,4 @@
+#include <array>
 #include <iostream>
 #include <map>
 
@@ -19,10 +20,28 @@ int main(int argc, char *argv[]) {
   };
   if (!ParseFlags(argc, argv, flags)) return 1;
 
-  ErrorOr<Client> client_or_error =
+  const int phase = 999;
+  ErrorOr<Client> client =
       Client::Connect(host.c_str(), port.c_str(), "test-client", user, machine);
-  if (!client_or_error) {
-    std::cerr << "Failed to connect: " << client_or_error.Error().message << std::endl;
+  if (!client) {
+    std::cerr << "Failed to connect: " << client.Error().message << std::endl;
     return 1;
+  }
+  if (auto chunks = client->GetChunks(phase); !chunks) {
+    std::cerr << "Failed to get chunks: " << chunks.Error().message << std::endl;
+  } else {
+    std::cerr << "Got chunks:\n";
+    for (int i: *chunks) {
+      std::cerr << i << '\n';
+    }
+    if (chunks->size() > 0) {
+      std::array<uint8_t, 32> hash = {};
+      ErrorOr<bool> upload = client->ReportChunkComplete(phase, chunks->front(), 31337, hash);
+      if (!upload) {
+        std::cerr << "Failed to report chunk complete: " << upload.Error().message << std::endl;
+      } else {
+        std::cerr << "Upload requested? " << (*upload ? "Yes!" : "No.") << std::endl;
+      }
+    }
   }
 }

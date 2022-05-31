@@ -29,6 +29,12 @@ public:
   T &Value() { return std::get<1>(value); }
   const T &Value() const { return std::get<1>(value); }
 
+  T &operator*() { return Value(); }
+  const T &operator*() const { return Value(); }
+
+  T *operator->() { return &Value(); }
+  const T *operator->() const { return &Value(); }
+
 private:
   std::variant<ErrorT, T> value;
 };

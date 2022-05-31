@@ -55,7 +55,7 @@ Request
 
   phase: integer
   chunk: integer
-  byte_size: integer
+  bytesize: integer
   sha256sum: bytestring (exactly 32 bytes)
 
 Response has exactly 1 part:
@@ -72,8 +72,6 @@ Request
 
   phase: integer
   chunk: integer
-  byte_size: int
-  sha256sum: bytestring
   encoding: bytestring ("deflate"?)
   encoded_data: bytestring
 

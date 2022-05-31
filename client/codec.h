@@ -15,7 +15,7 @@
 
 uint64_t DecodeInt(const uint8_t *data, size_t len);
 
-inline uint64_t DecodeInt(const bytes_t &data) {
+inline uint64_t DecodeInt(const byte_span_t &data) {
   return DecodeInt(data.data(), data.size());
 }
 
