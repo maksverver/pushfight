@@ -13,3 +13,7 @@ CC = x86_64-w64-mingw32-cc
 CXX = x86_64-w64-mingw32-c++
 LD = x86_64-w64-mingw32-c++
 CXXFLAGS += -static
+LDLIBS += -lws2_32
+
+clean:
+	rm -f *.exe *.o client/*.o client/*.exe
