@@ -1,0 +1,2 @@
+zlib (zlib1g-dev)
+libcrypto (libssl-dev)
