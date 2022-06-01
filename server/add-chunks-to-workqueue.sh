@@ -10,7 +10,7 @@ fi
 phase=$1
 input=../input/r${phase}.bin
 
-../count-r1 "$input" | stdbuf -oL head -100 | {
+../count-r1 "$input" | {
   echo 'BEGIN;'
 
   read line  # skip header line
