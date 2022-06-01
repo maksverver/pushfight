@@ -392,7 +392,7 @@ the phase will be fast, or we will discover a lot of lost positions, both of
 which are good.
 
 
-### Win in 2 (phase 3)
+### Loss in 2 (phase 3)
 
 In phase 3, we discovered 2,943,252,774 positions that were lost in 2 moves
 (or 4 turns). That's less than half of the number of losses discovered in
@@ -415,6 +415,18 @@ can respond with *e4-d2,d4-b2,d1-c1*:
 
 Blue has trapped red's round piece at *b1*. Note that the move *e4-d2* was
 necessary to protect the piece at *f1*.
+
+
+### Win in 3 (phase 4)
+
+In phase 4, we discovered 5,170,866,758 positions (14.8% of the remaining
+positions) that were won in 3 moves (or 5 turns). That's a lot less than in
+phase 2 (even relatively speaking), which suggests we are swowly getting
+closer to the fixed point.
+
+There are 29,666,437,884 tied positions remaining (85.2% of the result of
+after phase 3, or 78.5% after phase 2).
+
 
 ## Future work
 
