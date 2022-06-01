@@ -7,7 +7,7 @@
 #
 #  make -f Makefile.mingw
 
-include Makefile
+include Makefile.defs
 
 CC = x86_64-w64-mingw32-cc
 CXX = x86_64-w64-mingw32-c++
@@ -15,8 +15,13 @@ LD = x86_64-w64-mingw32-c++
 CXXFLAGS += -static
 LDLIBS += -lws2_32
 
+all: $(BINARIES) $(TESTS)
+
 clean:
-	rm -f *.exe *.o client/*.o client/*.exe
+	rm -f $(addsuffix .exe,$(BINARIES) $(TESTS))
+	rm -f -R deps obj
 
 dist: all
 	zip pushfight-windows-$$(date +%Y-%m-%d)-$$(git rev-parse --short HEAD).zip *.exe *.py *.sh client/*.exe
+
+include Makefile.rules

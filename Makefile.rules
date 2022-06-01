@@ -1,0 +1,100 @@
+# Disable default rules (which makes it easier to debug Makefile problems)
+.SUFFIXES:
+
+# Logic for automatic dependency generation below has been borrowed from:
+# http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+
+$(OBJDIR)/%.o : %.c $(DEPDIR)/%.d | $(DEPDIR)/ $(OBJDIR)/
+	$(CC) -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/%.o : %.cc $(DEPDIR)/%.d | $(DEPDIR)/ $(OBJDIR)/
+	$(CXX) -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d  $(CXXFLAGS) -c -o $@ $<
+ 
+$(OBJDIR)/client/%.o : client/%.cc $(DEPDIR)/client/%.d | $(DEPDIR)/client/ $(OBJDIR)/client/
+	$(CXX) -MT $@ -MMD -MP -MF $(DEPDIR)/client/$*.d $(CXXFLAGS) -c -o $@ $<
+ 
+deps/: ; mkdir -p $@
+deps/client/: ; mkdir -p $@
+objs/: ; mkdir -p $@
+objs/client/: ; mkdir -p $@
+
+DEPFILES := $(C_SRCS:%.c=$(DEPDIR)/%.d) $(CXX_SRCS:%.cc=$(DEPDIR)/%.d)
+
+$(DEPFILES):
+
+include $(wildcard $(DEPFILES))
+
+# Rules to build tests follow.
+
+perms_test: $(OBJDIR)/perms_test.o $(OBJDIR)/perms.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+search_test: $(OBJDIR)/search_test.o $(OBJDIR)/search.o $(OBJDIR)/board.o $(OBJDIR)/perms.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+ternary_test: $(OBJDIR)/ternary_test.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+# Rules to build binaries follow.
+
+backpropagate-losses: $(OBJDIR)/backpropagate-losses.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+count-bits: $(OBJDIR)/count-bits.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+count-r1: $(OBJDIR)/count-r1.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+count-unreachable: $(OBJDIR)/count-unreachable.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+combine-bitmaps: $(OBJDIR)/combine-bitmaps.o
+	$(CC) $(CCFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+decode-delta: $(OBJDIR)/decode-delta.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+encode-delta: $(OBJDIR)/encode-delta.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+integrate-wins: $(OBJDIR)/integrate-wins.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+lookup-rN: $(OBJDIR)/lookup-rN.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+minimax: $(OBJDIR)/minimax.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+print-perm: $(OBJDIR)/print-perm.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+solve-r0: $(OBJDIR)/solve-r0.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+solve-r1: $(OBJDIR)/solve-r1.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+solve-rN: $(OBJDIR)/solve-rN.o $(COMMON_OBJS) $(CLIENT_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(CLIENT_LDLIBS)
+
+solve-lost: $(OBJDIR)/solve-lost.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+verify-r0: $(OBJDIR)/verify-r0.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+verify-r1: $(OBJDIR)/verify-r1.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+verify-rN: $(OBJDIR)/verify-rN.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+print-r1: $(OBJDIR)/print-r1.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+client/test-client: $(OBJDIR)/client/test-client.o $(COMMON_OBJS) $(CLIENT_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(CLIENT_LDLIBS)
+
+# EOF

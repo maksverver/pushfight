@@ -1,0 +1,19 @@
+COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -march=native -flto -pthread
+CFLAGS=$(COMMON_FLAGS) -std=c17
+CXXFLAGS=$(COMMON_FLAGS) -std=c++20
+LDFLAGS=
+LDLIBS=-lpthread -lm
+CLIENT_LDLIBS=-lcrypto -lz
+
+COMMON_OBJS=$(addprefix $(OBJDIR)/,accessors.o codec.o flags.o parse-int.o perms.o board.o chunks.o search.o)
+CLIENT_OBJS=$(addprefix $(OBJDIR)/client/,codec.o compress.o client.o socket.o socket_codec.o)
+BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN print-perm solve-rN verify-rN print-r1 client/test-client
+OLD_BINARIES=minimax solve-lost solve-r0 solve-r1 verify-r0 verify-r1
+ALL_BINARIES=$(BINARIES) $(OLD_BINARIES)
+TESTS=perms_test search_test ternary_test
+
+C_SRCS = $(wildcard *.c)
+CXX_SRCS = $(wildcard *.cc client/*.cc)
+
+DEPDIR := deps
+OBJDIR := objs
