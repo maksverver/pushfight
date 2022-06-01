@@ -6,6 +6,7 @@ import socket
 import socketserver
 import sqlite3
 import os
+import sys
 import time
 import zlib
 
@@ -101,6 +102,11 @@ class RequestHandler(socketserver.BaseRequestHandler):
   def finish(self):
     print("{}: {} disconnected".format(datetime.now(), self.client_address[0]))
     self.con.close()
+
+    # When running as a systemd service, stdout is buffered. Flush after each
+    # request to make sure we can see any informational messages printed.
+    # Note that stderr is still unbuffered.
+    sys.stdout.flush()
 
   def send_response(self, response_dict):
     self.request.sendall(EncodeBytes(EncodeDict(response_dict)))
