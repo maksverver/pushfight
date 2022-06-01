@@ -14,9 +14,11 @@ input=../input/r${phase}.bin
   echo 'BEGIN;'
 
   read line  # skip header line
-  while read chunk ties losses wins total; do
-    echo "$chunk $ties" >&2
-    echo "INSERT INTO WorkQueue (phase, chunk, difficulty) VALUES ($phase, $chunk, $ties);"
+  while read chunk ties losses wins total ; do
+    if [ $chunk -ge 0 ]; then
+        echo "$chunk $ties" >&2
+        echo "INSERT INTO WorkQueue (phase, chunk, difficulty) VALUES ($phase, $chunk, $ties);"
+    fi
   done
 
   echo 'COMMIT;'
