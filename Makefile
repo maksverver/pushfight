@@ -81,7 +81,7 @@ solve-r0: solve-r0.cc $(COMMON_OBJS)
 solve-r1: solve-r1.cc $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
-solve-rN: solve-rN.cc $(COMMON_OBJS)
+solve-rN: solve-rN.cc $(COMMON_OBJS) $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 solve-lost: solve-lost.cc $(COMMON_OBJS)
