@@ -1,4 +1,7 @@
-/*.o
+/deps/*.d
+/deps/client/*.d
+/objs/*.o
+/objs/client/*.o
 /backpropagate-losses
 /combine-bitmaps
 /count-bits
