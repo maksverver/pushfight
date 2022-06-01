@@ -12,10 +12,11 @@
 .nullvalue NULL
 
 SELECT 
-    phase, chunk, solver, user, machine,
+    phase, chunk, difficulty,
+    solver, user, machine,
     datetime(assigned, 'unixepoch') AS assigned,
     datetime(completed, 'unixepoch') AS completed,
     datetime(received, 'unixepoch') AS received,
     bytesize,
     lower(substr(hex(sha256sum), 1, 16)) AS sha256sum
-FROM WorkQueue
+FROM WorkQueue;

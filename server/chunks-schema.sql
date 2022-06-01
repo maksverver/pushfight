@@ -8,6 +8,8 @@ CREATE TABLE WorkQueue(
     phase INTEGER NOT NULL,
     chunk INTEGER NOT NULL,
 
+    difficulty INTEGER,
+
     solver TEXT,
     user TEXT,
     machine TEXT,
