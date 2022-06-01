@@ -17,5 +17,5 @@ SELECT
     datetime(completed, 'unixepoch') AS completed,
     datetime(received, 'unixepoch') AS received,
     bytesize,
-    lower(substr(hex(sha256sum), 0, 16)) AS sha256sum
+    lower(substr(hex(sha256sum), 1, 16)) AS sha256sum
 FROM WorkQueue
