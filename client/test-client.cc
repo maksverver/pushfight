@@ -23,12 +23,12 @@ int main(int argc, char *argv[]) {
 
   const int phase = 999;
   ErrorOr<Client> client =
-      Client::Connect(host.c_str(), port.c_str(), "test-client", user, machine);
+      Client::Connect(phase, host.c_str(), port.c_str(), "test-client", user, machine);
   if (!client) {
     std::cerr << "Failed to connect: " << client.Error().message << std::endl;
     return 1;
   }
-  if (auto chunks = client->GetChunks(phase); !chunks) {
+  if (auto chunks = client->GetChunks(); !chunks) {
     std::cerr << "Failed to get chunks: " << chunks.Error().message << std::endl;
   } else {
     std::cerr << "Got chunks:\n";
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     }
     if (chunks->size() > 0) {
       byte_span_t content = byte_span_t("Hello, world!\n");
-      ErrorOr<size_t> result = client->SendChunk(phase, chunks->front(), content);
+      ErrorOr<size_t> result = client->SendChunk(chunks->front(), content);
       if (!result) {
         std::cerr << "Failed to report chunk complete: " << result.Error().message << std::endl;
       } else if (*result == 0) {

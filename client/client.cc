@@ -30,8 +30,10 @@ std::map<bytes_t, bytes_t> CreateClientHandshake(
 }  // namespace
 
 ErrorOr<Client> Client::Connect(
-    const char *hostname, const char *portname,
+    int phase, const char *hostname, const char *portname,
     std::string_view solver, std::string_view user, std::string_view machine) {
+  assert(phase >= 0);
+
   std::optional<Socket> socket = Socket::Connect(hostname, portname);
   if (!socket) {
     return Error("Failed to connect");
@@ -49,12 +51,11 @@ ErrorOr<Client> Client::Connect(
     return Error("Unsupported server protocol: " +
         (it == server_handshake->end() ? std::string("unknown") : ToString(it->second)));
   } else {
-    return Client(std::move(*socket));
+    return Client(phase, std::move(*socket));
   }
 }
 
-ErrorOr<std::vector<int>> Client::GetChunks(int phase) {
-  assert(phase >= 0);
+ErrorOr<std::vector<int>> Client::GetChunks() {
   std::map<bytes_t, bytes_t> request;
   request[ToBytes("method")] = ToBytes("GetChunks");
   request[ToBytes("phase")] = EncodeInt(phase);
@@ -84,12 +85,12 @@ ErrorOr<std::vector<int>> Client::GetChunks(int phase) {
   }
 }
 
-ErrorOr<size_t> Client::SendChunk(int phase, int chunk, byte_span_t content) {
+ErrorOr<size_t> Client::SendChunk( int chunk, byte_span_t content) {
   static_assert(SHA256_DIGEST_LENGTH == 32);
   std::array<uint8_t, 32> hash;
   SHA256(content.data(), content.size(), hash.data());
 
-  ErrorOr<bool> upload = ReportChunkComplete(phase, chunk, content.size(), hash);
+  ErrorOr<bool> upload = ReportChunkComplete(chunk, content.size(), hash);
   if (upload.IsError()) {
     return std::move(upload.Error());
   }
@@ -98,11 +99,11 @@ ErrorOr<size_t> Client::SendChunk(int phase, int chunk, byte_span_t content) {
     return size_t{0};
   }
 
-  return UploadChunk(phase, chunk, content);
+  return UploadChunk(chunk, content);
 }
 
 ErrorOr<bool> Client::ReportChunkComplete(
-    int phase, int chunk, int64_t bytesize, sha256sum_t &hash) {
+    int chunk, int64_t bytesize, sha256sum_t &hash) {
   std::map<bytes_t, bytes_t> request;
   request[ToBytes("method")] = ToBytes("ReportChunkComplete");
   request[ToBytes("phase")] = EncodeInt(phase);
@@ -128,7 +129,7 @@ ErrorOr<bool> Client::ReportChunkComplete(
 }
 
 ErrorOr<size_t> Client::UploadChunk(
-    int phase, int chunk, byte_span_t content) {
+    int chunk, byte_span_t content) {
   bytes_t compressed_bytes = Compress(content);
   // Save this here because we will move out of `compressed_bytes` below.
   const size_t compressed_size = compressed_bytes.size();
