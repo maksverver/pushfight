@@ -16,8 +16,8 @@ from codec import *
 MAX_CHUNK_BYTESIZE = 10810800
 
 BIND_ADDR = ('', 7429)
-WORK_EXPIRATION_SECONDS = 2*60*60  # 2 hour
-MAX_CHUNKS_PER_MACHINE = 10
+WORK_EXPIRATION_SECONDS = 2*60*60  # 4 hours
+MAX_CHUNKS_PER_MACHINE = 4
 
 # For local testing:
 #BIND_ADDR = ('localhost', 7429)
