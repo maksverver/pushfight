@@ -10,9 +10,9 @@
 SELECT
     phase,
     SUM(difficulty) AS total,
-    SUM(completed * (completed IS NOT NULL)) AS completed,
+    SUM(difficulty * (completed IS NOT NULL)) AS completed,
     SUM(difficulty * (completed IS NULL)) AS remaining,
-    SUM(assigned * (completed IS NULL AND assigned IS NOT NULL)) AS assigned
+    SUM(difficulty * (completed IS NULL AND assigned IS NOT NULL)) AS assigned
 FROM WorkQueue
 GROUP BY phase
 ORDER BY phase;
