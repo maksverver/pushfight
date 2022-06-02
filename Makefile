@@ -1,7 +1,6 @@
 include Makefile.defs
 
 all: $(ALL_BINARIES) $(TESTS)
-	echo "$(ALL_BINARIES)"
 
 test: $(TESTS)
 	./perms_test
