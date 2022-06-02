@@ -8,7 +8,12 @@ if [ $# -ne 1 ]; then
 fi
 
 phase=$1
-input=../input/r${phase}.bin
+input=../input/r$(expr $phase - 1).bin
+
+if ! test -f "$input"; then
+    echo "Missing input file: $input"
+    exit 1
+fi
 
 ../count-r1 "$input" | {
   echo 'BEGIN;'
