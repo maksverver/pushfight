@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+import http.server
 import hashlib
 import socket
 import socketserver
@@ -8,6 +9,7 @@ import sqlite3
 import os
 import sys
 import time
+import threading
 import zlib
 
 from codec import *
@@ -16,6 +18,7 @@ from codec import *
 MAX_CHUNK_BYTESIZE = 10810800
 
 BIND_ADDR = ('', 7429)
+HTTP_BIND_ADDR = ('', 7430)
 WORK_EXPIRATION_SECONDS = 2*60*60  # 4 hours
 MAX_CHUNKS_PER_MACHINE = 4
 
@@ -225,6 +228,73 @@ class RequestHandler(socketserver.BaseRequestHandler):
     print('UploadChunk: received an upload!')
     self.send_response({})
 
+
+class HttpServer(http.server.ThreadingHTTPServer):
+  allow_reuse_address = True
+
+  # Bind on an IPv6 address. This should also work with IPv4 on dualstack
+  # systems. To listen only on IPv4, change the value to AF_INET.
+  address_family = socket.AF_INET6
+
+
+class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
+  def do_GET(self):
+    con = ConnectDb()
+    try:
+      self.send_response(200)
+      self.send_header('Content-type', 'text/plain')
+      self.end_headers()
+      now = time.time()
+      for (
+        phase, chunks_total, chunks_assigned, chunks_completed,
+        difficulty_total, difficulty_assigned, difficulty_completed
+      ) in con.execute('''
+          SELECT
+            phase,
+            COUNT(*) AS total_chunks,
+            SUM(assigned IS NOT NULL and assigned >= ?) AS assigned_chunks,
+            SUM(completed IS NOT NULL) AS completed_chunks,
+            SUM(difficulty) AS total_difficulty,
+            SUM(difficulty*(assigned IS NOT NULL and assigned >= ?)) AS assigned_difficulty,
+            SUM(difficulty*(completed IS NOT NULL)) AS completed_difficulty
+          FROM WorkQueue
+          GROUP BY phase
+          ORDER BY phase
+      ''', (now - WORK_EXPIRATION_SECONDS, now - WORK_EXPIRATION_SECONDS)):
+        chunks_remaining = chunks_total - chunks_completed - chunks_assigned
+        message = '''Phase %d:
+
+  Chunks completed: %d/%d (%.2f%%)
+  Chunks assigned: %d/%d (%.2f%%)
+  Chunks remaining: %d/%d (%.2f%%)
+''' % (phase,
+  chunks_completed, chunks_total, 100.0*chunks_completed/chunks_total,
+  chunks_assigned, chunks_total, 100.0*chunks_assigned/chunks_total,
+  chunks_remaining, chunks_total, 100.0*chunks_remaining/chunks_total)
+
+        if difficulty_total is not None:
+          difficulty_remaining = difficulty_total - difficulty_completed - difficulty_assigned
+          message += '''
+  Permutations completed: %d/%d (%.2f%%)
+  Permutations assigned: %d/%d (%.2f%%)
+  Permutations remaining: %d/%d (%.2f%%)
+''' % (
+  difficulty_completed, difficulty_total, 100.0*difficulty_completed/difficulty_total,
+  difficulty_assigned, difficulty_total, 100.0*difficulty_assigned/difficulty_total,
+  difficulty_remaining, difficulty_total, 100.0*difficulty_remaining/difficulty_total)
+        message += '\n'
+        self.wfile.write(bytes(message, 'utf-8'))
+    finally:
+      con.close()
+
+
+def run_http_server():
+  with HttpServer(HTTP_BIND_ADDR, HttpRequestHandler) as httpd:
+    httpd.serve_forever()
+
+
 if __name__ == "__main__":
+  if HTTP_BIND_ADDR is not None:
+    threading.Thread(target=run_http_server, daemon=True).start()
   server = Server(BIND_ADDR, RequestHandler)
   server.serve_forever()
