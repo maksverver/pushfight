@@ -117,6 +117,12 @@ class RequestHandler(socketserver.BaseRequestHandler):
 
   def handle_get_chunks(self, info):
     phase = DecodeInt(info.get(b'phase'))
+
+    # Check solver is correct (except for phase == 999, which is used for testing).
+    if phase != 999 and self.solver != 'solve-rN-v0.0.0':
+      self.send_error('Invalid solver for phase')
+      return
+
     now = time.time()
     with self.con:
       chunks = [chunk for (chunk,) in self.con.execute('''
