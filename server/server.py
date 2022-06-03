@@ -122,7 +122,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
     phase = DecodeInt(info.get(b'phase'))
 
     # Check solver is correct (except for phase == 999, which is used for testing).
-    if phase != 999 and self.solver != 'solve-rN-v0.0.0':
+    if phase != 999 and self.solver != 'solve-rN-v0.1.0':
       self.send_error('Invalid solver for phase')
       return
 
