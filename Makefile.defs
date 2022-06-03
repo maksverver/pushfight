@@ -7,7 +7,7 @@ CLIENT_LDLIBS=-lz
 
 COMMON_OBJS=$(addprefix $(OBJDIR)/,accessors.o codec.o flags.o hash.o parse-int.o perms.o board.o chunks.o search.o)
 CLIENT_OBJS=$(addprefix $(OBJDIR)/client/,codec.o compress.o client.o socket.o socket_codec.o)
-BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta integrate-wins lookup-rN print-perm solve-rN verify-rN print-r1 client/test-client
+BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta fix-r4-bin integrate-wins lookup-rN print-perm solve-rN verify-rN print-r1 client/test-client
 OLD_BINARIES=minimax solve-lost solve-r0 solve-r1 verify-r0 verify-r1
 ALL_BINARIES=$(BINARIES) $(OLD_BINARIES)
 TESTS=perms_test search_test ternary_test

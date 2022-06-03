@@ -182,7 +182,7 @@ public:
   }
 
 private:
-  MutableMappedFile<uint8_t, chunk_size/5> map;
+  MutableMappedFile<uint8_t, total_perms/5> map;
 };
 
 // Accessor wrapper that wraps get() and set() calls with a mutex guard.
