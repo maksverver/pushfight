@@ -3,6 +3,7 @@ include Makefile.defs
 all: $(ALL_BINARIES) $(TESTS)
 
 test: $(TESTS)
+	./efcodec_test
 	./perms_test
 	./search_test
 	./ternary_test

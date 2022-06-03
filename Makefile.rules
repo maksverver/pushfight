@@ -26,6 +26,9 @@ include $(wildcard $(DEPFILES))
 
 # Rules to build tests follow.
 
+efcodec_test: $(OBJDIR)/efcodec_test.o $(OBJDIR)/efcodec.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 perms_test: $(OBJDIR)/perms_test.o $(OBJDIR)/perms.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
