@@ -21,7 +21,7 @@ range of integers. We could still use rotations to speed up calculations by
 (at most) a factor 2, but it's not clear it's worth the complexity.
 
 401567166000 permutations
-401567166000 = 2^4 × 3^3 × 5^3 × 7 × 11 × 13
+401567166000 = 2^4 × 3^3 × 5^3 × 7 × 11 × 13 × 17 × 19 × 23
 
 401567166000 = 7429 × 54054000
 
