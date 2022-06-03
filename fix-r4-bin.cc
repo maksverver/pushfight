@@ -2167,7 +2167,7 @@ constexpr int64_t indices[] = {
 
 int main() {
   const char *filename = "input/r4.bin";
-  MutableRnAccessor acc("input/r4.bin");
+  MutableRnAccessor acc(filename);
   std::cout << "Attempting to fix " << filename << "..." << std::endl;
   int flips = 0;
   for (int64_t i : indices) {
