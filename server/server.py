@@ -258,10 +258,10 @@ class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
           SELECT
             phase,
             COUNT(*) AS total_chunks,
-            SUM(assigned IS NOT NULL and assigned >= ?) AS assigned_chunks,
+            SUM(completed IS NULL AND assigned IS NOT NULL AND assigned >= ?) AS assigned_chunks,
             SUM(completed IS NOT NULL) AS completed_chunks,
             SUM(difficulty) AS total_difficulty,
-            SUM(difficulty*(assigned IS NOT NULL and assigned >= ?)) AS assigned_difficulty,
+            SUM(difficulty*(completed IS NULL AND assigned IS NOT NULL and assigned >= ?)) AS assigned_difficulty,
             SUM(difficulty*(completed IS NOT NULL)) AS completed_difficulty
           FROM WorkQueue
           GROUP BY phase
