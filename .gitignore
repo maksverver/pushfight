@@ -9,6 +9,7 @@
 /count-r1
 /decode-delta
 /encode-delta
+/fix-r4-bin
 /integrate-wins
 /lookup-rN
 /minimax
