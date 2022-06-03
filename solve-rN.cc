@@ -45,7 +45,7 @@ private:
 
 namespace {
 
-constexpr std::string solver_id = "solve-rN-v0.1.0";
+const std::string solver_id = "solve-rN-v0.1.0";
 
 // These are SHA256 sums of r4.bin (the input to phase 5).
 constexpr std::pair<int, const char *> phase_5_chunk_hashes[] = {
