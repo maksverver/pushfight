@@ -11,7 +11,7 @@
 namespace {
 
 void DumpPerm(const Perm &perm) {
-  std::cout << perm << std::endl;
+  std::cout << IndexOf(perm) << '\n' << perm << std::endl;
 
   std::cout << "This position is " << (IsReachable(perm) ? "likely" : "NOT") << " reachable.\n\n";
 
@@ -19,15 +19,17 @@ void DumpPerm(const Perm &perm) {
 
   Outcome o = LOSS;
   GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
-    std::cout << moves << std::endl;
-    std::cout << state << std::endl;
+    std::cout << moves << '\n';
+    std::cout << IndexOf(state.perm) << '\n';
+    std::cout << state << '\n';
     o = MaxOutcome(o, Invert(state.outcome));
     return true;
   });
 
   std::cout << "Predecessors:\n\n";
-  GeneratePredecessors(perm, [](const Perm &perm) {
-    std::cout << perm << "\n";
+  GeneratePredecessors(perm, [](const Perm &pred) {
+    std::cout << IndexOf(pred) << '\n';
+    std::cout << pred << "\n";
   });
 
   std::cout << "Verdict: " << (o == WIN ? "win" : o == LOSS ? "loss" : "tie") << std::endl;
@@ -64,7 +66,6 @@ int main(int argc, char *argv[]) {
         perm[i] = ch == 'o' ? WHITE_MOVER : ch == 'O' ? WHITE_PUSHER : ch == 'x' ? BLACK_MOVER :
             ch == 'X' ? BLACK_PUSHER : ch == 'Y' ? BLACK_ANCHOR : EMPTY;
       }
-      std::cout << "Permutation index: " << IndexOf(perm) << std::endl;
       DumpPerm(perm);
     }
   } else {
