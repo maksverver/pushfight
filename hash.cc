@@ -40,5 +40,5 @@ std::optional<sha256_hash_t> HexDecode(std::string_view s) {
     if (hi < 0 || lo < 0) return {};
     result[i] = (hi << 4) | lo;
   }
-  return std::move(result);
+  return result;
 }
