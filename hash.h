@@ -2,8 +2,11 @@
 #define HASH_H_INCLUDED
 
 #include <array>
+#include <optional>
 #include <cstdlib>
 #include <cstdint>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include "byte_span.h"
@@ -21,5 +24,8 @@ inline sha256_hash_t ComputeSha256(byte_span_t data) {
   ComputeSha256(data.data(), data.size(), result);
   return result;
 }
+
+std::string HexEncode(sha256_hash_t hash);
+std::optional<sha256_hash_t> HexDecode(std::string_view s);
 
 #endif  // ndef HASH_H_INCLUDED

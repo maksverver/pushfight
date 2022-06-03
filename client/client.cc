@@ -1,15 +1,14 @@
 #include "client.h"
 
-#include <openssl/sha.h>
-
 #include <cassert>
 #include <map>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "../bytes.h"
 #include "../chunks.h"
-#include "bytes.h"
+#include "../hash.h"
 #include "codec.h"
 #include "compress.h"
 #include "socket.h"
@@ -85,10 +84,8 @@ ErrorOr<std::vector<int>> Client::GetChunks() {
   }
 }
 
-ErrorOr<size_t> Client::SendChunk( int chunk, byte_span_t content) {
-  static_assert(SHA256_DIGEST_LENGTH == 32);
-  std::array<uint8_t, 32> hash;
-  SHA256(content.data(), content.size(), hash.data());
+ErrorOr<size_t> Client::SendChunk(int chunk, byte_span_t content) {
+  sha256_hash_t hash = ComputeSha256(content);
 
   ErrorOr<bool> upload = ReportChunkComplete(chunk, content.size(), hash);
   if (upload.IsError()) {

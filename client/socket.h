@@ -6,7 +6,7 @@
 
 #include <unistd.h>
 
-#include "bytes.h"
+#include "../bytes.h"
 
 class Socket {
 public:

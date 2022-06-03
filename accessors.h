@@ -123,6 +123,9 @@ public:
 
 private:
   MappedFile<uint8_t, filesize> map;
+
+  // Allow access to the mapped file to enable checksum verification.
+  friend class ChunkVerifier;
 };
 
 class RnAccessor : public RnAccessorBase<total_perms/5> {

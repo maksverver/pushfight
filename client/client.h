@@ -6,7 +6,7 @@
 #include <string_view>
 #include <vector>
 
-#include "bytes.h"
+#include "../bytes.h"
 #include "error.h"
 #include "socket.h"
 

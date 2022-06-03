@@ -1,7 +1,7 @@
 #ifndef COMPRESS_H_INCLUDED
 #define COMPRESS_H_INCLUDED
 
-#include "bytes.h"
+#include "../bytes.h"
 
 // Compress bytes with zlib (DEFLATE + zlib stream header).
 //
