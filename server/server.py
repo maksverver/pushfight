@@ -237,6 +237,12 @@ class HttpServer(http.server.ThreadingHTTPServer):
   address_family = socket.AF_INET6
 
 
+def ProgressBar(done, total):
+  size = 100
+  x = 100 * done // total
+  return x*'#' + (size - x)*'.'
+
+
 class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
   def do_GET(self):
     con = ConnectDb()
@@ -267,10 +273,13 @@ class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
   Chunks completed: %d/%d (%.2f%%)
   Chunks assigned: %d/%d (%.2f%%)
   Chunks remaining: %d/%d (%.2f%%)
+
+  [%s]
 ''' % (phase,
   chunks_completed, chunks_total, 100.0*chunks_completed/chunks_total,
   chunks_assigned, chunks_total, 100.0*chunks_assigned/chunks_total,
-  chunks_remaining, chunks_total, 100.0*chunks_remaining/chunks_total)
+  chunks_remaining, chunks_total, 100.0*chunks_remaining/chunks_total,
+  ProgressBar(chunks_completed, chunks_total))
 
         if difficulty_total is not None:
           difficulty_remaining = difficulty_total - difficulty_completed - difficulty_assigned
@@ -278,10 +287,13 @@ class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
   Permutations completed: %d/%d (%.2f%%)
   Permutations assigned: %d/%d (%.2f%%)
   Permutations remaining: %d/%d (%.2f%%)
+
+  [%s]
 ''' % (
   difficulty_completed, difficulty_total, 100.0*difficulty_completed/difficulty_total,
   difficulty_assigned, difficulty_total, 100.0*difficulty_assigned/difficulty_total,
-  difficulty_remaining, difficulty_total, 100.0*difficulty_remaining/difficulty_total)
+  difficulty_remaining, difficulty_total, 100.0*difficulty_remaining/difficulty_total,
+  ProgressBar(difficulty_completed, difficulty_total))
         message += '\n'
         self.wfile.write(bytes(message, 'utf-8'))
     finally:
