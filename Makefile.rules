@@ -70,6 +70,9 @@ fix-r4-bin: $(OBJDIR)/fix-r4-bin.o $(COMMON_OBJS)
 integrate-wins: $(OBJDIR)/integrate-wins.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+integrate-wins2: $(OBJDIR)/integrate-wins2.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 lookup-rN: $(OBJDIR)/lookup-rN.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 

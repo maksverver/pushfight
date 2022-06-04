@@ -55,7 +55,7 @@ const std::string PhaseInputFilename(int phase) {
 
 const std::string ChunkOutputFilename(int phase, int chunk) {
   std::ostringstream oss;
-  oss << "output/chunk-r" << phase << "-" << chunk << "-wins.bin";
+  oss << "output/chunk-r" << phase << "-" << std::setfill('0') << std::setw(4) << chunk << "-wins.bin";
   return oss.str();
 }
 
