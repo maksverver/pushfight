@@ -39,7 +39,7 @@
 
 namespace {
 
-const char *solver_id = "backpropagate-2-v0.1.1";
+const char *solver_id = "backpropagate2-v0.1.1";
 
 // Number of threads to use for calculations. 0 to disable multithreading.
 int num_threads = std::thread::hardware_concurrency();
