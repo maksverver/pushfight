@@ -1,0 +1,52 @@
+Phase 5: chunk 2671 incorrectly computed!
+
+$ sha256sum chunk-r5-2671.bin.bak chunk-r5-2671.bin
+5f1549e77c455bb141911cf5fcac8a1fe835e709dccaf6b8b5b5ce63d858b972  chunk-r5-2671.bin.bak
+074d323f15d9b75a9781e89e5b6a7f7d331b0e4211389ef092db9bbcbc514882  chunk-r5-2671.bin (correct)
+
+Detected by comparing chunk r4 and chunk r5 counts: the number of wins decreased
+while it should have remained the same.
+
+Per-chunk counts were useful to identify the corrupted chunk.
+
+Recomputing it locally gave the correct counts.
+
+Submitted:  6642252 ties, 43862513 wins.
+Recomputed: 6642244 ties, 43862521 wins.
+
+i.e. 8 wins were gone! (Note that phase 5 only computed losses, the wins should
+have been copied.)
+
+Hexadecimal diffs:
+
+< 00929960: 2c78 1100 4a50 f2f2 a4f2 a4f2 bcf2 50de  ,x..JP........P.
+> 00929960: 2c7a 1106 4a50 f2f2 a4f2 a4f2 bcf2 50de  ,z..JP........P.
+
+< 0092c410: ea00 124e f000 a2f0 0000 210c 0600 3600  ...N......!...6.
+> 0092c410: ea12 124e f000 a2f0 0000 210c 0600 3600  ...N......!...6.
+
+< 00931a90: f0f0 ef08 f208 f2f2 f212 ea50 f21a d8f0  ...........P....
+> 00931a90: f0f0 ef08 f208 f2f2 f2f2 eaf2 f21a d8f0  ................
+
+Note 5 bytes are wrong.
+
+Ternary diffs (note 8 changes from T to W)
+
+< 048037600: WWLLT TLLLL WWLTT TTTTT WTWWT WWWWT WWWWW WWWWW WTTTW WWWWW
+> 048037600: WWLLT WLLLL WWLTT TWTTT WTWWT WWWWT WWWWW WWWWW WTTTW WWWWW
+
+< 048092200: TTWLL TTTWL LLWWW WWTTT WWWWW WWTTT WWWWW WWWWT TTWWW TTTTT
+> 048092200: TTWLL TTTWL LLWWW WWTTT WWWWW WWTTT WWWWW WWWWT TTWWW TTWTT
+
+< 048203000: WWWWW TTWTT TTWWW WWWWT WWWWW WWWTT TTTWW TWWWW TTWTW WWWTT
+> 048203000: WWWWW WWWWW TTWWW WWWWW WWWWW WWWTT TTTWW TWWWW TTWTW WWWTT
+
+From the WorkQueue:
+
+5      2671   7613217     solve-rN-v0.1.0  [DPC] hansR  dbgrensenh30  2022-06-03 23:07:53  2022-06-03 23:07:53  NULL 10810800  5f1549e77c455bb1
+
+Interesting is that the file was not uploaded! So probably it was already wrong before the reset.
+
+Note that these errors can be detected more reliably with encode-delta:
+./encode-delta input/r4.bin input/r5.bin > /dev/null
+Invalid transition at index 144426271605: WIN -> TIE

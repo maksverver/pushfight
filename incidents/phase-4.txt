@@ -1,0 +1,18 @@
+r4.bin input is incorrect
+
+Detected by Dylan during phase 5.
+
+perm: 131851620602
+pred: 101294775009  (pred is marked LOSS but 'perm' is not marked WIN!)
+
+Dylan reported: failing input chunks are 2439 and 2505.
+
+That means not all losses were propagated correctly!
+Predecessor is from chunk 1873.
+
+Chunk 1873 was marked completed in r4-wins.bin, but forcing a rerun found some
+more wins. Not sure how that's possible (data loss on system restart?)
+
+Resolution:
+I forced a rerun (./backpropgate-losses 4 1873 1874, commenting out the check
+for chunks that are already done), regenerated r4-bin, and restarted phase 5.
