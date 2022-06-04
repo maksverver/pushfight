@@ -45,6 +45,10 @@ constexpr std::pair<int, const char*> r4_chunk_hashes[] = {
   {3603, "ab109a5e233114d49ca0110f5769c5f5107d14b5ac063d394683e733507b951b"},
   {4898, "a2e7804978dc9048b60d5acb41eece77dfe0766512bbedd358b409c111a55bf9"},
   {5824, "1d203d24cc6fb9ffbc606678b321740418293e2bb7a1da141e8bec86287eeae6"},
+
+  // Chunk that was possibly corrupted on 1 machine during phase 5?
+  // See incidents/phase-5.txt for details.
+  {2671, "797d266e799544af8cfe14488ec1b417fc0a7a1da52b0676eb1f94497a64c0db"},
 };
 
 // SHA256 checksums of chunks of r5.bin
