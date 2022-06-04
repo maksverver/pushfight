@@ -22,6 +22,9 @@
 //
 // This encoding packs N integers between 0 and M (exclusive) into
 // N * (2 + ceil(log(M/N, 2))) bits, which is close to optimal.
+//
+// k specifies the number of tail bits to use. Normally it should be left at -1
+// which means it will be determined automatically by calling EFTailBits().
 bytes_t EncodeEF(const std::vector<int64_t> sorted_ints, int k = -1);
 
 // Decodes a byte array produced by EncodeEF() above. The result is an optional

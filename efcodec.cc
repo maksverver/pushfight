@@ -130,6 +130,7 @@ bytes_t EncodeEF(const std::vector<int64_t> sorted_ints, int k) {
     if (element_count > 1) {
       const int64_t max_value = sorted_ints.back();
       if (k < 0) k = EFTailBits(element_count, max_value);
+      assert(k >= 0 && k <= 63);
       result.push_back(k);
       BitEncoder encoder(result);
       for (size_t i = 1; i < element_count; ++i) {
