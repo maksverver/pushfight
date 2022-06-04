@@ -76,7 +76,13 @@ lookup-rN: $(OBJDIR)/lookup-rN.o $(COMMON_OBJS)
 minimax: $(OBJDIR)/minimax.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+print-ef: $(OBJDIR)/print-ef.o $(OBJDIR)/bytes.o $(OBJDIR)/efcodec.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 print-perm: $(OBJDIR)/print-perm.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+print-r1: $(OBJDIR)/print-r1.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 solve-r0: $(OBJDIR)/solve-r0.o $(COMMON_OBJS)
@@ -98,9 +104,6 @@ verify-r1: $(OBJDIR)/verify-r1.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 verify-rN: $(OBJDIR)/verify-rN.o $(COMMON_OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-print-r1: $(OBJDIR)/print-r1.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 client/test-client: $(OBJDIR)/client/test-client.o $(COMMON_OBJS) $(CLIENT_OBJS)

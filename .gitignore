@@ -16,6 +16,7 @@
 /lookup-rN
 /minimax
 /perms_test
+/print-ef
 /print-perm
 /print-r1
 /search_test

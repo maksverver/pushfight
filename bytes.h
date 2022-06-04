@@ -20,5 +20,9 @@ bytes_t ReadFromFile(const std::string &filename);
 // Write bytes to a file. Aborts on error!
 void WriteToFile(const std::string &filename, byte_span_t bytes);
 
+// This is useful to read from e.g. stdin or generally when the input size
+// is not known in advance. Aborts on error!
+bytes_t ReadInput(std::istream &is);
+
 #endif  // ndef BYTES_H_INCLUDED
 

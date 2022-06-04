@@ -33,3 +33,21 @@ void WriteToFile(const std::string &filename, byte_span_t bytes) {
     exit(1);
   }
 }
+
+bytes_t ReadInput(std::istream &is) {
+  bytes_t bytes;
+  while (is) {
+    size_t n = bytes.size();
+    bytes.reserve(n + 4096);
+    assert(bytes.capacity() > bytes.size());
+    bytes.resize(bytes.capacity());
+    is.read(reinterpret_cast<char*>(bytes.data() + n), bytes.size() - n);
+    bytes.resize(n + is.gcount());
+    assert(is.gcount() > 0 || !is);
+  }
+  if (is.bad() || !is.eof()) {
+    std::cerr << "Failed to read all bytes from input!" << std::endl;
+    exit(1);
+  }
+  return bytes;
+}
