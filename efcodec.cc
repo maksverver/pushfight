@@ -67,7 +67,7 @@ std::optional<int64_t> ReadVarInt(const uint8_t *&data, size_t &size) {
     value |= int64_t{*byte & 0x7f} << shift;
     if ((*byte & 0x80) == 0) return value;
   }
-  return value;
+  return {};
 }
 
 struct BitDecoder {
