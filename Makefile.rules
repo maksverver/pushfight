@@ -43,6 +43,9 @@ ternary_test: $(OBJDIR)/ternary_test.o
 backpropagate-losses: $(OBJDIR)/backpropagate-losses.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+backpropagate2: $(OBJDIR)/backpropagate2.o $(COMMON_OBJS) $(CLIENT_OBJS) $(SOLVER_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(CLIENT_LDLIBS)
+
 count-bits: $(OBJDIR)/count-bits.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 

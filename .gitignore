@@ -3,6 +3,7 @@
 /objs/*.o
 /objs/client/*.o
 /backpropagate-losses
+/backpropagate2
 /combine-bitmaps
 /count-bits
 /count-unreachable
