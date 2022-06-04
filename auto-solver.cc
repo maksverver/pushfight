@@ -22,7 +22,7 @@ AutomaticSolver::AutomaticSolver(
     user(std::move(user)), machine(std::move(machine)),
     chunk_file_namer(std::move(chunk_file_namer)),
     chunk_computer(std::move(chunk_computer)) {
-  std::cout << "Automatic solver " << solver_id << " using host " << host << " port " << port << std::endl;
+  std::cout << "Automatic solver " << this->solver_id << std::endl;
 }
 
 void AutomaticSolver::Run() {
