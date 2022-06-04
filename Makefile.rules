@@ -82,7 +82,7 @@ solve-r0: $(OBJDIR)/solve-r0.o $(COMMON_OBJS)
 solve-r1: $(OBJDIR)/solve-r1.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-solve-rN: $(OBJDIR)/solve-rN.o $(COMMON_OBJS) $(CLIENT_OBJS)
+solve-rN: $(OBJDIR)/solve-rN.o $(COMMON_OBJS) $(CLIENT_OBJS) $(SOLVER_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(CLIENT_LDLIBS)
 
 solve-lost: $(OBJDIR)/solve-lost.o $(COMMON_OBJS)

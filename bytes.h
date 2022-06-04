@@ -2,6 +2,7 @@
 #define BYTES_H_INCLUDED
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "byte_span.h"
@@ -12,6 +13,12 @@ inline bytes_t operator+=(bytes_t &dst, byte_span_t src) {
   dst.insert(dst.end(), src.begin(), src.end());
   return dst;
 }
+
+// Read bytes from a file. Aborts on error!
+bytes_t ReadFromFile(const std::string &filename);
+
+// Write bytes to a file. Aborts on error!
+void WriteToFile(const std::string &filename, byte_span_t bytes);
 
 #endif  // ndef BYTES_H_INCLUDED
 

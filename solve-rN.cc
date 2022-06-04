@@ -10,62 +10,22 @@
 #include <thread>
 #include <vector>
 
-#include "client/client.h"
+#include "auto-solver.h"
 #include "accessors.h"
 #include "board.h"
 #include "bytes.h"
 #include "codec.h"
 #include "chunks.h"
 #include "flags.h"
-#include "hash.h"
+#include "input-verification.h"
 #include "macros.h"
 #include "parse-int.h"
 #include "perms.h"
 #include "search.h"
 
-// This class has friend access to RnAccessor to be able to access the
-// underlying memory mapped file.
-class ChunkVerifier {
-public:
-  constexpr static size_t chunk_byte_size = chunk_size / 5;
-
-  ChunkVerifier(const RnAccessor &acc) : acc(acc) {}
-
-  sha256_hash_t ComputeChunkHash(int chunk) {
-    return ComputeSha256(GetChunkBytes(chunk));
-  }
-
-private:
-  byte_span_t GetChunkBytes(int chunk) {
-    return byte_span_t(acc.map.data() + chunk_byte_size * chunk, chunk_byte_size);
-  }
-
-  const RnAccessor &acc;
-};
-
 namespace {
 
-const std::string solver_id = "solve-rN-v0.1.0";
-
-// These are SHA256 sums of r4.bin (the input to phase 5).
-constexpr std::pair<int, const char *> phase_5_chunk_hashes[] = {
-  // First three chunks
-  {0, "e56a04df6ec6e61b03e651247929c8e99048c87274d0582abfb868cf7ba10fe4"},
-  {1, "440024667100b0aed051b067ed089ccb90b82b2bc24f9e0fa6d7f1eb7e1f6fe6"},
-  {2, "66b67cf63717a57cabe3ce9f1a3ecdea8383feb8a43a6dc39e05f77098963dbe"},
-
-  // Last three chunks
-  {7426, "e29eb5ad29401478d4170e92cf3728312672060c72e6d12d813dbb7d8c8f4306"},
-  {7427, "118f46577b86d2623363ee1f076854bc064e6700288cdc9e22ff25974111705f"},
-  {7428, "49e6d3ffd64e5bf03ad08fae0299cf0f889458a2c245316722deed534feb0243"},
-
-  // Chunks that were wrongly calculated in an old version of r4.bin :-(
-  {2436, "66a4effeb5b08bd0a943095b721c55a323d6c808b2f3a7981f5d0a16482a42c9"},
-  {2500, "9c23655ae2783e7fd83a609b6bb611765c776942acaba516bd93f5039f2f72c7"},
-  {3603, "ab109a5e233114d49ca0110f5769c5f5107d14b5ac063d394683e733507b951b"},
-  {4898, "a2e7804978dc9048b60d5acb41eece77dfe0766512bbedd358b409c111a55bf9"},
-  {5824, "1d203d24cc6fb9ffbc606678b321740418293e2bb7a1da141e8bec86287eeae6"},
-};
+const char *solver_id = "solve-rN-v0.1.1";
 
 // Number of threads to use for calculations. 0 to disable multithreading.
 int num_threads = std::thread::hardware_concurrency();
@@ -159,7 +119,7 @@ void ComputeChunkThread(int chunk, std::atomic<int> *next_part, Outcome outcomes
   }
 }
 
-std::vector<Outcome> ComputeChunk(int chunk) {
+std::vector<uint8_t> ComputeChunk(int chunk) {
   std::vector<Outcome> outcomes(chunk_size, TIE);
   std::atomic<int> next_part = 0;
   ChunkStats stats;
@@ -182,31 +142,7 @@ std::vector<Outcome> ComputeChunk(int chunk) {
   }
   ClearChunkUpdate();
   std::cerr << "Chunk stats: kept=" << stats.kept << " unchanged=" << stats.unchanged << " changed=" << stats.changed << std::endl;
-  return outcomes;
-}
-
-std::vector<uint8_t> ReadFromFile(const std::string &filename) {
-  size_t size = std::filesystem::file_size(filename);
-  std::vector<uint8_t> bytes(size);
-  std::ifstream ifs(filename, std::ofstream::binary);
-  if (!ifs) {
-    std::cerr << "Could not open input file: " << filename << std::endl;
-    exit(1);
-  }
-  ifs.read(reinterpret_cast<char*>(bytes.data()), bytes.size());
-  assert(ifs);
-  assert(ifs.gcount() == bytes.size());
-  return bytes;
-}
-
-void WriteToFile(const std::string &filename, const std::vector<uint8_t> &bytes) {
-  std::ofstream ofs(filename, std::ofstream::binary);
-  if (!ofs) {
-    std::cerr << "Could not open output file: " << filename << std::endl;
-    exit(1);
-  }
-  ofs.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
-  assert(ofs);
+  return EncodeOutcomes(outcomes);
 }
 
 const std::string PhaseInputFilename(int phase) {
@@ -221,28 +157,7 @@ void InitPhase(int phase) {
 
   acc.emplace(PhaseInputFilename(phase - 1).c_str());
 
-  if (phase == 5) {
-    // Verify the input file (r4.bin) is correct by checking some chunk hashes.
-    ChunkVerifier verifier = ChunkVerifier(acc.value());
-    int failures = 0;
-    for (const auto &pair : phase_5_chunk_hashes) {
-      int chunk = pair.first;
-      std::optional<sha256_hash_t> expected_hash = HexDecode(pair.second);
-      if (!expected_hash) {
-        std::cerr << "Couldn't decode expected hash for chunk " << chunk << "!" << std::endl;
-        ++failures;
-      } else {
-        sha256_hash_t computed_hash = verifier.ComputeChunkHash(chunk);
-        if (computed_hash != *expected_hash) {
-          std::cerr << "Verification of chunk " << chunk << " failed!\n"
-              << "Expected SHA-256 sum: " << HexEncode(*expected_hash) << "\n"
-              << "Computed SHA-256 sum: " << HexEncode(computed_hash) << std::endl;
-          ++failures;
-        }
-      }
-    }
-    if (failures != 0) exit(1);
-  }
+  if (VerifyInputChunks(phase - 1, acc.value()) != 0) exit(1);
 }
 
 void RunManually(int phase, int start_chunk, int end_chunk) {
@@ -256,123 +171,19 @@ void RunManually(int phase, int start_chunk, int end_chunk) {
       continue;
     }
     auto start_time = std::chrono::system_clock::now();
-    std::vector<Outcome> outcomes = ComputeChunk(chunk);
-    std::vector<uint8_t> bytes = EncodeOutcomes(outcomes);
+    std::vector<uint8_t> bytes = ComputeChunk(chunk);
     WriteToFile(filename, bytes);
     std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now() - start_time;
     std::cerr << "Chunk " << chunk << " done in " << elapsed_seconds.count() / 60 << " minutes." << std::endl;
   }
 }
 
-class AutomaticSolver {
-public:
-  static constexpr int min_sleep_seconds = 5;
-  static constexpr int max_sleep_seconds = 600;  // 10 minutes
-
-  AutomaticSolver(int phase, std::string host, std::string port, std::string user, std::string machine)
-    : phase(phase), host(std::move(host)), port(std::move(port)),
-      user(std::move(user)), machine(std::move(machine)) {
-  }
-
-  void Run() {
-    for (;;) {
-      if (chunks.empty()) {
-        if (GetMoreChunks()) {
-          ResetSleepTime();
-        } else {
-          Sleep();
-        }
-      } else {
-        int chunk = chunks.front();
-        chunks.pop_front();
-        ProcessChunk(chunk);
-      }
-    }
-  }
-
-private:
-
-  ErrorOr<Client> Connect() {
-    return Client::Connect(phase, host.c_str(), port.c_str(), solver_id, user, machine);
-  }
-
-  void ResetSleepTime() {
-    sleep_seconds = 0;
-  }
-
-  void Sleep() {
-    if (sleep_seconds == 0) {
-      sleep_seconds = min_sleep_seconds;
-    } else {
-      sleep_seconds = std::min(sleep_seconds * 2, max_sleep_seconds);
-    }
-    std::cout << "Sleeping for " << sleep_seconds << " seconds before retrying..." << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(sleep_seconds));
-  }
-
-  bool GetMoreChunks() {
-    std::cout << "Queue is empty. Fetching more chunks from the server at "
-        << host << ":" << port << "..." << std::endl;
-    if (auto client = Connect(); !client) {
-      std::cerr << "Failed to connect: " << client.Error().message << std::endl;
-    } else if (auto chunks = client->GetChunks(); !chunks) {
-      std::cerr << "Failed to get chunks: " << chunks.Error().message << std::endl;
-    } else if (chunks->empty()) {
-      std::cerr << "Server has no more chunks available!" << std::endl;
-    } else {
-      std::cout << "Server returned " << chunks->size() << " more chunks to solve." << std::endl;
-      this->chunks.insert(this->chunks.end(), chunks->begin(), chunks->end());
-      return true;
-    }
-    return false;
-  }
-
-  void ProcessChunk(int chunk) {
-    const std::string filename = ChunkFileName(phase, "output", chunk);
-    std::vector<uint8_t> bytes;
-    if (std::filesystem::exists(filename) && std::filesystem::file_size(filename) > 0) {
-      std::cout << "Chunk output already exists. Loading..." << std::endl;
-      bytes = ReadFromFile(filename);
-      assert(!bytes.empty());
-    } else {
-      std::cout << "Calculating chunk " << chunk
-          << " using " << num_threads << " threads." << std::endl;
-      bytes = EncodeOutcomes(ComputeChunk(chunk));
-      WriteToFile(filename, bytes);
-    }
-    std::cout << "Chunk complete! Reporting result to server..." << std::endl;
-    ReportChunk(chunk, bytes);
-  }
-
-  bool ReportChunk(int chunk, const std::vector<uint8_t> &bytes) {
-    if (auto client = Connect(); !client) {
-      std::cerr << "Failed to connect: " << client.Error().message << std::endl;
-      return false;
-    } else if (ErrorOr<size_t> uploaded = client->SendChunk(chunk, bytes); !uploaded) {
-      std::cout << "Failed to send result to server: " << uploaded.Error().message << std::endl;
-      return false;
-    } else if (*uploaded == 0) {
-      std::cout << "Succesfully reported result to server! (No upload required.)" << std::endl;
-      return true;
-    } else {
-      std::cout << "Succesfully uploaded chunk to server! "
-          << "(" << bytes.size() << " bytes; " << *uploaded << " bytes compressed)" << std::endl;
-      return true;
-    }
-  }
-
-  int phase = -1;
-  std::string host, port, user, machine;
-  std::deque<int> chunks;
-  int sleep_seconds = 0;
-};
-
 void PrintUsage() {
-  std::cout << "Usage:\n\n"
+  std::cout << solver_id << "\n\n"
     << "For manual chunk assignment:\n\n"
-    << "  solve-rN --phase=N --user=<user-id> --machine=<machine-id>\n\n"
+    << "  solve-rN --phase=N --start=<start-chunk> --end=<end-chunk>\n\n"
     << "For automatic chunk assignment (requires network access):\n\n"
-    << "  solve-rN --phase=N --start=<start-chunk> --end=<end-chunk>\n"
+    << "  solve-rN --phase=N --user=<user-id> --machine=<machine-id>\n"
     << "      [--host=styx.verver.ch] [--port=7429]"
     << std::endl;
 }
@@ -454,7 +265,12 @@ int main(int argc, char *argv[]) {
     }
 
     InitPhase(phase);
-    AutomaticSolver solver(phase, arg_host, arg_port, arg_user, arg_machine);
+    AutomaticSolver solver(
+        solver_id, phase, arg_host, arg_port, arg_user, arg_machine,
+        [phase](int chunk) {
+          return ChunkFileName(phase, "output", chunk);
+        },
+        ComputeChunk);
     solver.Run();
   }
 }

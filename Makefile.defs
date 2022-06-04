@@ -5,7 +5,8 @@ LDFLAGS=
 LDLIBS=-lpthread -lm -lcrypto
 CLIENT_LDLIBS=-lz
 
-COMMON_OBJS=$(addprefix $(OBJDIR)/,accessors.o codec.o efcodec.o flags.o hash.o parse-int.o perms.o board.o chunks.o search.o)
+COMMON_OBJS=$(addprefix $(OBJDIR)/,accessors.o codec.o efcodec.o flags.o hash.o parse-int.o perms.o board.o bytes.o chunks.o search.o)
+SOLVER_OBJS=$(addprefix $(OBJDIR)/,input-verification.o auto-solver.o)
 CLIENT_OBJS=$(addprefix $(OBJDIR)/client/,codec.o compress.o client.o socket.o socket_codec.o)
 BINARIES=backpropagate-losses count-bits count-r1 count-unreachable combine-bitmaps decode-delta encode-delta fix-r4-bin integrate-wins lookup-rN print-perm solve-rN verify-rN print-r1 client/test-client
 OLD_BINARIES=minimax solve-lost solve-r0 solve-r1 verify-r0 verify-r1
