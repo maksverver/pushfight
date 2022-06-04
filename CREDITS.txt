@@ -1,6 +1,7 @@
 Special thanks to Tweakers.net users who contributed CPU time!
 
- - Jonathan Peeman ("thec0mpler")
  - asterix78
  - dylan111111
+ - Hans Rensen ("hansR")
+ - Jonathan Peeman ("thec0mpler")
  - __R__
