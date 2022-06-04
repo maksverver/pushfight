@@ -14,8 +14,7 @@ import zlib
 
 from codec import *
 
-# 54054000 items in ternary encoding
-MAX_CHUNK_BYTESIZE = 10810800
+MAX_CHUNK_BYTESIZE = 50 << 20  # 50 MiB
 
 BIND_ADDR = ('', 7429)
 HTTP_BIND_ADDR = ('', 7430)
@@ -157,7 +156,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
     chunk = DecodeInt(info.get(b'chunk'))
     bytesize = DecodeInt(info.get(b'bytesize'))
     if not (0 < bytesize <= MAX_CHUNK_BYTESIZE):
-      self.send_error('Invalid chunk size')
+      self.send_error('Invalid chunk size: ' + str(bytesize))
       return
 
     sha256sum = info.get(b'sha256sum')
