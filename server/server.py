@@ -34,6 +34,12 @@ UPLOAD_DIR = 'incoming'
 assert os.path.isdir(UPLOAD_DIR)
 
 
+def GetSolver(phase):
+  if phase == 5: return 'solve-rN-v0.1.0'
+  if phase == 6: return 'backpropagate2-v0.1.0'
+  return None
+
+
 class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
   allow_reuse_address = True
 
@@ -122,7 +128,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
     phase = DecodeInt(info.get(b'phase'))
 
     # Check solver is correct (except for phase == 999, which is used for testing).
-    if phase != 999 and self.solver != 'solve-rN-v0.1.0':
+    if phase != 999 and self.solver != GetSolver(phase):
       self.send_error('Invalid solver for phase')
       return
 
