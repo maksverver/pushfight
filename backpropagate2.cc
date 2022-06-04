@@ -184,7 +184,7 @@ void RunManually(int phase, int start_chunk, int end_chunk) {
       << "from " << start_chunk << " to " << end_chunk << " (exclusive) "
       << "using " << num_threads << " threads." << std::endl;
   FOR(chunk, start_chunk, end_chunk) {
-    const std::string filename = ChunkFileName(phase, "output", chunk);
+    const std::string filename = ChunkOutputFilename(phase, chunk);
     if (std::filesystem::exists(filename)) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
