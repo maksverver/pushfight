@@ -21,8 +21,10 @@ fi
   read line  # skip header line
   while read chunk ties losses wins total ; do
     if [ $chunk -ge 0 ]; then
-        echo "$chunk $ties" >&2
+      echo "$chunk $ties" >&2
+      if [ $ties -gt 0 ]; then
         echo "INSERT INTO WorkQueue (phase, chunk, difficulty) VALUES ($phase, $chunk, $ties);"
+      fi
     fi
   done
 
