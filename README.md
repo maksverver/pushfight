@@ -452,6 +452,15 @@ positions) that are lost in 3 moves (or 6 turns).
 In phase 6, we discovered 2,255,991,948 positions (8.1% of the remaining
 positions) that are won in 4 moves (or 7 turns).
 
+An example position is given below:
+
+![Win in 4 (before red's move)](images/win-in-4.png)
+![Win in 4 (red's move)](images/win-in-4-move-1.gif)
+
+At first glance, it seems like red is in trouble, with pieces on the edge at
+*a2*, *h2* and *f1*. The key to victory is to leave the square on *f1* where it
+is and instead move *h2-d2*, *c2-b3*, *b3-c3* to trap blue's round piece at *d1*.
+
 ## Future work
 
  * Write about how to find optimal moves before turn 1.
