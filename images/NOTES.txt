@@ -16,6 +16,8 @@ Generated with:
 ./animate.py images/loss-in-2-1-move-1.gif .xXO.......O.....Yx..OoX.o f1-e1,b1-f3,f3-f2
 ./animate.py images/loss-in-2-1-before-move-2.png .xXO.......O.....XP...oXox
 ./animate.py images/loss-in-2-1-move-2.gif .xXO.......O.....XP...oXox e4-d2,d4-b2,d1-c1
+./animate.py images/win-in-4.png ...X...X..Yx.o.O....O..xoO
+./animate.py images/win-in-4-move-1.gif ...X...X..Yx.o.O....O..xoO h2-d2,c2-b3,b3-c3
 
 To optimize the generated files afterwards, I use gifsicle
 (https://www.lcdf.org/gifsicle/) for GIF giles, and optipng
