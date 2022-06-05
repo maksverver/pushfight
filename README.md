@@ -303,7 +303,20 @@ corresponds with the maximum number of turns leading to a win.
 
 ## Results
 
-### Immediately losing positions
+### Summary
+
+| Phase |  Undetermined   |     Losses     |       Wins      |
+|------:|----------------:|---------------:|----------------:|
+|    -1 | 401,567,165,352 |            648 |               0 |
+|     0 |  60,779,916,660 |            648 | 340,787,248,692 |
+|     1 |  54,546,852,886 |  6,233,064,422 | 340,787,248,692 |
+|     2 |  37,780,557,416 |  6,233,064,422 | 357,553,544,162 |
+|     3 |  34,837,304,642 |  9,176,317,196 | 357,553,544,162 |
+|     4 |  29,666,435,732 |  9,176,317,196 | 362,724,413,072 |
+|     5 |  27,888,385,421 | 10,954,367,507 | 362,724,413,072 |
+
+
+### Immediately losing positions (phase -1)
 
 If a player cannot end their turn with a push, he or she will lose the game.
 
