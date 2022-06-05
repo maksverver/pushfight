@@ -32,6 +32,21 @@ assert os.path.exists(DATABASE_FILE)
 UPLOAD_DIR = 'incoming'
 assert os.path.isdir(UPLOAD_DIR)
 
+ARCHIVE_DIR = 'archive'
+if os.path.isdir(ARCHIVE_DIR):
+  archive_dirs = [
+    path for path in [os.path.join(ARCHIVE_DIR, name) for name in os.listdir(ARCHIVE_DIR)]
+    if os.path.isdir(path)]
+  if not archive_dirs:
+    print('No subdirectories in %s' % ARCHIVE_DIRS)
+  else:
+    print('Using archived files in subdirectories:')
+    for path in archive_dirs:
+      print('  ', path)
+else:
+  print('Warning: %s does not exist (or is not a directory)' % ARCHIVE_DIR)
+  archive_dirs = []
+
 
 def GetSolver(phase):
   if phase == 5: return 'solve-rN-v0.1.1'
@@ -49,6 +64,18 @@ class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 def ChunkFilename(sha256sum):
   return os.path.join(UPLOAD_DIR, sha256sum.hex())
+
+
+def HaveOutputFile(sha256sum):
+  name = sha256sum.hex()
+  filepath = os.path.join(UPLOAD_DIR, name)
+  if os.path.exists(filepath):
+    return True
+  for dirpath in archive_dirs:
+    filepath = os.path.join(dirpath, name)
+    if os.path.exists(filepath) or os.path.exists(filepath + '.zst'):
+      return True
+  return False
 
 
 def ConnectDb():
@@ -178,7 +205,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
     print('ReportChunkComplete: received a report!')
 
     # Ask the client to upload the file if we don't already have it.
-    request_upload = 0 if os.path.exists(ChunkFilename(sha256sum)) else 1
+    request_upload = 0 if HaveOutputFile(sha256sum) else 1
 
     self.send_response({b'upload': EncodeInt(request_upload)})
 
