@@ -314,6 +314,7 @@ corresponds with the maximum number of turns leading to a win.
 |     3 |  34,837,304,642 |  9,176,317,196 | 357,553,544,162 |
 |     4 |  29,666,435,732 |  9,176,317,196 | 362,724,413,072 |
 |     5 |  27,888,385,421 | 10,954,367,507 | 362,724,413,072 |
+|     6 |  25,632,393,473 | 10,954,367,507 | 364,980,405,020 |
 
 
 ### Immediately losing positions (phase -1)
@@ -444,12 +445,12 @@ after phase 3, or 78.5% after phase 2).
 ### Loss in 3 (phase 5)
 
 In phase 5, we discovered 1,778,050,311 positions (6.0% of the remaining
-positions) that were lost in 3 moves (or 6 turns).
+positions) that are lost in 3 moves (or 6 turns).
 
 ### Win in 4 (phase 6)
 
-TODO
-
+In phase 6, we discovered 2,255,991,948 positions (8.1% of the remaining
+positions) that are won in 4 moves (or 7 turns).
 
 ## Future work
 
