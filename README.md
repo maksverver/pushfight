@@ -441,6 +441,16 @@ There are 29,666,437,884 tied positions remaining (85.2% of the result of
 after phase 3, or 78.5% after phase 2).
 
 
+### Loss in 3 (phase 5)
+
+In phase 5, we discovered 1,778,050,311 positions (6.0% of the remaining
+positions) that were lost in 3 moves (or 6 turns).
+
+### Win in 4 (phase 6)
+
+TODO
+
+
 ## Future work
 
  * Write about how to find optimal moves before turn 1.
