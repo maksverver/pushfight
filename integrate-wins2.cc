@@ -1,6 +1,7 @@
 // Tool to integrate the wins found with backpropagate2 into a ternary file.
 
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <optional>
 
@@ -12,14 +13,21 @@
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
-    std::cout << "Usage: integrate-wins2 <rN.bin> <chunk-rN-wins.bin...>\n";
+    std::cout << "Usage: integrate-wins2 [--dry-run] <rN.bin> <chunk-rN-wins.bin...>\n";
     return 0;
   }
 
-  MutableRnAccessor acc(argv[1]);
+  bool dry_run = false;
+  int start_argi = 1;
+  if (strcmp(argv[start_argi], "--dry-run") == 0) {
+    dry_run = true;
+    ++start_argi;
+  }
+
+  MutableRnAccessor acc(argv[start_argi++]);
   int64_t total_perms = 0;
   int64_t total_changes = 0;
-  for (int i = 2; i < argc; ++i) {
+  for (int i = start_argi; i < argc; ++i) {
     const char *filename = argv[i];
     int64_t changes = 0;
     bytes_t bytes = ReadFromFile(filename);
@@ -39,7 +47,7 @@ int main(int argc, char *argv[]) {
         return 1;
       }
       assert(o == TIE);
-      acc[i] = WIN;
+      if (!dry_run) acc[i] = WIN;
       ++changes;
     }
     int64_t perms = ints->size();
