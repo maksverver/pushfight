@@ -69,6 +69,24 @@ constexpr std::pair<int, const char*> r5_chunk_hashes[] = {
   {4457, "1d21fcb35a9dbb151421885cab2fc6e95eab0d134ab28a5c9ca1974502773fc0"},
 };
 
+// SHA256 checksums of chunks of r6.bin
+constexpr std::pair<int, const char*> r6_chunk_hashes[] = {
+  // First three chunks
+  {0, "1d2f0ebdf9b526403f89f93ecf6df7aa4f23a331a6666b5e15df2b21d31a75b3"},
+  {1, "0c3e24d42543ae625b5c984c078b09474abd6ceb1452340eac20eff8d35eca17"},
+  {2, "9f12bf1e86a926e66da3a060befee3bc70fe2c364cd6d3e40f557fb3a53781c6"},
+
+  // Last three chunks
+  {7426, "9fa40121068806a26c171f70097d178810ef346d71f0da17de5f66b03c87c01a"},
+  {7427, "bc6738905085221b1abd426d2fd0a06e02df626add1476e1a220af340035fbaa"},
+  {7428, "cbbf6d773e15196e5a1cc6fce46ce0aad813cc1be7a14f531afd72d0baa7e370"},
+
+  // A few random chunks in the middle.
+  {1486, "7414ac59aa9b3a41c362403ef6f4619a6ea722781e55dbc2ba187efd42a15d80"},
+  {2972, "b7dd63f3338014cf70377da5cae5a60f793c7d0c4806c1d22d2768143d38dfea"},
+  {4457, "2bcec64447633a63a6ca19dfe6b467560554eb398e04127b2e9cc786b816b0d0"},
+};
+
 int Verify(int phase, const RnAccessor &acc, const std::pair<int, const char*> *hashes, size_t size) {
   ChunkVerifier verifier = ChunkVerifier(acc);
   int failures = 0;
@@ -103,6 +121,7 @@ int VerifyInputChunks(int phase, const RnAccessor &acc) {
   switch (phase) {
     case 4: return Verify(4, acc, r4_chunk_hashes);
     case 5: return Verify(5, acc, r5_chunk_hashes);
+    case 6: return Verify(6, acc, r6_chunk_hashes);
 
     default:
       std::cerr << "WARNING: no input file verification data exists for phase " << phase << "!";
