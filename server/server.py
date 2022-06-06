@@ -298,7 +298,7 @@ class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
             SUM(difficulty*(completed IS NOT NULL)) AS completed_difficulty
           FROM WorkQueue
           GROUP BY phase
-          ORDER BY phase
+          ORDER BY phase DESC
       ''', (now - WORK_EXPIRATION_SECONDS, now - WORK_EXPIRATION_SECONDS)):
         chunks_remaining = chunks_total - chunks_completed - chunks_assigned
         message = '''Phase %d:
