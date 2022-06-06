@@ -22,7 +22,7 @@ static_assert(part_size % 16 == 0);
 
 std::string ChunkFileName(int phase, const std::string &dir, int chunk);
 
-void PrintChunkUpdate(int chunk, int part);
+void PrintChunkUpdate(int chunk, int part, int total = num_parts);
 
 void ClearChunkUpdate();
 

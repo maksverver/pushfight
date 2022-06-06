@@ -136,7 +136,6 @@ ChunkStats ProcessChunk(int chunk, std::vector<int64_t> &wins) {
   } else {
     assert(chunk_size % num_threads == 0);
     // Multi-threaded computation.
-    std::atomic<int> next_part = 0;
     std::vector<std::thread> threads;
     std::vector<std::vector<int64_t>> thread_wins(num_threads);
     std::vector<ChunkStats> thread_stats(num_threads);

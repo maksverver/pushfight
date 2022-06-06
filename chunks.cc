@@ -13,13 +13,13 @@ std::string ChunkFileName(int phase, const std::string &dir, int chunk) {
   return oss.str();
 }
 
-void PrintChunkUpdate(int chunk, int part) {
+void PrintChunkUpdate(int chunk, int part, int total) {
   // Precompute output line to minimize formatting errors due to multiple
   // threads writing to std::cerr at the same time.
   char buf[100];
   snprintf(buf, sizeof(buf),
       "Chunk %d calculating... part %d / %d (%.2f%% done)\r",
-      chunk, part, num_parts, 100.0*part / num_parts);
+      chunk, part, total, 100.0*part / total);
   std::cerr << buf << std::flush;
 }
 

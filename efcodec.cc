@@ -119,8 +119,7 @@ private:
 
 }  // namespace
 
-bytes_t EncodeEF(const std::vector<int64_t> &sorted_ints, int k) {
-  bytes_t result;
+void EncodeEF(const std::vector<int64_t> &sorted_ints, bytes_t &result, int k) {
   const size_t element_count = sorted_ints.size();
   AppendVarInt(result, element_count);
   if (element_count > 0) {
@@ -141,7 +140,6 @@ bytes_t EncodeEF(const std::vector<int64_t> &sorted_ints, int k) {
       }
     }
   }
-  return result;
 }
 
 std::optional<std::vector<int64_t>> DecodeEF(byte_span_t bytes) {

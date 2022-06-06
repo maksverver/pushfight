@@ -129,7 +129,6 @@ std::vector<uint8_t> ComputeChunk(int chunk) {
   } else {
     assert(chunk_size % num_threads == 0);
     // Multi-threaded computation.
-    std::atomic<int> next_part = 0;
     std::vector<std::thread> threads;
     std::vector<ChunkStats> thread_stats(num_threads);
     threads.reserve(num_threads);
