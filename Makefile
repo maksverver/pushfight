@@ -1,5 +1,7 @@
 include Makefile.defs
 
+COMMON_FLAGS += -march=native
+
 all: $(ALL_BINARIES) $(TESTS)
 
 test: $(TESTS)
