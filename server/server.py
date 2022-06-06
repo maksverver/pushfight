@@ -52,6 +52,7 @@ def GetSolver(phase):
   if phase == 5: return 'solve-rN-v0.1.1'
   if phase == 6: return 'backpropagate2-v0.1.1'
   if phase == 7: return 'solve-rN-v0.1.2'
+  if phase == 8: return 'backpropagate2-v0.1.3'
   return None
 
 
