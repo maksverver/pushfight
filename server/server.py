@@ -14,7 +14,8 @@ import zlib
 
 from codec import *
 
-MAX_CHUNK_BYTESIZE = 50 << 20  # 50 MiB
+# Should be less than MAX_MESSAGE_SIZE in codec.py
+MAX_CHUNK_BYTESIZE = 99 << 20  # 99 MiB
 
 BIND_ADDR = ('', 7429)
 HTTP_BIND_ADDR = ('', 7430)
