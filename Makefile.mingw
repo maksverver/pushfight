@@ -22,6 +22,6 @@ clean:
 	rm -f -R deps obj
 
 dist: all
-	zip pushfight-windows-$$(date +%Y-%m-%d)-$$(git rev-parse --short HEAD).zip *.exe *.py *.sh client/*.exe input/README.txt output/README.txt
+	zip pushfight-windows-$$(date +%Y-%m-%d)-$$(git rev-parse --short HEAD).zip *.exe *.py *.sh client/*.exe input/README.txt output/README.txt metadata/*.sha256sum
 
 include Makefile.rules
