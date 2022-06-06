@@ -79,7 +79,7 @@ lookup-rN: $(OBJDIR)/lookup-rN.o $(COMMON_OBJS)
 minimax: $(OBJDIR)/minimax.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-print-ef: $(OBJDIR)/print-ef.o $(OBJDIR)/bytes.o $(OBJDIR)/efcodec.o
+print-ef: $(OBJDIR)/print-ef.o $(OBJDIR)/bytes.o $(OBJDIR)/efcodec.o $(OBJDIR)/parse-int.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 print-perm: $(OBJDIR)/print-perm.o $(COMMON_OBJS)

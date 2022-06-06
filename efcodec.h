@@ -40,9 +40,15 @@ inline bytes_t EncodeEF(const std::vector<int64_t> &sorted_ints, int k = -1) {
 // containing a vector of nondecreasing nonnegative integers, or an empty
 // optional if the input byte array was not encoded correctly.
 //
-// TODO later: support returning the end index, so this can be used to parse
-// just a prefix of a binary string?
-std::optional<std::vector<int64_t>> DecodeEF(byte_span_t bytes);
+// The `bytes` argument is updated to reflect the undecoded portion of the
+// input. If an error occurs, its contents are undefined.
+std::optional<std::vector<int64_t>> DecodeEF(byte_span_t *bytes);
+
+// Convenience method that decodes bytes but doesn't return the undecoded
+// portion of the input.
+inline std::optional<std::vector<int64_t>> DecodeEF(byte_span_t bytes) {
+  return DecodeEF(&bytes);
+}
 
 // Returns the number of bits that are encoded literally in the Elias-Fano
 // encoding of `n` integers between 0 and `m` (inclusive!)

@@ -142,9 +142,9 @@ void EncodeEF(const std::vector<int64_t> &sorted_ints, bytes_t &result, int k) {
   }
 }
 
-std::optional<std::vector<int64_t>> DecodeEF(byte_span_t bytes) {
-  const uint8_t *data = bytes.data();
-  size_t size = bytes.size();
+std::optional<std::vector<int64_t>> DecodeEF(byte_span_t *bytes) {
+  const uint8_t *data = bytes->data();
+  size_t size = bytes->size();
   int64_t element_count;
   if (auto res = ReadVarInt(data, size); !res) {
     return {};
@@ -182,6 +182,7 @@ std::optional<std::vector<int64_t>> DecodeEF(byte_span_t bytes) {
       }
     }
   }
+  *bytes = byte_span_t(data, size);
   return result;
 }
 

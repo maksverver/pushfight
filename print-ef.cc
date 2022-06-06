@@ -5,6 +5,7 @@
 
 #include "bytes.h"
 #include "efcodec.h"
+#include "parse-int.h"
 
 #include <cassert>
 #include <cstring>
@@ -14,10 +15,17 @@
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    std::cerr << "Usage: print-ef <file...>\n\nUse \"-\" to read from stdin." << std::endl;
+    std::cerr << "Usage: print-ef [<--part=N>] <file...>\n\nUse \"-\" to read from stdin." << std::endl;
     return 1;
   }
-  for (int i = 1; i < argc; ++i) {
+  int start_argi = 1;
+  int want_part = -1;
+  if (strncmp(argv[start_argi], "--part=", 7) == 0) {
+    want_part = ParseInt(argv[start_argi] + 7);
+    ++start_argi;
+  }
+
+  for (int i = start_argi; i < argc; ++i) {
     bytes_t bytes;
     if (strcmp(argv[i], "-") == 0) {
       bytes = ReadInput(std::cin);
@@ -31,12 +39,17 @@ int main(int argc, char *argv[]) {
       }
       bytes = ReadInput(ifs);
     }
-    auto result = DecodeEF(bytes);
-    if (!result) {
-      std::cerr << "Elias-Fano decoding failed!" << std::endl;
-      return 1;
+    byte_span_t byte_span = bytes;
+    for (int part = 0; !byte_span.empty(); ++part) {
+      auto result = DecodeEF(&byte_span);
+      if (!result) {
+        std::cerr << "Elias-Fano decoding failed!" << std::endl;
+        return 1;
+      }
+      if (want_part == -1 || part == want_part) {
+        for (auto i : *result) std::cout << i << '\n';
+      }
     }
-    for (auto i : *result) std::cout << i << '\n';
   }
   std::cout << std::flush;
 }
