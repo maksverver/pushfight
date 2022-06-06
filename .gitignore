@@ -27,6 +27,7 @@
 /solve-rN
 /solve-lost
 /ternary_test
+/verify-input-chunks
 /verify-r0
 /verify-r1
 /verify-rN

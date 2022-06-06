@@ -1,6 +1,15 @@
 #include "input-verification.h"
 
+#include <algorithm>
+#include <cassert>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <random>
 
 #include "accessors.h"
 #include "hash.h"
@@ -87,6 +96,9 @@ constexpr std::pair<int, const char*> r6_chunk_hashes[] = {
   {4457, "2bcec64447633a63a6ca19dfe6b467560554eb398e04127b2e9cc786b816b0d0"},
 };
 
+std::random_device dev;
+std::mt19937 rng(dev());
+
 int Verify(int phase, const RnAccessor &acc, const std::pair<int, const char*> *hashes, size_t size) {
   ChunkVerifier verifier = ChunkVerifier(acc);
   int failures = 0;
@@ -115,16 +127,107 @@ int Verify(int phase, const RnAccessor &acc, const std::pair<int, const char*> (
   return Verify(phase, acc, hashes, N);
 }
 
+std::optional<std::vector<sha256_hash_t>> LoadChecksums(const char *filename) {
+  std::vector<sha256_hash_t> result;
+  std::ifstream ifs(filename);  // open in text mode
+  if (!ifs) {
+    std::cerr << "Could not open " << filename << std::endl;
+    return {};
+  }
+  std::string line;
+  for (int i = 0; std::getline(ifs, line); ++i) {
+    std::istringstream iss(line);
+    std::string encoded_hash;
+    iss >> encoded_hash;
+    std::optional<sha256_hash_t> decoded_hash = HexDecode(encoded_hash);
+    if (!decoded_hash) {
+      std::cerr << "Failed to parse checksum on line " << (i + 1) << " of file " << filename << std::endl;
+      return {};
+    }
+    result.push_back(std::move(*decoded_hash));
+  }
+  return result;
+}
+
+std::string GetChecksumFilename(const char *subdir, int phase) {
+  std::ostringstream oss;
+  oss << subdir;
+  if (*subdir) oss << '/';
+  oss << "chunk-r" << phase << ".sha256sum";
+  return oss.str();
+}
+
+int VerifyChecksums(
+    int phase, const RnAccessor &acc,
+    const std::vector<sha256_hash_t> &checksums,
+    const std::vector<int> chunks) {
+    int failures = 0;
+  ChunkVerifier verifier = ChunkVerifier(acc);
+  int i = 0;
+  for (int chunk : chunks) {
+    sha256_hash_t computed_hash = verifier.ComputeChunkHash(chunk);
+    const sha256_hash_t &expected_hash = checksums[chunk];
+    if (computed_hash != expected_hash) {
+      std::cerr << "Verification of phase " << phase << " chunk " << chunk << " failed!\n"
+          << "Expected SHA-256 sum: " << HexEncode(expected_hash) << "\n"
+          << "Computed SHA-256 sum: " << HexEncode(computed_hash) << std::endl;
+      ++failures;
+    }
+    if (chunks.size() > 10 && ++i % 10 == 0) {
+      std::cerr << "Verified checksum for phase " << phase << " chunk " << chunk << " (" << i << " of " << chunks.size() << ")...\n";
+    }
+  }
+  return failures;
+}
+
+int VerifyFromChecksumFile(int phase, const RnAccessor &acc, int chunks_to_verify) {
+  std::string path = GetChecksumFilename("metadata", phase);
+  if (!std::filesystem::exists(path)) {
+    std::cerr << "Checksum file found for phase " << phase << " does not exist: " << path << std::endl;
+    return 1;
+  }
+  auto checksums = LoadChecksums(path.c_str());
+  if (!checksums) {
+    std::cerr << "Could not load checksum file." << std::endl;
+    return 1;
+  }
+  if (checksums->size() != num_chunks) {
+    std::cerr << "Invalid number of checksums. "
+        << "Expected " << num_chunks << ", actual " << checksums->size() << std::endl;
+    return 1;
+  }
+
+  // Select chunks to verify. Always start with first and last chunk.
+  std::vector<int> chunks;
+  if (chunks_to_verify > 0) {
+    chunks.push_back(0);
+  }
+  if (chunks_to_verify > 1) {
+    chunks.push_back(num_chunks - 1);
+  }
+  if (chunks_to_verify > 2) {
+    for (int i = 1; i < num_chunks - 1; ++i) {
+      chunks.push_back(i);
+    }
+    assert(chunks.size() == num_chunks);
+    if (chunks_to_verify < num_chunks) {
+      // Randomly choose the remaining chunks.
+      std::shuffle(&chunks[2], &chunks[num_chunks], rng);
+      chunks.resize(chunks_to_verify);
+      std::sort(&chunks[2], &chunks[chunks_to_verify]);
+    }
+  }
+  return VerifyChecksums(phase, acc, *checksums, chunks);
+}
+
 }  // namespace
 
-int VerifyInputChunks(int phase, const RnAccessor &acc) {
+int VerifyInputChunks(int phase, const RnAccessor &acc, int chunks_to_verify) {
   switch (phase) {
     case 4: return Verify(4, acc, r4_chunk_hashes);
     case 5: return Verify(5, acc, r5_chunk_hashes);
     case 6: return Verify(6, acc, r6_chunk_hashes);
-
     default:
-      std::cerr << "WARNING: no input file verification data exists for phase " << phase << "!";
-      return 0;
+      return VerifyFromChecksumFile(phase, acc, chunks_to_verify);
   }
 }

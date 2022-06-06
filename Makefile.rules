@@ -100,6 +100,9 @@ solve-rN: $(OBJDIR)/solve-rN.o $(COMMON_OBJS) $(CLIENT_OBJS) $(SOLVER_OBJS)
 solve-lost: $(OBJDIR)/solve-lost.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+verify-input-chunks: $(OBJDIR)/verify-input-chunks.o $(COMMON_OBJS) $(OBJDIR)/input-verification.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 verify-r0: $(OBJDIR)/verify-r0.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
