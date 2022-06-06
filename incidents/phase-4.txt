@@ -16,3 +16,10 @@ more wins. Not sure how that's possible (data loss on system restart?)
 Resolution:
 I forced a rerun (./backpropgate-losses 4 1873 1874, commenting out the check
 for chunks that are already done), regenerated r4-bin, and restarted phase 5.
+
+Note: restarting might not have fixed all problems, since existing output files
+for phase 5 would have been re-uploaded even if they contained incorrect data!
+If true, there might be some losses that were not identified in phase 5. These
+would have been detected in phase 7 instead.
+
+According to the server logs, this might apply to chunks up 3053!
