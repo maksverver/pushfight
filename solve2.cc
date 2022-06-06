@@ -274,7 +274,7 @@ bytes_t ComputeChunk(int chunk) {
     ChunkStats2 stats2 = ComputeWins(chunk, losses, wins);
 
     std::cerr << "Win computation stats: "
-        << wins.size() << " new wins."
+        << wins.size() << " new wins. "
         << stats2.total_predecessors / losses.size() << " average predecessors.";
     std::cerr << '\n';
   }
