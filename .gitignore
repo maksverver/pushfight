@@ -12,6 +12,7 @@
 /encode-delta
 /efcodec_test
 /fix-r4-bin
+/integrate-two
 /integrate-wins
 /integrate-wins2
 /lookup-rN
