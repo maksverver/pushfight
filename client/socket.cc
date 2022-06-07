@@ -65,14 +65,14 @@ std::optional<Socket> Socket::Connect(const char *hostname, const char *portname
   }
 
   for (struct addrinfo *p = ai; p != nullptr; p = p->ai_next) {
-    int s = socket(ai->ai_family, SOCK_STREAM, IPPROTO_TCP);
+    int s = socket(p->ai_family, SOCK_STREAM, IPPROTO_TCP);
     if (s == -1) {
-      const char *family = ai->ai_family == AF_INET ? "IPv4" : ai->ai_family == AF_INET6 ? "IPv6" : "UNKNOWN";
+      const char *family = p->ai_family == AF_INET ? "IPv4" : p->ai_family == AF_INET6 ? "IPv6" : "UNKNOWN";
       std::cerr << "client: Failed to create " << family << " socket!" << std::endl;
     } else {
-      if (connect(s, ai->ai_addr, ai->ai_addrlen) == -1) {
+      if (connect(s, p->ai_addr, p->ai_addrlen) == -1) {
         std::cerr << "client: Failed to connect to host " << hostname
-            << " IP address " << AddrInfoToString(ai) << " port " << portname << std::endl;
+            << " IP address " << AddrInfoToString(p) << " port " << portname << std::endl;
       } else {
         freeaddrinfo(ai);
         return {Socket(s)};
