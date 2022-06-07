@@ -214,6 +214,8 @@ This leads to the following algorithm to solve the game:
    rest undetermined.
  * Phase 2..N: repeat the logic from phase 1 until no more changes occur.
 
+The logic for phases 2 and up is implemented in [solve-rN.cc](solve-rN.cc).
+
 This is a fixed-point iteration algorithm where we classify more and more positions
 until we cannot find any more positions that can be classified by rules 2a and 2b.
 At this point, we can stop and assume that all remaining indetermined positions are
@@ -230,6 +232,104 @@ winning for the opponent (rule 2b) and the previous phase didn't find any.
 
 And so on: the phases alternate between finding only losing and winning
 positions, with even phases finding winners and odd phases finding losers.
+
+### Distribution of work
+
+To allow the work of calculating a phase to be distributied, I split the input
+into 7429 chunks of 5,4054,000 permutations each. This allows solvers running on
+multiple computers to calculate the results for different input chunks
+independently. To calculate the combined output file, it's necessary to collect
+the generated output files and concatenate them.
+
+### Backpropagation of losses using predecessors
+
+The game Push Fight has the interesting property that it isn't much more
+difficult to generate the predecessors of a position than the successors.
+(A predecessor of a position *q* is a position *p* such that *p* has a valid
+move that leads to *q*.)
+
+This makes it possible to calculate the winning positions in a different way.
+Instead of looping over the undecided positions, searching for successors where
+the opponent loses, we can loop over all the positions that were marked losing
+in the previous phase, and mark all their predecessors as winning.
+
+This approach is advantageous for two reasons. One is that after the first few
+phases, the number of newly-losing positions is much smaller than the number of
+undecided positions (by a factor of 20 or so), while the number of predecessors
+is roughly the same as the number of successors. That means backpropagating
+losses can be up to 20 times faster.
+
+Does this mean that the calculation of even phases (where we find wins) is 
+much faster than odd phases? No, it turns out the approach implemented by
+solve-rN is perfectly suitable for odd phases. The reason is that it's much
+easier to prove that a position is not losing (finding a single tied successor
+is sufficient) than to prove that a position is not winning (which requires
+enumerating all the successors to show than none of them are lost by the
+opponent). So although the solve-rN solver has to process more positions, it
+can process them more quickly (in odd phases only!)
+
+The loss backpropagation logic is implemented in two solvers:
+[backpropagate-losses.cc](backpropagate-losses.cc) and
+[backpropgate2.cc](backpropgate2.cc). They differ in the output file format.
+backpropagate-losses creates a single 50 GB bitmap with new wins marked as 1.
+This bitmap is shared between input chunks, so it never grows. backpropagate2
+on the other hand writes a list of permutation indices that were newly
+discovered to be winning. The downside of the second approach is that different
+input chunks can have some duplicates in their output (a newly winning
+position can be a predecessor of multiple losing positions that occur in
+different input chunks).
+
+The bitmap output file from backpropagate-losses deduplicates by overwriting
+the same bit in the bitmap. However, this deduplication only happens on a single
+machine, so the more different machines are participating in the computation,
+the less effective the bitmap approach is at eliminating duplicates. Therefore,
+the backpropagate-losses tool scales less well with multiple participants.
+
+## Combined strategy
+
+Finally, it's possible to combine these ideas, using a forward search from each
+undecided position to find new losses, and then using a backward search from
+each new loss to find new wins. The advantage of this approach is that only
+the even-number input files ever need to be generated.
+
+This method is implemented in [solve2](solve2.cc), which outputs two lists for
+each input chunk: one with the newly discovered losses (corresponding with the
+results of solve-rN) and one with the newly discovered wins (corresponding with
+the results of backpropagate2). Note that that new losses will be discovered
+in the range corresponding with the input chunk, while new wins can appear
+anywhere, and so the second lists of all chunk output files can still contain
+duplicates.
+
+The combined strategy is most effective in later phases, when the number of
+new wins and losses becomes relatively small.
+
+
+## Backpropagating both wins and losses
+
+Finally, it's also possible to backpropagate newly-discovered wins. To do that
+we would look at all the predecessors of the winning position, and consider
+their successors: if all successors are won by the opponent, then we can mark
+the predecessor as losing.
+
+Note that this is less efficient than loss backpropagation, since we need to
+consider all successors of a predecessor, rather than just the predecessor
+itself. If we assume a position has about 2,000 predecessors and successors
+on avarage, that means we'll have to check ~2,000 positions when
+backpropagating losses, and ~4,000,000 positions when backpropagating wins.
+Obviously the latter is much slower.
+
+We could speed this up by maintaining some auxiliary data per indeterminate
+position which prevents the need to re-evaluate all successors, such as the
+number of indeterminate successors (which is decremented whenever we identify
+a new win), or a reference to one inderminate successor (which we'd update
+whenever that successor is marked as a win). However, storing this extra
+information would take a lot of extra disk space (e.g., two bytes per
+permutation would require another 800 GB total), so I decided against it for
+now.
+
+At some point, the number of newly-discovered positions in a phase could
+become so small that backpropagating wins becomes the more effective strategy.
+
 
 ### Output files and sizes
 
