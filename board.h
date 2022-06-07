@@ -146,8 +146,22 @@ struct Moves {
   std::array<std::pair<int, int>, 3> moves;
 };
 
+// Structure used to associate permutation with pretty-printing options.
+struct PrettyPerm {
+  const Perm &perm;
+  bool compact = false;
+};
+
+// Structure used to associate state with pretty-printing options.
+struct PrettyState {
+  const State &state;
+  bool compact = false;
+};
+
 std::ostream &operator<<(std::ostream &os, const Perm &p);
 std::ostream &operator<<(std::ostream &os, const State &s);
 std::ostream &operator<<(std::ostream &os, const Moves &moves);
+std::ostream &operator<<(std::ostream &os, const PrettyPerm &p);
+std::ostream &operator<<(std::ostream &os, const PrettyState &s);
 
 #endif  // ndef BOARD_H_INCLUDED

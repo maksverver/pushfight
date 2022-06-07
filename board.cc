@@ -114,7 +114,8 @@ const char *OutcomeToString(Outcome o) {
   return o == WIN ? "WIN" : o == LOSS ? "LOSS" : o == TIE ? "TIE" : "INVALID OUTCOME";
 }
 
-std::ostream &operator<<(std::ostream &os, const Perm &p) {
+std::ostream &operator<<(std::ostream &os, const PrettyPerm &pp) {
+  const Perm &p = pp.perm;
   REP(r, H) {
     REP(c, W) {
       int i = BOARD_INDEX[r][c];
@@ -125,19 +126,32 @@ std::ostream &operator<<(std::ostream &os, const Perm &p) {
       } else {
         ch = ' ';
       }
-      os << ch;
-
+      if (!pp.compact || ch != ' ') os << ch;
     }
-    os << '\n';
+    if (!pp.compact) os << '\n';
   }
   return os;
 }
 
+std::ostream &operator<<(std::ostream &os, const PrettyState &ps) {
+  const State &s = ps.state;
+  Outcome o = s.outcome;
+  os << PrettyPerm{.perm=s.perm, .compact=ps.compact};
+  const char *outcome = o == WIN ? "win" : o == LOSS ? "loss" : "indeterminate";
+  if (ps.compact) {
+    os << ' ' << outcome;
+  } else {
+    os << "Outcome: " << outcome << '\n';
+  }
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const Perm &p) {
+  return os << PrettyPerm{p};
+}
 
 std::ostream &operator<<(std::ostream &os, const State &s) {
-  Outcome o = s.outcome;
-  return os << s.perm <<
-      "Outcome: " << (o == WIN ? "win" : o == LOSS ? "loss" : "indeterminate") << '\n';
+  return os << PrettyState{s};
 }
 
 std::ostream &operator<<(std::ostream &os, const Moves &moves) {
