@@ -292,7 +292,7 @@ bytes_t ComputeChunk(int chunk) {
 
 void RunManually(int phase, int start_chunk, int end_chunk) {
   std::cout << "Calculating " << end_chunk - start_chunk
-      << " R" << phase << "+R" << phase + 1 << " chunks "
+      << " R" << phase - 1 << "+R" << phase << " chunks "
       << "from " << start_chunk << " to " << end_chunk << " (exclusive) "
       << "using " << num_threads << " threads." << std::endl;
   FOR(chunk, start_chunk, end_chunk) {
