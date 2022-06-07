@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Collects the chunks from an rN phase by hardlinking files from the
-# incoming/ subdirectory to the chunks/ subdirectory. Files are named
-# like "chunk-r0-0000.bin".
+# incoming/ subdirectory to the output/ subdirectory. Files are named
+# like "chunk-r0-0000-output.bin".
 #
 # Writes the file SHA256 checksums to standard output (in the same format
 # as sha256sum) which should be redirected to a file (or /dev/null).
 #
 # Example:
 #
-#  ./collect-chunks.sh 5 > chunk-r5.sha25sum
+#  ./collect-chunk-output.sh 5 > chunk-r5-output.sha25sum
 
 
 set -e -E -o pipefail
@@ -22,14 +22,24 @@ if [ -z "$phase" ]; then
   exit 1
 fi
 
-sqlite3 chunks.db "SELECT phase,chunk,hex(sha256sum) FROM WorkQueue WHERE phase=$phase" | {
+if [ ! -d incoming ]; then
+  echo 'Missing incoming directory.'
+  exit 1
+fi
+
+if [ ! -d output ]; then
+  echo 'Missing output directory.'
+  exit 1
+fi
+
+sqlite3 chunks.db "SELECT phase,chunk,hex(sha256sum) FROM WorkQueue WHERE phase=$phase AND completed IS NOT NULL" | {
   IFS='|'
   while read phase chunk sha256sum
   do
     sha256sum=$(echo "$sha256sum" | tr A-Z a-z)
-    filename=$(printf 'chunk-r%d-%04d.bin' "$phase" "$chunk")
+    filename=$(printf 'chunk-r%d-%04d-output.bin' "$phase" "$chunk")
     echo "$sha256sum  $filename"
-    dst=chunks/$filename
+    dst=output/$filename
     if [ -f "$dst" ]; then
       echo "$dst already exists. Skipping." >&2
     else
