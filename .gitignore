@@ -30,6 +30,7 @@
 /solve-lost
 /ternary_test
 /verify-input-chunks
+/verify-new
 /verify-r0
 /verify-r1
 /verify-rN

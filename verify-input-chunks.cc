@@ -1,3 +1,7 @@
+// Tool to verify rN.bin files using sha256 checksums of some chunks.
+//
+// This is basically a thin wrapper around the VerifyInputChunks() function.
+
 #include "accessors.h"
 #include "chunks.h"
 #include "parse-int.h"
