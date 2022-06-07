@@ -83,7 +83,7 @@ def HaveOutputFile(sha256sum):
 
 
 def ConnectDb():
-  return sqlite3.connect(DATABASE_FILE, isolation_level='EXCLUSIVE')
+  return sqlite3.connect(DATABASE_FILE, isolation_level='EXCLUSIVE', timeout=120)
 
 
 class RequestHandler(socketserver.BaseRequestHandler):
