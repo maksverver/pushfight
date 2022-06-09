@@ -31,12 +31,12 @@ FIELD_COL = [
 ]
 
 if len(sys.argv) < 3:
-  print('Usage: animate.py <output.gif> <state> [<moves>]')
+  print('Usage: animate.py <output.gif> <state> [<moves>...]')
   sys.exit(1)
 
 output_arg = sys.argv[1]
 state_arg = sys.argv[2]
-moves_arg = sys.argv[3] if len(sys.argv) > 3 else None
+turn_args = sys.argv[3:]
 
 if len(state_arg) != 26:
   print('Invalid state: ' + state_arg + ' (expected a 26-character string like ".OX.....oxY....Oox.....OX.")')
@@ -60,7 +60,7 @@ def ParseMove(move):
     sys.exit(1)
   return tuple(map(ParseField, move.split('-')))
 
-moves = moves_arg and list(map(ParseMove, moves_arg.split(',')))
+turns = [[ParseMove(move) for move in turn_arg.split(',')] for turn_arg in turn_args]
 
 class Piece:
   def __init__(self, r, c, color, pusher, anchor):
@@ -188,53 +188,54 @@ def FindPath(r1, c1, r2, c2):
 # Create first frame
 AddImage(1000)
 
-if moves is None:
+if not turns:
   # Save single image
   images[0].save(output_arg)
 else:
-  # Create animation
-  for i, ((r1, c1), (r2, c2)) in enumerate(moves):
-    # If this fails, the piece was not found on the selected location!
-    piece = FindPiece(r1, c1)
-    if piece is None:
-      print('No piece found at', (r1, c1))
-      sys.exit(1)
-
-    if i + 1 < len(moves):
-      # Regular move.
-      path = FindPath(r1, c1, r2, c2)
-      if path is None:
-        print('No path found from', (r1, c1), 'to', (r2, c2))
+  for moves in turns:
+    # Create animation
+    for i, ((r1, c1), (r2, c2)) in enumerate(moves):
+      # If this fails, the piece was not found on the selected location!
+      piece = FindPiece(r1, c1)
+      if piece is None:
+        print('No piece found at', (r1, c1))
         sys.exit(1)
 
-      for j in range(len(path) - 1):
-        (r1, c1), (r2, c2) = path[j:j + 2]
-        AddAnimation(50, 5, [piece], r2 - r1, c2 - c1)
-        piece.r = r2
-        piece.c = c2
+      if i + 1 < len(moves):
+        # Regular move.
+        path = FindPath(r1, c1, r2, c2)
+        if path is None:
+          print('No path found from', (r1, c1), 'to', (r2, c2))
+          sys.exit(1)
 
-      durations[-1] = 200
+        for j in range(len(path) - 1):
+          (r1, c1), (r2, c2) = path[j:j + 2]
+          AddAnimation(50, 5, [piece], r2 - r1, c2 - c1)
+          piece.r = r2
+          piece.c = c2
 
-    else:
-      # Push move.
-      for p in pieces:
-        p.anchor = 0
-      piece.anchor = 1
-      dr = r2 - r1
-      dc = c2 - c1
-      moved_pieces = [piece]
-      while True:
-        piece = FindPiece(r1 + len(moved_pieces)*dr, c1 + len(moved_pieces)*dc)
-        if piece is None:
-          break
-        moved_pieces.append(piece)
-      AddAnimation(50, 12, moved_pieces, dr, dc)
-      for piece in moved_pieces:
-        piece.r += dr
-        piece.c += dc
+        durations[-1] = 200
 
-  # Show final state for 2 seconds
-  AddImage(2000)
+      else:
+        # Push move.
+        for p in pieces:
+          p.anchor = 0
+        piece.anchor = 1
+        dr = r2 - r1
+        dc = c2 - c1
+        moved_pieces = [piece]
+        while True:
+          piece = FindPiece(r1 + len(moved_pieces)*dr, c1 + len(moved_pieces)*dc)
+          if piece is None:
+            break
+          moved_pieces.append(piece)
+        AddAnimation(50, 12, moved_pieces, dr, dc)
+        for piece in moved_pieces:
+          piece.r += dr
+          piece.c += dc
+
+    # Show final state for 2 seconds
+    AddImage(2000)
 
   # Save animated image
   images[0].save(output_arg, save_all=True, append_images=images[1:], loop=0, duration=durations)
