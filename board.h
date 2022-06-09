@@ -150,12 +150,14 @@ struct Moves {
 struct PrettyPerm {
   const Perm &perm;
   bool compact = false;
+  bool coords = false;
 };
 
 // Structure used to associate state with pretty-printing options.
 struct PrettyState {
   const State &state;
   bool compact = false;
+  bool coords = false;
 };
 
 std::ostream &operator<<(std::ostream &os, const Perm &p);

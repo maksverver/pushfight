@@ -16,10 +16,18 @@ namespace {
 bool print_successors = false;
 bool print_predecessors = false;
 bool print_compact = false;
+bool print_coords = false;
+
+PrettyPerm Print(const Perm &perm) {
+  return PrettyPerm{.perm=perm, .compact=print_compact, .coords=print_coords};
+}
+
+PrettyState Print(const State &state) {
+  return PrettyState{.state=state, .compact=print_compact, .coords=print_coords};
+}
 
 void DumpPerm(const Perm &perm) {
-  std::cout << IndexOf(perm) << '\n'
-      << PrettyPerm{.perm=perm, .compact=print_compact} << std::endl;
+  std::cout << IndexOf(perm) << '\n' << Print(perm) << std::endl;
 
   std::cout << "This position is " << (IsReachable(perm) ? "likely" : "NOT") << " reachable.\n";
 
@@ -32,7 +40,7 @@ void DumpPerm(const Perm &perm) {
     if (print_successors) {
       std::cout << moves << '\n';
       std::cout << IndexOf(state.perm) << '\n';
-      std::cout << PrettyState{.state=state, .compact=print_compact} << '\n';
+      std::cout << Print(state) << '\n';
       if (print_compact) std::cout << '\n';
     }
     o = MaxOutcome(o, Invert(state.outcome));
@@ -43,7 +51,7 @@ void DumpPerm(const Perm &perm) {
     std::cout << "\nPredecessors:\n\n";
     GeneratePredecessors(perm, [](const Perm &pred) {
       std::cout << IndexOf(pred) << '\n';
-      std::cout << PrettyPerm{.perm=pred, .compact=print_compact} << "\n";
+      std::cout << Print(pred) << "\n";
       if (print_compact) std::cout << '\n';
     });
   }
@@ -57,6 +65,7 @@ void PrintUsage() {
     "  print-perm [options] .OX.....oxY....Oox.....OX.\n\n"
     "Options:\n"
     "  --compact: print permutations without spaces\n"
+    "  --coords: include coordinates in output\n"
     "  --succ: print successors\n"
     "  --pred: print predecessors" << std::endl;
 }
@@ -82,11 +91,13 @@ int main(int argc, char *argv[]) {
   InitializePerms();
 
   std::string arg_compact;
+  std::string arg_coords;
   std::string arg_succ;
   std::string arg_pred;
 
   std::map<std::string, Flag> flags = {
     {"compact", Flag::optional(arg_compact)},
+    {"coords", Flag::optional(arg_coords)},
     {"succ", Flag::optional(arg_succ)},
     {"pred", Flag::optional(arg_pred)},
   };
@@ -110,6 +121,7 @@ int main(int argc, char *argv[]) {
   const char *perm_arg = argv[1];
 
   print_compact = arg_compact == "true";
+  print_coords = arg_coords == "true";
   print_predecessors = arg_pred == "true";
   print_successors = arg_succ == "true";
 

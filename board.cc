@@ -128,7 +128,14 @@ std::ostream &operator<<(std::ostream &os, const PrettyPerm &pp) {
       }
       if (!pp.compact || ch != ' ') os << ch;
     }
-    if (!pp.compact) os << '\n';
+    if (!pp.compact) {
+      if (pp.coords) os << static_cast<char>('4' - r);
+      os << '\n';
+    }
+  }
+  if (!pp.compact && pp.coords) {
+    REP(c, W) os << static_cast<char>('a' + c);
+    os << '\n';
   }
   return os;
 }
@@ -136,7 +143,7 @@ std::ostream &operator<<(std::ostream &os, const PrettyPerm &pp) {
 std::ostream &operator<<(std::ostream &os, const PrettyState &ps) {
   const State &s = ps.state;
   Outcome o = s.outcome;
-  os << PrettyPerm{.perm=s.perm, .compact=ps.compact};
+  os << PrettyPerm{.perm=s.perm, .compact=ps.compact, .coords=ps.coords};
   const char *outcome = o == WIN ? "win" : o == LOSS ? "loss" : "indeterminate";
   if (ps.compact) {
     os << ' ' << outcome;
