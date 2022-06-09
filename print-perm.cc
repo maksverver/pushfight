@@ -6,6 +6,8 @@
 #include "search.h"
 
 #include <cassert>
+#include <cctype>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 
@@ -49,20 +51,29 @@ void DumpPerm(const Perm &perm) {
   std::cout << "Verdict: " << (o == WIN ? "win" : o == LOSS ? "loss" : "indeterminate") << std::endl;
 }
 
-int count(const std::string &s, char target) {
-  int n = 0;
-  for (char ch : s) if (ch == target) ++n;
-  return n;
-}
-
 void PrintUsage() {
   std::cout << "Usage:\n" <<
-    "  print-perm [options] --index=123\n"
-    "  print-perm [options] --perm=.OX.....oxY....Oox.....OX.\n\n"
+    "  print-perm [options] 123\n"
+    "  print-perm [options] .OX.....oxY....Oox.....OX.\n\n"
     "Options:\n"
     "  --compact: print permutations without spaces\n"
     "  --succ: print successors\n"
     "  --pred: print predecessors" << std::endl;
+}
+
+int Count(const char *s, char target) {
+  int n = 0;
+  while (*s) {
+    n += *s++ == target;
+  }
+  return n;
+}
+
+bool AllDigits(const char *s) {
+  do {
+    if (!isdigit(*s++)) return false;
+  } while (*s);
+  return true;
 }
 
 }  // namespace
@@ -70,15 +81,11 @@ void PrintUsage() {
 int main(int argc, char *argv[]) {
   InitializePerms();
 
-  std::string arg_index;
-  std::string arg_perm;
   std::string arg_compact;
   std::string arg_succ;
   std::string arg_pred;
 
   std::map<std::string, Flag> flags = {
-    {"index", Flag::optional(arg_index)},
-    {"perm", Flag::optional(arg_perm)},
     {"compact", Flag::optional(arg_compact)},
     {"succ", Flag::optional(arg_succ)},
     {"pred", Flag::optional(arg_pred)},
@@ -95,42 +102,40 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (argc > 1) {
-    std::cout << "Too many arguments!\n\n";
+  if (argc < 2 || argc > 2) {
+    std::cout << "Expected exactly 1 permutation argument!\n\n";
     PrintUsage();
     return 1;
   }
-
-  if (arg_index.empty() == arg_perm.empty()) {
-    std::cout << "Exactly one of --index or --perm must be provided.\n";
-    return 1;
-  }
+  const char *perm_arg = argv[1];
 
   print_compact = arg_compact == "true";
   print_predecessors = arg_pred == "true";
   print_successors = arg_succ == "true";
 
-  if (!arg_index.empty()) {
-    int64_t index = ParseInt64(arg_index.c_str());
+  if (AllDigits(perm_arg)) {
+    // Parse as permutation index.
+    int64_t index = ParseInt64(perm_arg);
     if (index < 0 || index >= total_perms) {
       std::cout << "Invalid permutation index " << index << std::endl;
     }
     Perm perm = PermAtIndex(index);
     DumpPerm(perm);
-  } else if (!arg_perm.empty()) {
-    if (arg_perm.size() != 26) {
+  } else {
+    // Parse as permutation string.
+    if (strlen(perm_arg) != 26) {
       std::cout << "Invalid length! Expected 26." << std::endl;
     } else if (
-        count(arg_perm, 'o') != 2 ||
-        count(arg_perm, 'O') != 3 ||
-        count(arg_perm, 'x') != 2 ||
-        count(arg_perm, 'X') != 2 ||
-        count(arg_perm, 'Y') != 1) {
+        Count(perm_arg, 'o') != 2 ||
+        Count(perm_arg, 'O') != 3 ||
+        Count(perm_arg, 'x') != 2 ||
+        Count(perm_arg, 'X') != 2 ||
+        Count(perm_arg, 'Y') != 1) {
       std::cout << "Invalid character counts." << std::endl;
     } else {
       Perm perm;
       REP(i, 26) {
-        char ch = arg_perm[i];
+        char ch = perm_arg[i];
         perm[i] =
             ch == 'o' ? WHITE_MOVER :
             ch == 'O' ? WHITE_PUSHER :
