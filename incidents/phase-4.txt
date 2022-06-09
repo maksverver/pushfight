@@ -23,3 +23,26 @@ If true, there might be some losses that were not identified in phase 5. These
 would have been detected in phase 7 instead.
 
 According to the server logs, this might apply to chunks up 3053!
+
+Resolution (part 2):
+I recalculated all phase 5 output chunks up to 3053 using solve-rN,
+to find the incorrect chunks. It turns out there were only three:
+
+    chunk-r5-0591.bin
+    chunk-r5-0660.bin
+    chunk-r5-2168.bin
+
+I used solve2 to recomputed losses and backpropagated wins, and then ran
+integrate-two to update r5.bin and r6.bin. It turns out there were a total of
+35 new losses, and 0 new wins:
+
+output/chunk-r6-0591-two.bin: 356561 losses, 20 new losses.
+output/chunk-r6-0591-two.bin: 596474 wins, 0 new wins.
+output/chunk-r6-0660-two.bin: 262372 losses, 8 new losses.
+output/chunk-r6-0660-two.bin: 12143 wins, 0 new wins.
+output/chunk-r6-2168-two.bin: 466711 losses, 7 new losses.
+output/chunk-r6-2168-two.bin: 0 wins, 0 new wins.
+Total 1694261 permutations, 1085644 losses, 35 new losses, 608617 wins, 0 new wins.
+
+I also used `integrate-two --dry-run` to confirm that r7.bin contained the
+losses already, as expected.
