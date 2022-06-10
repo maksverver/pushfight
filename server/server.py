@@ -39,7 +39,7 @@ if os.path.isdir(ARCHIVE_DIR):
     path for path in [os.path.join(ARCHIVE_DIR, name) for name in os.listdir(ARCHIVE_DIR)]
     if os.path.isdir(path)]
   if not archive_dirs:
-    print('No subdirectories in %s' % ARCHIVE_DIRS)
+    print('No subdirectories in %s' % ARCHIVE_DIR)
   else:
     print('Using archived files in subdirectories:')
     for path in archive_dirs:
