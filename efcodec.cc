@@ -35,6 +35,15 @@ struct BitEncoder {
   void WriteLowerBits(uint64_t value, int num_bits) {
     // TODO: this could be optimized a bit, by writing multiple bits at once
     // if there is space in the byte.
+    //
+    // NOTE: this effectly reverses the order of bits. It would have been better
+    // to encode numbers in little-endian order:
+    //
+    //  REP(i, num_bits) WriteBit((value >> i) & 1);
+    //
+    // which allows reading/writing multiple bits from a byte without having
+    // to reverse the bits. Unfortunately, I don't think I should change the
+    // file format at this point.
     while (num_bits-- > 0) WriteBit((value >> num_bits) & 1);
   }
 
