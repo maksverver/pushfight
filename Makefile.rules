@@ -58,6 +58,9 @@ count-unreachable: $(OBJDIR)/count-unreachable.o $(COMMON_OBJS)
 combine-bitmaps: $(OBJDIR)/combine-bitmaps.o
 	$(CC) $(CCFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+combine-two: $(OBJDIR)/combine-two.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 decode-delta: $(OBJDIR)/decode-delta.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
