@@ -49,18 +49,19 @@ else:
   archive_dirs = []
 
 
-def GetSolver(phase):
-  if phase == 5: return 'solve-rN-v0.1.1'
-  if phase == 6: return 'backpropagate2-v0.1.1'
-  if phase == 7: return 'solve-rN-v0.1.2'
-  if phase == 8: return 'backpropagate2-v0.1.3'
-  if phase == 10: return 'solve2-v0.1.3'
-  if phase == 12: return 'solve2-v0.1.3'
-  if phase == 14: return 'solve2-v0.1.3'
-  if phase == 16: return 'solve2-v0.1.3'
-  if phase == 18: return 'solve2-v0.1.3'
-  if phase == 20: return 'solve2-v0.1.3'
-  if phase == 22: return 'solve2-v0.1.3'
+def GetSolvers(phase):
+  if phase == 5: return ['solve-rN-v0.1.1']
+  if phase == 6: return ['backpropagate2-v0.1.1']
+  if phase == 7: return ['solve-rN-v0.1.2']
+  if phase == 8: return ['backpropagate2-v0.1.3']
+  if phase == 10: return ['solve2-v0.1.3']
+  if phase == 12: return ['solve2-v0.1.3']
+  if phase == 14: return ['solve2-v0.1.3']
+  if phase == 16: return ['solve2-v0.1.3']
+  if phase == 18: return ['solve2-v0.1.3']
+  if phase == 20: return ['solve2-v0.1.3']
+  if phase == 22: return ['solve2-v0.1.3', 'solve2-v0.1.4']
+  if phase == 24: return ['solve2-v0.1.3', 'solve2-v0.1.4']
   return None
 
 
@@ -164,7 +165,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
     phase = DecodeInt(info.get(b'phase'))
 
     # Check solver is correct (except for phase == 999, which is used for testing).
-    if phase != 999 and self.solver != GetSolver(phase):
+    if phase != 999 and self.solver not in GetSolvers(phase):
       self.send_error('Invalid solver for phase')
       return
 
