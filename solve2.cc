@@ -50,9 +50,17 @@
 #include <thread>
 #include <vector>
 
+// Defined in input_generation.cc.
+bool GeneratePhaseInput(
+    int phase,
+    const char *input_filename,
+    const char *temp_filename,
+    const char *previous_input_filename,
+    const char *diff_filename);
+
 namespace {
 
-constexpr const char *solver_id = "solve2-v0.1.3";
+constexpr const char *solver_id = "solve2-v0.1.4";
 constexpr const char *default_hostname = "styx.verver.ch";
 constexpr const char *default_portname = "7429";
 
@@ -67,6 +75,12 @@ const std::string PhaseInputFilename(int phase) {
   return oss.str();
 }
 
+const std::string PhaseDiffFilename(int phase) {
+  std::ostringstream oss;
+  oss << "input/r" << phase << "-new.bin";
+  return oss.str();
+}
+
 const std::string ChunkOutputFilename(int phase, int chunk) {
   std::ostringstream oss;
   oss << "output/chunk-r" << phase << "-" << std::setfill('0') << std::setw(4) << chunk << "-two.bin";
@@ -74,7 +88,19 @@ const std::string ChunkOutputFilename(int phase, int chunk) {
 }
 
 void InitPhase(int phase) {
-  acc.emplace(PhaseInputFilename(phase - 2).c_str());
+  std::string input_filename = PhaseInputFilename(phase - 2);
+  std::string temp_filename = input_filename + ".tmp";
+  std::string previous_input_filename = PhaseInputFilename(phase - 4);
+  std::string diff_filename = PhaseDiffFilename(phase - 2);
+
+  if (!GeneratePhaseInput(phase, input_filename.c_str(),
+      temp_filename.c_str(),
+      previous_input_filename.c_str(),
+      diff_filename.c_str())) {
+    exit(1);
+  }
+
+  acc.emplace(input_filename.c_str());
   int failures = VerifyInputChunks(phase - 2, acc.value());
   if (failures != 0) exit(1);
 }
