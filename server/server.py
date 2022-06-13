@@ -59,6 +59,8 @@ def GetSolver(phase):
   if phase == 14: return 'solve2-v0.1.3'
   if phase == 16: return 'solve2-v0.1.3'
   if phase == 18: return 'solve2-v0.1.3'
+  if phase == 20: return 'solve2-v0.1.3'
+  if phase == 22: return 'solve2-v0.1.3'
   return None
 
 
