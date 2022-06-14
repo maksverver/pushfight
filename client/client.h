@@ -21,6 +21,10 @@ public:
   // Returns the active phase number, or an empty optional if there is none.
   ErrorOr<std::optional<int>> GetCurrentPhase();
 
+  // Filename should be something like "r22-new.bin" or "chunk-r22.sha256sum".
+  ErrorOr<bytes_t> DownloadInputFile(
+    const std::string &filename);
+
   // Returns a list of new chunks.
   ErrorOr<std::vector<int>> GetChunks(int phase);
 

@@ -38,6 +38,12 @@ bool GeneratePhaseInput(
     return true;
   }
 
+  if (!std::filesystem::exists(temp_filename) &&
+      !std::filesystem::exists(previous_input_filename)) {
+    std::cerr << "Cannot generate " << input_filename << "; missing previous input file " << previous_input_filename << std::endl;
+    return false;
+  }
+
   if (!std::filesystem::exists(diff_filename)) {
     std::cerr << "Cannot generate " << input_filename << "; missing diff file " << diff_filename << std::endl;
     return false;
@@ -49,6 +55,10 @@ bool GeneratePhaseInput(
     return false;
   }
 
+  if (!std::filesystem::exists(temp_filename)) {
+    std::filesystem::rename(previous_input_filename, temp_filename);
+  }
+
   std::unique_ptr<void, std::function<void(void*)>> diff_data(
       MemMap(diff_filename, diff_filesize, false),
       [size=diff_filesize](void *data) {
@@ -56,15 +66,6 @@ bool GeneratePhaseInput(
       });
   byte_span_t diff_bytes(
     reinterpret_cast<const uint8_t*>(diff_data.get()), diff_filesize);
-
-  if (!std::filesystem::exists(temp_filename)) {
-    if (!std::filesystem::exists(previous_input_filename)) {
-      std::cerr << "Cannot generate " << input_filename << "; missing previous input file " << temp_filename << std::endl;
-      return false;
-    }
-
-    std::filesystem::rename(previous_input_filename, temp_filename);
-  }
 
   // Step 1: integrate new wins and losses.
   std::cerr << "Generating " << input_filename << " from "

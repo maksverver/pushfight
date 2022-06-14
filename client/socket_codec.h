@@ -7,7 +7,7 @@
 #include "codec.h"
 #include "socket.h"
 
-constexpr size_t DEFAULT_MAX_MESSAGE_SIZE = 100 << 20;  // 100 MiB
+constexpr size_t DEFAULT_MAX_MESSAGE_SIZE = 500 << 20;  // 500 MiB
 
 std::optional<bytes_t> DecodeBytesFromSocket(
     Socket &socket,

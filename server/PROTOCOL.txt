@@ -29,26 +29,43 @@ Server response:
 
 Then a number of requests follow.
 
+Each request has a single string field "method" which indicates the method being
+called, in addition to the method call parameters (different per method,
+described below). The response contains either a string field "error" containing
+an error message, or the return values (also described below).
+
 
 GetCurrentPhase
 ---------------
+
 Request:
-  method: "GetCurrentPhase"
+  (nothing)
 
 Response:
   phase: integer (optional)
 
 
+DownloadInputFile
+-----------------
+
+Request:
+  filename: string
+
+Response:
+  bytesize: integer
+  sha256sum: bytestring (exactly 32 bytes)
+  encoding: bytestring ("zlib")
+  encoded_data: bytestring
+
+
 GetChunks
 ---------
-Request
 
-  method: "GetChunks"
+Request
   phase: integer
 
 Response
-
-chunks: list of integers
+  chunks: list of integers
 
 In the above, each integer is encoded as a string, then the strings
 are encoded as a string, e.g.:
@@ -62,15 +79,12 @@ ReportChunkComplete
 -------------------
 
 Request
-
-  method: "ReportChunkComplete"
   phase: integer
   chunk: integer
   bytesize: integer
   sha256sum: bytestring (exactly 32 bytes)
 
-Response has exactly 1 part:
-
+Response:
   upload: integer
 
 If upload=1 then the client should upload the result.
@@ -80,13 +94,10 @@ UploadChunk
 -----------
 
 Request
-
-  method: "UploadChunk"
   phase: integer
   chunk: integer
   encoding: bytestring ("zlib")
   encoded_data: bytestring
 
 Response
-
-(empty)
+  (nothing)

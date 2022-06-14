@@ -42,6 +42,7 @@
 #include <cassert>
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <optional>
@@ -71,6 +72,10 @@ std::optional<RnAccessor> acc;  // r(N-1).bin
 
 int initialized_phase = -1;
 
+std::function<std::optional<Client>()> client_factory = []() {
+  return std::optional<Client>();
+};
+
 const std::string PhaseInputFilename(int phase) {
   std::ostringstream oss;
   oss << "input/r" << phase << ".bin";
@@ -87,6 +92,30 @@ const std::string ChunkOutputFilename(int phase, int chunk) {
   std::ostringstream oss;
   oss << "output/chunk-r" << phase << "-" << std::setfill('0') << std::setw(4) << chunk << "-two.bin";
   return oss.str();
+}
+
+bool MaybeDownload(const char *filename) {
+  if (std::filesystem::exists(filename)) return true;
+  if (auto client = client_factory(); !client) {
+    std::cerr << "Cannot download " << filename << std::endl;
+  } else if (auto data = client->DownloadInputFile(basename(filename)); !data) {
+    std::cerr << "Failed to download " << filename << ": " << data.Error().message << std::endl;
+  } else if (std::ofstream ofs(filename, std::ofstream::binary); !ofs) {
+    std::cerr << "Could not open " << filename << std::endl;
+  } else if (!ofs.write(reinterpret_cast<char*>(data->data()), data->size())) {
+    std::cerr << "Failed to write to " << filename << std::endl;
+  } else if (auto res = client->DownloadInputFile(std::filesystem::path(filename).filename()); !res) {
+    std::cerr << "Failed to download " << filename << ": " << res.Error().message << std::endl;
+  } else {
+    std::ofstream ofs(filename, std::ofstream::binary);
+    if (!ofs.write(reinterpret_cast<char*>(res->data()), res->size())) {
+      std::cerr << "Failed to write to " << filename << std::endl;
+    } else {
+      std::cerr << "Downloaded " << filename << std::endl;
+      return true;
+    }
+  }
+  return false;
 }
 
 // Note: may be called more than once (whenever the active phase changes).
@@ -106,6 +135,18 @@ void InitPhase(int phase) {
   std::string temp_filename = input_filename + ".tmp";
   std::string previous_input_filename = PhaseInputFilename(phase - 4);
   std::string diff_filename = PhaseDiffFilename(phase - 2);
+
+  if (!std::filesystem::exists(input_filename)) {
+    // We will have to generate it.
+    if (std::filesystem::exists(previous_input_filename) ||
+        std::filesystem::exists(temp_filename)) {
+      if (!(
+        MaybeDownload(GetChecksumFilename("metadata", phase - 2).c_str()) &&
+        MaybeDownload(diff_filename.c_str()))) {
+        std::cerr << "Failed to download the required files!" << std::endl;
+      }
+    }
+  }
 
   if (!GeneratePhaseInput(phase, input_filename.c_str(),
       temp_filename.c_str(),
@@ -445,6 +486,15 @@ int main(int argc, char *argv[]) {
       std::cout << "Must provide both user and machine flags.\n";
       return 1;
     }
+
+    client_factory = [host=arg_host, port=arg_port, user=arg_user, machine=arg_machine]() {
+      if (auto client = Client::Connect(host.c_str(), port.c_str(), solver_id, user, machine); !client) {
+        std::cerr << "Failed to connect: " << client.Error().message << std::endl;
+        return std::optional<Client>();
+      } else {
+        return std::optional<Client>(std::move(*client));
+      }
+    };
 
     AutomaticSolver solver(
         solver_id, arg_host, arg_port, arg_user, arg_machine,

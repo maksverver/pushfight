@@ -1,6 +1,6 @@
 #include "socket_codec.h"
 
-std::optional<bytes_t> DecodeBytesFromSocket(Socket &socket,size_t max_size) {
+std::optional<bytes_t> DecodeBytesFromSocket(Socket &socket, size_t max_size) {
   std::vector<uint8_t> buffer(1);
   if (socket.Receive(&buffer[0], 1) != 1) {
     return {};  // EOF

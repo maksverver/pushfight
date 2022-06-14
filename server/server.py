@@ -33,6 +33,14 @@ assert os.path.exists(DATABASE_FILE)
 UPLOAD_DIR = 'incoming'
 assert os.path.isdir(UPLOAD_DIR)
 
+INPUT_DIR = 'input'
+INPUT_FILES = set()
+if os.path.isdir(INPUT_DIR):
+  for name in os.listdir(INPUT_DIR):
+    INPUT_FILES.add(name)
+else:
+  print('Warning: %s does not exist (or is not a directory)' % INPUT_DIR)
+
 ARCHIVE_DIR = 'archive'
 if os.path.isdir(ARCHIVE_DIR):
   archive_dirs = [
@@ -62,6 +70,7 @@ def GetSolvers(phase):
   if phase == 20: return ['solve2-v0.1.3']
   if phase == 22: return ['solve2-v0.1.3', 'solve2-v0.1.4', 'solve2-v0.1.5']
   if phase == 24: return ['solve2-v0.1.3', 'solve2-v0.1.4', 'solve2-v0.1.5']
+  if phase == 26: return ['solve2-v0.1.5']
   return []
 
 
@@ -138,6 +147,8 @@ class RequestHandler(socketserver.BaseRequestHandler):
             self.send_error('Missing method')
           elif method == 'GetCurrentPhase':
             self.handle_get_current_phase(info)
+          elif method == 'DownloadInputFile':
+            self.handle_download_input_file(info)
           elif method == 'GetChunks':
             self.handle_get_chunks(info)
           elif method == 'ReportChunkComplete':
@@ -173,6 +184,15 @@ class RequestHandler(socketserver.BaseRequestHandler):
     else:
       self.send_response({b'phase': EncodeInt(phase)})
 
+  def handle_download_input_file(self, info):
+    filename = info[b'filename'].decode('utf-8')
+    if filename not in INPUT_FILES:
+      print(filename)
+      self.send_error('File not found')
+    else:
+      with open(os.path.join(INPUT_DIR, filename), 'rb') as f:
+        while buf := f.read(65536):
+          self.request.sendall(buf)
 
   def handle_get_chunks(self, info):
     phase = DecodeInt(info.get(b'phase'))

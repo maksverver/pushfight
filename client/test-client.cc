@@ -27,6 +27,13 @@ int main(int argc, char *argv[]) {
     std::cerr << "Failed to connect: " << client.Error().message << std::endl;
     return 1;
   }
+
+  if (auto res = client->DownloadInputFile("hello.txt"); !res) {
+    std::cerr << "Download failed: " << res.Error().message << std::endl;
+  } else {
+    std::cerr << "Downloaded:" << std::endl << *res << std::endl;
+  }
+
   if (auto res = client->GetCurrentPhase(); !res) {
     std::cerr << "Failed to get current phase: " << res.Error().message << std::endl;
   } else if (auto opt_phase = res.Value(); !opt_phase) {

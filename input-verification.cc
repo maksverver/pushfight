@@ -34,6 +34,14 @@ private:
   const RnAccessor &acc;
 };
 
+std::string GetChecksumFilename(const char *subdir, int phase) {
+  std::ostringstream oss;
+  oss << subdir;
+  if (*subdir) oss << '/';
+  oss << "chunk-r" << phase << ".sha256sum";
+  return oss.str();
+}
+
 namespace {
 
 // SHA256 checksums of chunks of r4.bin
@@ -147,14 +155,6 @@ std::optional<std::vector<sha256_hash_t>> LoadChecksums(const char *filename) {
     result.push_back(std::move(*decoded_hash));
   }
   return result;
-}
-
-std::string GetChecksumFilename(const char *subdir, int phase) {
-  std::ostringstream oss;
-  oss << subdir;
-  if (*subdir) oss << '/';
-  oss << "chunk-r" << phase << ".sha256sum";
-  return oss.str();
 }
 
 int VerifyChecksums(

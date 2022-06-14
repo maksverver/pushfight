@@ -73,6 +73,49 @@ ErrorOr<std::optional<int>> Client::GetCurrentPhase() {
   }
 }
 
+ErrorOr<bytes_t> Client::DownloadInputFile(const std::string &filename) {
+  std::map<bytes_t, bytes_t> request;
+  request[ToBytes("method")] = ToBytes("DownloadInputFile");
+  request[ToBytes("filename")] = ToBytes(filename);
+
+  if (!socket.SendAll(EncodeBytes(EncodeDict(request)))) {
+    return Error("Failed to send request");
+  } else if (std::optional<bytes_t> data = DecodeBytesFromSocket(socket); !data) {
+    return Error("No response");
+  } else if (auto response = DecodeDict(*data); !response) {
+    return Error("Couldn't parse response dictionary");
+  } else if (auto it = response->find(byte_span_t("error")); it != response->end()) {
+    return Error("Server returned error: \"" + ToString(it->second) + "\"");
+  } else if (auto it = response->find(byte_span_t("bytesize")); it == response->end()) {
+    return Error("Missing field 'bytesize'.");
+  } else if (auto bytesize = DecodeInt(it->second); !bytesize) {
+    return Error("Couldn't parse field 'bytesize'.");
+  } else if (auto it = response->find(byte_span_t("sha256sum")); it == response->end()) {
+    return Error("Missing field 'sha256sum'.");
+  } else if (const auto &sha256sum = it->second; sha256sum.size() != 32) {
+    return Error("Invalid length for field 'sha256sum'.");
+  } else if (auto it = response->find(byte_span_t("encoding")); it == response->end()) {
+    return Error("Missing field 'encoding'.");
+  } else if (const auto &encoding = it->second; encoding != ToBytes("zlib")) {
+    return Error("Invalid encoding.");
+  } else if (auto it = response->find(byte_span_t("encoded_data")); it == response->end()) {
+    return Error("Missing field 'encoded_data'.");
+  } else if (auto decoded = Decompress(it->second); !decoded) {
+    return Error("Could not decompress 'encoded_data'!");
+  } else {
+    if (decoded->size() != bytesize) {
+      return Error("Decoded size does not match!");
+    }
+    sha256_hash_t expected_hash;
+    assert(sizeof(expected_hash) == sha256sum.size());
+    std::copy(sha256sum.begin(), sha256sum.end(), expected_hash.begin());
+    if (ComputeSha256(*decoded) != expected_hash) {
+      return Error("SHA-256 checksum mismatch!");
+    }
+    return *decoded;
+  }
+}
+
 ErrorOr<std::vector<int>> Client::GetChunks(int phase) {
   std::map<bytes_t, bytes_t> request;
   request[ToBytes("method")] = ToBytes("GetChunks");
