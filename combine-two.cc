@@ -71,7 +71,8 @@ int main(int argc, char *argv[]) {
       std::vector<int64_t> ints;
       ints.reserve(src.size());
       for (int i : src) {
-        ints.push_back(int64_t{chunk} * chunk_size + i);
+        assert(i >= 0 && i < chunk_size);
+        ints.push_back(int64_t{chunk} * int64_t{chunk_size} + int64_t{i});
       }
       bytes_t bytes = EncodeEF(ints);
       if (!std::cout.write(reinterpret_cast<const char*>(bytes.data()), bytes.size())) {
