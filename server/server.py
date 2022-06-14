@@ -62,7 +62,7 @@ def GetSolvers(phase):
   if phase == 20: return ['solve2-v0.1.3']
   if phase == 22: return ['solve2-v0.1.3', 'solve2-v0.1.4']
   if phase == 24: return ['solve2-v0.1.3', 'solve2-v0.1.4']
-  return None
+  return []
 
 
 class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
