@@ -46,6 +46,7 @@ int num_threads = std::thread::hardware_concurrency();
 
 std::optional<RnAccessor> rn2_acc;  // r(N-2).bin
 std::optional<RnAccessor> rn1_acc;  // r(N-1).bin
+int initialized_phase = -1;
 
 const std::string PhaseInputFilename(int phase) {
   std::ostringstream oss;
@@ -67,6 +68,8 @@ void InitPhase(int phase) {
       VerifyInputChunks(phase - 2, rn2_acc.value()) +
       VerifyInputChunks(phase - 1, rn1_acc.value());
   if (failures != 0) exit(1);
+
+  initialized_phase = phase;
 }
 
 struct ChunkStats {
@@ -154,7 +157,9 @@ ChunkStats ProcessChunk(int chunk, std::vector<int64_t> &wins) {
   return stats;
 }
 
-bytes_t ComputeChunk(int chunk) {
+bytes_t ComputeChunk(int phase, int chunk) {
+  assert(phase == initialized_phase);
+
   auto start_time = std::chrono::system_clock::now();
 
   std::vector<int64_t> wins;
@@ -188,7 +193,7 @@ void RunManually(int phase, int start_chunk, int end_chunk) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
     }
-    WriteToFile(filename, ComputeChunk(chunk));
+    WriteToFile(filename, ComputeChunk(phase, chunk));
   }
 }
 
@@ -284,11 +289,8 @@ int main(int argc, char *argv[]) {
 
     InitPhase(phase);
     AutomaticSolver solver(
-        solver_id, phase, arg_host, arg_port, arg_user, arg_machine,
-        [phase](int chunk) {
-          return ChunkOutputFilename(phase, chunk);
-        },
-        ComputeChunk);
+        solver_id, arg_host, arg_port, arg_user, arg_machine,
+        ChunkOutputFilename, ComputeChunk, phase);
     solver.Run();
   }
 }

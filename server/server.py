@@ -60,8 +60,8 @@ def GetSolvers(phase):
   if phase == 16: return ['solve2-v0.1.3']
   if phase == 18: return ['solve2-v0.1.3']
   if phase == 20: return ['solve2-v0.1.3']
-  if phase == 22: return ['solve2-v0.1.3', 'solve2-v0.1.4']
-  if phase == 24: return ['solve2-v0.1.3', 'solve2-v0.1.4']
+  if phase == 22: return ['solve2-v0.1.3', 'solve2-v0.1.4', 'solve2-v0.1.5']
+  if phase == 24: return ['solve2-v0.1.3', 'solve2-v0.1.4', 'solve2-v0.1.5']
   return []
 
 
@@ -136,6 +136,8 @@ class RequestHandler(socketserver.BaseRequestHandler):
           method = info.get(b'method').decode('utf-8')
           if not method:
             self.send_error('Missing method')
+          elif method == 'GetCurrentPhase':
+            self.handle_get_current_phase(info)
           elif method == 'GetChunks':
             self.handle_get_chunks(info)
           elif method == 'ReportChunkComplete':
@@ -160,6 +162,17 @@ class RequestHandler(socketserver.BaseRequestHandler):
   def send_error(self, error_message):
     print('RequestHandler retuning error:', error_message)
     self.send_response({b'error': bytes(error_message, 'utf-8')})
+
+  def handle_get_current_phase(self, info):
+    with self.con:
+      cur = self.con.execute('SELECT MIN(phase) FROM WorkQueue WHERE completed IS NULL')
+      phase, = cur.fetchone()
+      cur.close()
+    if phase is None:
+      self.send_response({})
+    else:
+      self.send_response({b'phase': EncodeInt(phase)})
+
 
   def handle_get_chunks(self, info):
     phase = DecodeInt(info.get(b'phase'))

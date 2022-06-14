@@ -50,6 +50,8 @@ struct ChunkStats {
 // Accessor for the previous phase's results.
 std::optional<RnAccessor> acc;
 
+int initialized_phase = -1;
+
 // Expected outcome for this phase.
 //
 // We detect all positions that are won-in-1 in phase 0.
@@ -119,7 +121,8 @@ void ComputeChunkThread(int chunk, std::atomic<int> *next_part, Outcome outcomes
   }
 }
 
-std::vector<uint8_t> ComputeChunk(int chunk) {
+std::vector<uint8_t> ComputeChunk(int phase, int chunk) {
+  assert(phase == initialized_phase);
   std::vector<Outcome> outcomes(chunk_size, TIE);
   std::atomic<int> next_part = 0;
   ChunkStats stats;
@@ -157,6 +160,8 @@ void InitPhase(int phase) {
   acc.emplace(PhaseInputFilename(phase - 1).c_str());
 
   if (VerifyInputChunks(phase - 1, acc.value()) != 0) exit(1);
+
+  initialized_phase = phase;
 }
 
 void RunManually(int phase, int start_chunk, int end_chunk) {
@@ -170,7 +175,7 @@ void RunManually(int phase, int start_chunk, int end_chunk) {
       continue;
     }
     auto start_time = std::chrono::system_clock::now();
-    std::vector<uint8_t> bytes = ComputeChunk(chunk);
+    std::vector<uint8_t> bytes = ComputeChunk(phase, chunk);
     WriteToFile(filename, bytes);
     std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now() - start_time;
     std::cerr << "Chunk " << chunk << " done in " << elapsed_seconds.count() / 60 << " minutes." << std::endl;
@@ -265,11 +270,12 @@ int main(int argc, char *argv[]) {
 
     InitPhase(phase);
     AutomaticSolver solver(
-        solver_id, phase, arg_host, arg_port, arg_user, arg_machine,
-        [phase](int chunk) {
+        solver_id, arg_host, arg_port, arg_user, arg_machine,
+        [](int phase, int chunk) {
           return ChunkFileName(phase, "output", chunk);
         },
-        ComputeChunk);
+        ComputeChunk,
+        phase);
     solver.Run();
   }
 }

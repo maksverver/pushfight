@@ -21,29 +21,36 @@ int main(int argc, char *argv[]) {
   };
   if (!ParseFlags(argc, argv, flags)) return 1;
 
-  const int phase = 999;
   ErrorOr<Client> client =
-      Client::Connect(phase, host.c_str(), port.c_str(), "test-client", user, machine);
+      Client::Connect(host.c_str(), port.c_str(), "test-client", user, machine);
   if (!client) {
     std::cerr << "Failed to connect: " << client.Error().message << std::endl;
     return 1;
   }
-  if (auto chunks = client->GetChunks(); !chunks) {
-    std::cerr << "Failed to get chunks: " << chunks.Error().message << std::endl;
+  if (auto res = client->GetCurrentPhase(); !res) {
+    std::cerr << "Failed to get current phase: " << res.Error().message << std::endl;
+  } else if (auto opt_phase = res.Value(); !opt_phase) {
+    std::cerr << "No phase currently active." << std::endl;
   } else {
-    std::cerr << "Got chunks:\n";
-    for (int i: *chunks) {
-      std::cerr << i << '\n';
-    }
-    if (chunks->size() > 0) {
-      byte_span_t content = byte_span_t("Hello, world!\n");
-      ErrorOr<size_t> result = client->SendChunk(chunks->front(), content);
-      if (!result) {
-        std::cerr << "Failed to report chunk complete: " << result.Error().message << std::endl;
-      } else if (*result == 0) {
-        std::cerr << "Chunk reported! (But not uploaded.)" << std::endl;
-      } else {
-        std::cerr << "Chunk uploaded! (" << *result << " bytes after compression.)" << std::endl;
+    int phase = *opt_phase;
+    std::cout << "Current phase: " << phase << std::endl;
+    if (auto chunks = client->GetChunks(phase); !chunks) {
+      std::cerr << "Failed to get chunks: " << chunks.Error().message << std::endl;
+    } else {
+      std::cerr << "Got chunks:\n";
+      for (int i: *chunks) {
+        std::cerr << i << '\n';
+      }
+      if (chunks->size() > 0) {
+        byte_span_t content = byte_span_t("Hello, world!\n");
+        ErrorOr<size_t> result = client->SendChunk(phase, chunks->front(), content);
+        if (!result) {
+          std::cerr << "Failed to report chunk complete: " << result.Error().message << std::endl;
+        } else if (*result == 0) {
+          std::cerr << "Chunk reported! (But not uploaded.)" << std::endl;
+        } else {
+          std::cerr << "Chunk uploaded! (" << *result << " bytes after compression.)" << std::endl;
+        }
       }
     }
   }

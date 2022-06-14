@@ -60,7 +60,7 @@ bool GeneratePhaseInput(
 
 namespace {
 
-constexpr const char *solver_id = "solve2-v0.1.4";
+constexpr const char *solver_id = "solve2-v0.1.5";
 constexpr const char *default_hostname = "styx.verver.ch";
 constexpr const char *default_portname = "7429";
 
@@ -68,6 +68,8 @@ constexpr const char *default_portname = "7429";
 int num_threads = std::thread::hardware_concurrency();
 
 std::optional<RnAccessor> acc;  // r(N-1).bin
+
+int initialized_phase = -1;
 
 const std::string PhaseInputFilename(int phase) {
   std::ostringstream oss;
@@ -87,7 +89,19 @@ const std::string ChunkOutputFilename(int phase, int chunk) {
   return oss.str();
 }
 
+// Note: may be called more than once (whenever the active phase changes).
 void InitPhase(int phase) {
+  if (phase == initialized_phase) {
+    // Initializaiton already complete.
+    return;
+  }
+
+  if (phase < 2 || phase % 2 != 0) {
+    std::cerr << "Invalid phase number: " << phase << "!" << std::endl;
+    exit(1);
+  }
+  std::cerr << "Initializing solver for phase " << phase << "..." << std::endl;
+
   std::string input_filename = PhaseInputFilename(phase - 2);
   std::string temp_filename = input_filename + ".tmp";
   std::string previous_input_filename = PhaseInputFilename(phase - 4);
@@ -103,6 +117,8 @@ void InitPhase(int phase) {
   acc.emplace(input_filename.c_str());
   int failures = VerifyInputChunks(phase - 2, acc.value());
   if (failures != 0) exit(1);
+  std::cerr << "Initialization complete!" << std::endl;
+  initialized_phase = phase;
 }
 
 //
@@ -285,7 +301,9 @@ ChunkStats2 ComputeWins(
 
 // Combined logic continues here.
 
-bytes_t ComputeChunk(int chunk) {
+bytes_t ComputeChunk(int phase, int chunk) {
+  InitPhase(phase);
+
   auto start_time = std::chrono::system_clock::now();
 
   std::vector<int64_t> losses;
@@ -327,7 +345,7 @@ void RunManually(int phase, int start_chunk, int end_chunk) {
       std::cerr << "Chunk " << chunk << " already exists. Skipping..." << std::endl;
       continue;
     }
-    WriteToFile(filename, ComputeChunk(chunk));
+    WriteToFile(filename, ComputeChunk(phase, chunk));
   }
 }
 
@@ -354,7 +372,7 @@ int main(int argc, char *argv[]) {
   std::string arg_user;
   std::string arg_machine;
   std::map<std::string, Flag> flags = {
-    {"phase", Flag::required(arg_phase)},
+    {"phase", Flag::optional(arg_phase)},
 
     // For manual chunk assignment
     {"start", Flag::optional(arg_start)},
@@ -394,17 +412,25 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  int phase = ParseInt(arg_phase.c_str());
-  if (phase < 2) {
-    std::cout << "Invalid phase. Must be 2 or higher.\n";
-    return 1;
-  }
-  if (phase % 2 != 0) {
-    std::cout << "Invalid phase. Must be an even number.\n";
-    return 1;
+  std::optional<int> phase;
+  if (!arg_phase.empty()) {
+    int i = ParseInt(arg_phase.c_str());
+    if (i < 2) {
+      std::cout << "Invalid phase. Must be 2 or higher.\n";
+      return 1;
+    }
+    if (i % 2 != 0) {
+      std::cout << "Invalid phase. Must be an even number.\n";
+      return 1;
+    }
+    phase = i;
   }
 
   if (want_manual) {
+    if (!phase) {
+      std::cout << "Must specify the phase when running manually.\n";
+      return 1;
+    }
     if (arg_start.empty() || arg_end.empty()) {
       std::cout << "Must provide both start and end chunks.\n";
       return 1;
@@ -412,8 +438,7 @@ int main(int argc, char *argv[]) {
     int start_chunk = std::max(ParseInt(arg_start.c_str()), 0);
     int end_chunk = std::min(ParseInt(arg_end.c_str()), num_chunks);
 
-    InitPhase(phase);
-    RunManually(phase, start_chunk, end_chunk);
+    RunManually(phase.value(), start_chunk, end_chunk);
   } else {
     assert(want_automatic);
     if (arg_user.empty() || arg_machine.empty()) {
@@ -421,13 +446,11 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    InitPhase(phase);
     AutomaticSolver solver(
-        solver_id, phase, arg_host, arg_port, arg_user, arg_machine,
-        [phase](int chunk) {
-          return ChunkOutputFilename(phase, chunk);
-        },
-        ComputeChunk);
+        solver_id, arg_host, arg_port, arg_user, arg_machine,
+        ChunkOutputFilename,
+        ComputeChunk,
+        phase);
     solver.Run();
   }
 }

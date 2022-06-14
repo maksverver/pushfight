@@ -29,10 +29,8 @@ std::map<bytes_t, bytes_t> CreateClientHandshake(
 }  // namespace
 
 ErrorOr<Client> Client::Connect(
-    int phase, const char *hostname, const char *portname,
+    const char *hostname, const char *portname,
     std::string_view solver, std::string_view user, std::string_view machine) {
-  assert(phase >= 0);
-
   std::optional<Socket> socket = Socket::Connect(hostname, portname);
   if (!socket) {
     return Error("Failed to connect");
@@ -50,11 +48,32 @@ ErrorOr<Client> Client::Connect(
     return Error("Unsupported server protocol: " +
         (it == server_handshake->end() ? std::string("unknown") : ToString(it->second)));
   } else {
-    return Client(phase, std::move(*socket));
+    return Client(std::move(*socket));
   }
 }
 
-ErrorOr<std::vector<int>> Client::GetChunks() {
+ErrorOr<std::optional<int>> Client::GetCurrentPhase() {
+  std::map<bytes_t, bytes_t> request;
+  request[ToBytes("method")] = ToBytes("GetCurrentPhase");
+
+  if (!socket.SendAll(EncodeBytes(EncodeDict(request)))) {
+    return Error("Failed to send request");
+  } else if (std::optional<bytes_t> data = DecodeBytesFromSocket(socket); !data) {
+    return Error("No response");
+  } else if (auto response = DecodeDict(*data); !response) {
+    return Error("Couldn't parse response dictionary");
+  } else if (auto it = response->find(byte_span_t("error")); it != response->end()) {
+    return Error("Server returned error: \"" + ToString(it->second) + "\"");
+  } else if (auto it = response->find(byte_span_t("phase")); it == response->end()) {
+    return {{}};  // no current phase
+  } else if (auto phase = DecodeInt(it->second); !phase) {
+    return Error("Couldn't parse field 'phase'.");
+  } else {
+    return {phase};
+  }
+}
+
+ErrorOr<std::vector<int>> Client::GetChunks(int phase) {
   std::map<bytes_t, bytes_t> request;
   request[ToBytes("method")] = ToBytes("GetChunks");
   request[ToBytes("phase")] = EncodeInt(phase);
@@ -84,10 +103,10 @@ ErrorOr<std::vector<int>> Client::GetChunks() {
   }
 }
 
-ErrorOr<size_t> Client::SendChunk(int chunk, byte_span_t content) {
+ErrorOr<size_t> Client::SendChunk(int phase, int chunk, byte_span_t content) {
   sha256_hash_t hash = ComputeSha256(content);
 
-  ErrorOr<bool> upload = ReportChunkComplete(chunk, content.size(), hash);
+  ErrorOr<bool> upload = ReportChunkComplete(phase, chunk, content.size(), hash);
   if (upload.IsError()) {
     return std::move(upload.Error());
   }
@@ -96,11 +115,11 @@ ErrorOr<size_t> Client::SendChunk(int chunk, byte_span_t content) {
     return size_t{0};
   }
 
-  return UploadChunk(chunk, content);
+  return UploadChunk(phase, chunk, content);
 }
 
 ErrorOr<bool> Client::ReportChunkComplete(
-    int chunk, int64_t bytesize, sha256sum_t &hash) {
+    int phase, int chunk, int64_t bytesize, sha256sum_t &hash) {
   std::map<bytes_t, bytes_t> request;
   request[ToBytes("method")] = ToBytes("ReportChunkComplete");
   request[ToBytes("phase")] = EncodeInt(phase);
@@ -126,7 +145,7 @@ ErrorOr<bool> Client::ReportChunkComplete(
 }
 
 ErrorOr<size_t> Client::UploadChunk(
-    int chunk, byte_span_t content) {
+    int phase, int chunk, byte_span_t content) {
   bytes_t compressed_bytes = Compress(content);
   // Save this here because we will move out of `compressed_bytes` below.
   const size_t compressed_size = compressed_bytes.size();

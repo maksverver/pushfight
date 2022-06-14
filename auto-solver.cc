@@ -12,28 +12,39 @@
 #include "bytes.h"
 
 AutomaticSolver::AutomaticSolver(
-  std::string solver_id, int phase,
+  std::string solver_id,
   std::string host, std::string port,
   std::string user, std::string machine,
-  std::function<std::string(int)> chunk_file_namer,
-  std::function<bytes_t(int)> chunk_computer)
-  : solver_id(std::move(solver_id)), phase(phase),
+  std::function<std::string(int, int)> chunk_file_namer,
+  std::function<bytes_t(int, int)> chunk_computer,
+  std::optional<int> phase)
+  : solver_id(std::move(solver_id)),
     host(std::move(host)), port(std::move(port)),
     user(std::move(user)), machine(std::move(machine)),
     chunk_file_namer(std::move(chunk_file_namer)),
-    chunk_computer(std::move(chunk_computer)) {
+    chunk_computer(std::move(chunk_computer)),
+    phase(phase), fixed_phase(phase.has_value()) {
   std::cout << "Automatic solver " << this->solver_id << std::endl;
 }
 
 void AutomaticSolver::Run() {
   for (;;) {
     if (chunks.empty()) {
-      if (GetMoreChunks()) {
-        ResetSleepTime();
+      if (!phase) {
+        if (GetCurrentPhase()) {
+          ResetSleepTime();
+        } else {
+          Sleep();
+        }
       } else {
-        Sleep();
+        if (GetMoreChunks()) {
+          ResetSleepTime();
+        } else if (phase) {
+          Sleep();
+        }
       }
     } else {
+      assert(phase >= 0 && !chunks.empty());
       int chunk = chunks.front();
       chunks.pop_front();
       ProcessChunk(chunk);
@@ -42,7 +53,7 @@ void AutomaticSolver::Run() {
 }
 
 ErrorOr<Client> AutomaticSolver::Connect() {
-  return Client::Connect(phase, host.c_str(), port.c_str(), solver_id, user, machine);
+  return Client::Connect(host.c_str(), port.c_str(), solver_id, user, machine);
 }
 
 void AutomaticSolver::ResetSleepTime() {
@@ -59,15 +70,34 @@ void AutomaticSolver::Sleep() {
   std::this_thread::sleep_for(std::chrono::seconds(sleep_seconds));
 }
 
+bool AutomaticSolver::GetCurrentPhase() {
+  std::cout << "Getting current phase from the server at "
+      << host << ":" << port << "..." << std::endl;
+  if (auto client = Connect(); !client) {
+    std::cerr << "Failed to connect: " << client.Error().message << std::endl;
+  } else if (auto res = client->GetCurrentPhase(); !res) {
+    std::cerr << "Failed to get current phase: " << res.Error().message << std::endl;
+  } else if (!res->has_value()) {
+    std::cerr << "No currently active phase." << std::endl;
+  } else {
+    phase = res->value();
+    return true;
+  }
+  return false;
+}
+
 bool AutomaticSolver::GetMoreChunks() {
   std::cout << "Queue is empty. Fetching more chunks from the server at "
       << host << ":" << port << "..." << std::endl;
   if (auto client = Connect(); !client) {
     std::cerr << "Failed to connect: " << client.Error().message << std::endl;
-  } else if (auto chunks = client->GetChunks(); !chunks) {
+  } else if (auto chunks = client->GetChunks(phase.value()); !chunks) {
     std::cerr << "Failed to get chunks: " << chunks.Error().message << std::endl;
   } else if (chunks->empty()) {
     std::cerr << "Server has no more chunks available!" << std::endl;
+    if (!fixed_phase) {
+      phase.reset();
+    }
   } else {
     std::cout << "Server returned " << chunks->size() << " more chunks to solve." << std::endl;
     this->chunks.insert(this->chunks.end(), chunks->begin(), chunks->end());
@@ -77,7 +107,7 @@ bool AutomaticSolver::GetMoreChunks() {
 }
 
 void AutomaticSolver::ProcessChunk(int chunk) {
-  const std::string filename = chunk_file_namer(chunk);
+  const std::string filename = chunk_file_namer(phase.value(), chunk);
   bytes_t bytes;
   if (std::filesystem::exists(filename) && std::filesystem::file_size(filename) > 0) {
     std::cout << "Chunk output already exists. Loading..." << std::endl;
@@ -85,7 +115,7 @@ void AutomaticSolver::ProcessChunk(int chunk) {
     assert(!bytes.empty());
   } else {
     std::cout << "Calculating chunk " << chunk << std::endl;
-    bytes = chunk_computer(chunk);
+    bytes = chunk_computer(phase.value(), chunk);
     WriteToFile(filename, bytes);
   }
   std::cout << "Chunk complete! Reporting result to server..." << std::endl;
@@ -96,7 +126,7 @@ bool AutomaticSolver::ReportChunk(int chunk, const bytes_t &bytes) {
   if (auto client = Connect(); !client) {
     std::cerr << "Failed to connect: " << client.Error().message << std::endl;
     return false;
-  } else if (ErrorOr<size_t> uploaded = client->SendChunk(chunk, bytes); !uploaded) {
+  } else if (ErrorOr<size_t> uploaded = client->SendChunk(phase.value(), chunk, bytes); !uploaded) {
     std::cout << "Failed to send result to server: " << uploaded.Error().message << std::endl;
     return false;
   } else if (*uploaded == 0) {

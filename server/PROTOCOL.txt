@@ -29,6 +29,16 @@ Server response:
 
 Then a number of requests follow.
 
+
+GetCurrentPhase
+---------------
+Request:
+  method: "GetCurrentPhase"
+
+Response:
+  phase: integer (optional)
+
+
 GetChunks
 ---------
 Request
@@ -36,7 +46,7 @@ Request
   method: "GetChunks"
   phase: integer
 
-RESPONSE
+Response
 
 chunks: list of integers
 
@@ -53,6 +63,7 @@ ReportChunkComplete
 
 Request
 
+  method: "ReportChunkComplete"
   phase: integer
   chunk: integer
   bytesize: integer
@@ -70,6 +81,7 @@ UploadChunk
 
 Request
 
+  method: "UploadChunk"
   phase: integer
   chunk: integer
   encoding: bytestring ("zlib")
