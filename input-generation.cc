@@ -141,9 +141,10 @@ const std::string PhaseDiffFilename(int phase) {
 
 bool MaybeDownload(const std::filesystem::path &filepath, const client_factory_t &client_factory) {
   if (std::filesystem::exists(filepath)) return true;
+  const std::string filename = filepath.filename().string();
   if (auto client = client_factory(); !client) {
     std::cerr << "Cannot download " << filepath << std::endl;
-  } else if (auto res = client->DownloadInputFile(filepath.filename().c_str()); !res) {
+  } else if (auto res = client->DownloadInputFile(filename.c_str()); !res) {
     std::cerr << "Failed to download " << filepath << ": " << res.Error().message << std::endl;
   } else {
     std::ofstream ofs(filepath, std::ofstream::binary);
