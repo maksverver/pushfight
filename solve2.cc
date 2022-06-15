@@ -98,7 +98,8 @@ bool MaybeDownload(const char *filename) {
   if (std::filesystem::exists(filename)) return true;
   if (auto client = client_factory(); !client) {
     std::cerr << "Cannot download " << filename << std::endl;
-  } else if (auto data = client->DownloadInputFile(basename(filename)); !data) {
+  } else if (auto data = client->DownloadInputFile(
+        std::filesystem::path::filename(filename)); !data) {
     std::cerr << "Failed to download " << filename << ": " << data.Error().message << std::endl;
   } else if (std::ofstream ofs(filename, std::ofstream::binary); !ofs) {
     std::cerr << "Could not open " << filename << std::endl;
@@ -108,8 +109,13 @@ bool MaybeDownload(const char *filename) {
     std::cerr << "Failed to download " << filename << ": " << res.Error().message << std::endl;
   } else {
     std::ofstream ofs(filename, std::ofstream::binary);
-    if (!ofs.write(reinterpret_cast<char*>(res->data()), res->size())) {
+    bool result = ofs.write(reinterpret_cast<char*>(res->data()), res->size());
+    ofs.close();
+    if (!result) {
       std::cerr << "Failed to write to " << filename << std::endl;
+      // Remove file so we can try to redownload it later instead of incorrectly
+      // using an empty or truncated file.
+      std::filesystem::remove(filename);
     } else {
       std::cerr << "Downloaded " << filename << std::endl;
       return true;
