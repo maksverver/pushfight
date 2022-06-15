@@ -94,30 +94,22 @@ const std::string ChunkOutputFilename(int phase, int chunk) {
   return oss.str();
 }
 
-bool MaybeDownload(const char *filename) {
-  if (std::filesystem::exists(filename)) return true;
+bool MaybeDownload(const std::filesystem::path &filepath) {
+  if (std::filesystem::exists(filepath)) return true;
   if (auto client = client_factory(); !client) {
-    std::cerr << "Cannot download " << filename << std::endl;
-  } else if (auto data = client->DownloadInputFile(
-        std::filesystem::path::filename(filename)); !data) {
-    std::cerr << "Failed to download " << filename << ": " << data.Error().message << std::endl;
-  } else if (std::ofstream ofs(filename, std::ofstream::binary); !ofs) {
-    std::cerr << "Could not open " << filename << std::endl;
-  } else if (!ofs.write(reinterpret_cast<char*>(data->data()), data->size())) {
-    std::cerr << "Failed to write to " << filename << std::endl;
-  } else if (auto res = client->DownloadInputFile(std::filesystem::path(filename).filename()); !res) {
-    std::cerr << "Failed to download " << filename << ": " << res.Error().message << std::endl;
+    std::cerr << "Cannot download " << filepath << std::endl;
+  } else if (auto res = client->DownloadInputFile(filepath.filename().c_str()); !res) {
+    std::cerr << "Failed to download " << filepath << ": " << res.Error().message << std::endl;
   } else {
-    std::ofstream ofs(filename, std::ofstream::binary);
-    bool result = ofs.write(reinterpret_cast<char*>(res->data()), res->size());
-    ofs.close();
-    if (!result) {
-      std::cerr << "Failed to write to " << filename << std::endl;
+    std::ofstream ofs(filepath, std::ofstream::binary);
+    if (!ofs.write(reinterpret_cast<char*>(res->data()), res->size())) {
+      std::cerr << "Failed to write to " << filepath << std::endl;
       // Remove file so we can try to redownload it later instead of incorrectly
       // using an empty or truncated file.
-      std::filesystem::remove(filename);
+      ofs.close();
+      std::filesystem::remove(filepath);
     } else {
-      std::cerr << "Downloaded " << filename << std::endl;
+      std::cerr << "Downloaded " << filepath << std::endl;
       return true;
     }
   }
