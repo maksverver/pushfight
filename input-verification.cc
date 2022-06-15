@@ -183,7 +183,7 @@ int VerifyChecksums(
 int VerifyFromChecksumFile(int phase, const RnAccessor &acc, int chunks_to_verify) {
   std::string path = GetChecksumFilename("metadata", phase);
   if (!std::filesystem::exists(path)) {
-    std::cerr << "Checksum file found for phase " << phase << " does not exist: " << path << std::endl;
+    std::cerr << "Checksum file for phase " << phase << " does not exist: " << path << std::endl;
     return 1;
   }
   auto checksums = LoadChecksums(path.c_str());
