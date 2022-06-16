@@ -61,7 +61,7 @@ bool GeneratePhaseInput(
 
 namespace {
 
-constexpr const char *solver_id = "solve2-v0.1.5";
+constexpr const char *solver_id = "solve2-v0.1.6";
 constexpr const char *default_hostname = "styx.verver.ch";
 constexpr const char *default_portname = "7429";
 
