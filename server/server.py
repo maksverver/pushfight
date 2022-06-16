@@ -71,7 +71,8 @@ def GetSolvers(phase):
   if phase == 22: return ['solve2-v0.1.3', 'solve2-v0.1.4', 'solve2-v0.1.5']
   if phase == 24: return ['solve2-v0.1.3', 'solve2-v0.1.4', 'solve2-v0.1.5']
   if phase == 26: return ['solve2-v0.1.5']
-  if phase == 28: return ['solve2-v0.1.5']
+  if phase == 28: return ['solve2-v0.1.5', 'solve2-v0.1.6']
+  if phase == 30: return ['solve2-v0.1.5', 'solve2-v0.1.6']
   return []
 
 
@@ -221,6 +222,10 @@ class RequestHandler(socketserver.BaseRequestHandler):
       self.con.executemany(
           'UPDATE WorkQueue SET solver=?, user=?, machine=?, assigned=? WHERE phase=? AND chunk=?',
           [(self.solver, self.user, self.machine, now, phase, chunk) for chunk in chunks])
+    if self.solver == 'solve2-v0.1.5' and not chunks:
+      # Work around bug in solver which doesn't sleep between polling.
+      self.con.close()
+      time.sleep(10)
     print('GetChunks: returned %s chunks' % len(chunks))
     self.send_response({b'chunks': EncodeList(map(EncodeInt, chunks))})
 
