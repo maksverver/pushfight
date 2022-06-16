@@ -391,9 +391,9 @@ void RunManually(int phase, int start_chunk, int end_chunk) {
 void PrintUsage() {
   std::cout << solver_id << "\n\n"
     << "For manual chunk assignment:\n\n"
-    << "  backpropagate2 --phase=N --start=<start-chunk> --end=<end-chunk>\n\n"
+    << "  solve2 --phase=N --start=<start-chunk> --end=<end-chunk>\n\n"
     << "For automatic chunk assignment (requires network access):\n\n"
-    << "  backpropagate2 --phase=N --user=<user-id> --machine=<machine-id>\n"
+    << "  solve2 --phase=N --user=<user-id> --machine=<machine-id>\n"
     << "      [--host=" << default_hostname << "] [--port=" << default_portname << "]\n"
     << std::endl;
 }
