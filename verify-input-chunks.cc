@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
   std::cerr << "Succesfully verified ";
   if (chunks_to_verify == num_chunks) {
-    std::cerr << "all ";
+    std::cerr << "all";
   } else {
     std::cerr << chunks_to_verify << " of " << num_chunks;
   }
