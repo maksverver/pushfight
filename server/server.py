@@ -180,6 +180,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
       cur = self.con.execute('SELECT MIN(phase) FROM WorkQueue WHERE completed IS NULL')
       phase, = cur.fetchone()
       cur.close()
+    print('GetCurrentPhase: returned %s' % phase)
     if phase is None:
       self.send_response({})
     else:
@@ -188,9 +189,9 @@ class RequestHandler(socketserver.BaseRequestHandler):
   def handle_download_input_file(self, info):
     filename = info[b'filename'].decode('utf-8')
     if filename not in INPUT_FILES:
-      print(filename)
       self.send_error('File not found')
     else:
+      print('DownloadInputFile: sending %s' % filename)
       with open(os.path.join(INPUT_DIR, filename), 'rb') as f:
         while buf := f.read(65536):
           self.request.sendall(buf)
