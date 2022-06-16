@@ -19,4 +19,5 @@ SELECT
     datetime(received, 'unixepoch') AS received,
     bytesize,
     lower(substr(hex(sha256sum), 1, 16)) AS sha256sum
-FROM WorkQueue;
+FROM WorkQueue
+ORDER BY phase DESC, chunk ASC;
