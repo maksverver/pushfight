@@ -8,19 +8,19 @@ if [ $# -ne 1 ]; then
 fi
 
 phase=$1
-input=../input/r$(expr $phase - 2).bin
+counts=../metadata/r$(expr $phase - 2)-counts.txt
 
 if (( $phase % 2 )); then
   echo "Phase must be even!"
   exit 1
 fi
 
-if ! test -f "$input"; then
-  echo "Missing input file: $input"
+if ! test -f "$counts"; then
+  echo "Missing input counts: $counts"
   exit 1
 fi
 
-../count-r1 "$input" | {
+cat "$counts" | {
   echo 'BEGIN;'
 
   read line  # skip header line
