@@ -32,14 +32,16 @@ void AutomaticSolver::Run() {
     if (chunks.empty()) {
       if (!phase) {
         if (GetCurrentPhase()) {
-          ResetSleepTime();
+          // Don't reset sleep time here. It would lead to a busy loop with
+          // GetMoreChunks() when a phase is active but all remaining chunks are
+          // assigned.
         } else {
           Sleep();
         }
       } else {
         if (GetMoreChunks()) {
           ResetSleepTime();
-        } else if (phase) {
+        } else {
           Sleep();
         }
       }
