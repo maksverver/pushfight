@@ -71,6 +71,7 @@ def GetSolvers(phase):
   if phase == 22: return ['solve2-v0.1.3', 'solve2-v0.1.4', 'solve2-v0.1.5']
   if phase == 24: return ['solve2-v0.1.3', 'solve2-v0.1.4', 'solve2-v0.1.5']
   if phase == 26: return ['solve2-v0.1.5']
+  if phase == 28: return ['solve2-v0.1.5']
   return []
 
 
