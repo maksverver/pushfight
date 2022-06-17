@@ -1,5 +1,6 @@
 #include "bytes.h"
 
+#include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <fstream>
@@ -38,8 +39,7 @@ bytes_t ReadInput(std::istream &is) {
   bytes_t bytes;
   while (is) {
     size_t n = bytes.size();
-    bytes.reserve(n + 4096);
-    assert(bytes.capacity() > bytes.size());
+    bytes.reserve(n + std::max(n, size_t{4096}));
     bytes.resize(bytes.capacity());
     is.read(reinterpret_cast<char*>(bytes.data() + n), bytes.size() - n);
     bytes.resize(n + is.gcount());
