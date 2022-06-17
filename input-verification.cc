@@ -13,6 +13,7 @@
 
 #include "accessors.h"
 #include "hash.h"
+#include "macros.h"
 
 // This class has friend access to RnAccessor to be able to access the
 // underlying memory mapped file.
@@ -22,6 +23,7 @@ public:
 
   ChunkVerifier(const RnAccessor &acc) : acc(acc) {}
 
+  // This method is threadsafe.
   sha256_hash_t ComputeChunkHash(int chunk) {
     return ComputeSha256(GetChunkBytes(chunk));
   }
@@ -43,6 +45,9 @@ std::string GetChecksumFilename(const char *subdir, int phase) {
 }
 
 namespace {
+
+// Number of threads to use for calculations.
+const int num_threads = std::thread::hardware_concurrency();
 
 // SHA256 checksums of chunks of r4.bin
 constexpr std::pair<int, const char*> r4_chunk_hashes[] = {
@@ -157,25 +162,53 @@ std::optional<std::vector<sha256_hash_t>> LoadChecksums(const char *filename) {
   return result;
 }
 
-int VerifyChecksums(
-    int phase, const RnAccessor &acc,
-    const std::vector<sha256_hash_t> &checksums,
-    const std::vector<int> chunks) {
-    int failures = 0;
-  ChunkVerifier verifier = ChunkVerifier(acc);
-  int i = 0;
-  for (int chunk : chunks) {
+void VerifyChecksumsThread(
+    int phase, const RnAccessor *acc,
+    const std::vector<sha256_hash_t> *checksums,
+    const std::vector<int> *chunks,
+    std::atomic<int> *next_index,
+    std::atomic<int> *failures,
+    std::mutex *io_mutex) {
+  ChunkVerifier verifier = ChunkVerifier(*acc);
+  for (int i; (i = (*next_index)++) < chunks->size(); ) {
+    int chunk = chunks->at(i);
     sha256_hash_t computed_hash = verifier.ComputeChunkHash(chunk);
-    const sha256_hash_t &expected_hash = checksums[chunk];
+    const sha256_hash_t &expected_hash = checksums->at(chunk);
     if (computed_hash != expected_hash) {
+      std::lock_guard lock(*io_mutex);
       std::cerr << "Verification of phase " << phase << " chunk " << chunk << " failed!\n"
           << "Expected SHA-256 sum: " << HexEncode(expected_hash) << "\n"
           << "Computed SHA-256 sum: " << HexEncode(computed_hash) << std::endl;
-      ++failures;
+      ++(*failures);
     }
-    if (chunks.size() > 10 && ++i % 10 == 0) {
-      std::cerr << "Verified checksum for phase " << phase << " chunk " << chunk << " (" << i << " of " << chunks.size() << ")...\n";
+    if (chunks->size() > 10 && i % 10 == 0) {
+      std::lock_guard lock(*io_mutex);
+      std::cerr << "Verified checksum for phase " << phase << " chunk " << chunk << " (" << i << " of " << chunks->size() << ")...\n";
     }
+  }
+}
+
+int VerifyChecksums(
+    int phase, const RnAccessor &acc,
+    const std::vector<sha256_hash_t> &checksums,
+    const std::vector<int> &chunks) {
+  std::atomic<int> next_index = 0;
+  std::atomic<int> failures = 0;
+  std::mutex io_mutex;
+  if (num_threads == 0) {
+    VerifyChecksumsThread(phase, &acc, &checksums,
+      &chunks, &next_index, &failures, &io_mutex);
+  } else {
+    assert(num_threads > 0);
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
+    REP(i, num_threads) {
+      threads.emplace_back(
+        VerifyChecksumsThread, phase, &acc, &checksums,
+        &chunks, &next_index, &failures, &io_mutex);
+    }
+    REP(i, num_threads) threads[i].join();
+    assert(next_index == chunks.size() + num_threads);
   }
   return failures;
 }
