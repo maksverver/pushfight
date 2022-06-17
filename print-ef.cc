@@ -14,23 +14,14 @@
 #include <vector>
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    std::cerr <<
-        "Usage: print-ef [<--part=N>] [<--every=M>] <file...>\n\n"
-        "With --part=N, prints only the N-th part (0-based).\n"
-        "With --part=N --every=M, prints only the parts with index N modulo M\n"
-        "(e.g. --part=1 --every=2 prints all the odd-numbered parts).\n\n"
-        "Use \"-\" to read from stdin." << std::endl;
-    return 1;
-  }
   int start_argi = 1;
   int want_part = -1;
-  if (strncmp(argv[start_argi], "--part=", 7) == 0) {
+  if (start_argi < argc && strncmp(argv[start_argi], "--part=", 7) == 0) {
     want_part = ParseInt(argv[start_argi] + 7);
     ++start_argi;
   }
   int every = -1;
-  if (strncmp(argv[start_argi], "--every=", 8) == 0) {
+  if (start_argi < argc && strncmp(argv[start_argi], "--every=", 8) == 0) {
     if (want_part < 0) {
       std::cerr << "Cannot use --every=M withouth preceding --part=N." << std::endl;
       return 1;
@@ -41,6 +32,15 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     ++start_argi;
+  }
+  if (start_argi >= argc) {
+    std::cerr <<
+        "Usage: print-ef [<--part=N>] [<--every=M>] <file...>\n\n"
+        "With --part=N, prints only the N-th part (0-based).\n"
+        "With --part=N --every=M, prints only the parts with index N modulo M\n"
+        "(e.g. --part=1 --every=2 prints all the odd-numbered parts).\n\n"
+        "Use \"-\" to read from stdin." << std::endl;
+    return 1;
   }
 
   for (int i = start_argi; i < argc; ++i) {
