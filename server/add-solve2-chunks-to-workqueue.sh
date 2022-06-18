@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Don't execute this directly. Execute start-next-phase.sh instead, which
+# ensures that input files are generated before adding chunks to the work queue
+# which causes the next phase to begin.
+
 set -e -E -o pipefail
 
 if [ $# -ne 1 ]; then
