@@ -33,6 +33,7 @@
 #include "chunks.h"
 #include "efcodec.h"
 #include "flags.h"
+#include "input-generation.h"
 #include "input-verification.h"
 #include "macros.h"
 #include "parse-int.h"
@@ -51,14 +52,6 @@
 #include <thread>
 #include <vector>
 
-// Defined in input_generation.cc.
-bool GeneratePhaseInput(
-    int phase,
-    const char *input_filename,
-    const char *temp_filename,
-    const char *previous_input_filename,
-    const char *diff_filename);
-
 namespace {
 
 constexpr const char *solver_id = "solve2-v0.1.6";
@@ -68,7 +61,7 @@ constexpr const char *default_portname = "7429";
 // Number of threads to use for calculations. 0 to disable multithreading.
 int num_threads = std::thread::hardware_concurrency();
 
-std::optional<RnAccessor> acc;  // r(N-1).bin
+std::optional<RnAccessor> acc;  // r(N-2).bin
 
 int initialized_phase = -1;
 
@@ -76,44 +69,10 @@ std::function<std::optional<Client>()> client_factory = []() {
   return std::optional<Client>();
 };
 
-const std::string PhaseInputFilename(int phase) {
-  std::ostringstream oss;
-  oss << "input/r" << phase << ".bin";
-  return oss.str();
-}
-
-const std::string PhaseDiffFilename(int phase) {
-  std::ostringstream oss;
-  oss << "input/r" << phase << "-new.bin";
-  return oss.str();
-}
-
 const std::string ChunkOutputFilename(int phase, int chunk) {
   std::ostringstream oss;
   oss << "output/chunk-r" << phase << "-" << std::setfill('0') << std::setw(4) << chunk << "-two.bin";
   return oss.str();
-}
-
-bool MaybeDownload(const std::filesystem::path &filepath) {
-  if (std::filesystem::exists(filepath)) return true;
-  if (auto client = client_factory(); !client) {
-    std::cerr << "Cannot download " << filepath << std::endl;
-  } else if (auto res = client->DownloadInputFile(filepath.filename().c_str()); !res) {
-    std::cerr << "Failed to download " << filepath << ": " << res.Error().message << std::endl;
-  } else {
-    std::ofstream ofs(filepath, std::ofstream::binary);
-    if (!ofs.write(reinterpret_cast<char*>(res->data()), res->size())) {
-      std::cerr << "Failed to write to " << filepath << std::endl;
-      // Remove file so we can try to redownload it later instead of incorrectly
-      // using an empty or truncated file.
-      ofs.close();
-      std::filesystem::remove(filepath);
-    } else {
-      std::cerr << "Downloaded " << filepath << std::endl;
-      return true;
-    }
-  }
-  return false;
 }
 
 // Note: may be called more than once (whenever the active phase changes).
@@ -129,31 +88,7 @@ void InitPhase(int phase) {
   }
   std::cerr << "Initializing solver for phase " << phase << "..." << std::endl;
 
-  std::string input_filename = PhaseInputFilename(phase - 2);
-  std::string temp_filename = input_filename + ".tmp";
-  std::string previous_input_filename = PhaseInputFilename(phase - 4);
-  std::string diff_filename = PhaseDiffFilename(phase - 2);
-
-  if (!std::filesystem::exists(input_filename)) {
-    // We will have to generate it.
-    if (std::filesystem::exists(previous_input_filename) ||
-        std::filesystem::exists(temp_filename)) {
-      if (!(
-        MaybeDownload(GetChecksumFilename("metadata", phase - 2).c_str()) &&
-        MaybeDownload(diff_filename.c_str()))) {
-        std::cerr << "Failed to download the required files!" << std::endl;
-      }
-    }
-  }
-
-  if (!GeneratePhaseInput(phase, input_filename.c_str(),
-      temp_filename.c_str(),
-      previous_input_filename.c_str(),
-      diff_filename.c_str())) {
-    exit(1);
-  }
-
-  acc.emplace(input_filename.c_str());
+  acc.emplace(PreparePhaseInput(phase, client_factory).c_str());
   int failures = VerifyInputChunks(phase - 2, acc.value());
   if (failures != 0) exit(1);
   std::cerr << "Initialization complete!" << std::endl;

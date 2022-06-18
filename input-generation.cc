@@ -1,6 +1,7 @@
 #include "accessors.h"
 #include "byte_span.h"
 #include "efcodec.h"
+#include "input-generation.h"
 #include "input-verification.h"
 #include "macros.h"
 
@@ -8,8 +9,11 @@
 #include <cstdint>
 #include <iostream>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <optional>
+
+namespace {
 
 // Generates an input file from a previous one and a list of new losses and wins.
 //
@@ -120,4 +124,70 @@ bool GeneratePhaseInput(
   std::filesystem::rename(temp_filename, input_filename);
   std::cerr << "Succesfully generated " << input_filename << "!" << std::endl;
   return true;
+}
+
+
+const std::string PhaseInputFilename(int phase) {
+  std::ostringstream oss;
+  oss << "input/r" << phase << ".bin";
+  return oss.str();
+}
+
+const std::string PhaseDiffFilename(int phase) {
+  std::ostringstream oss;
+  oss << "input/r" << phase << "-new.bin";
+  return oss.str();
+}
+
+bool MaybeDownload(const std::filesystem::path &filepath, const client_factory_t &client_factory) {
+  if (std::filesystem::exists(filepath)) return true;
+  if (auto client = client_factory(); !client) {
+    std::cerr << "Cannot download " << filepath << std::endl;
+  } else if (auto res = client->DownloadInputFile(filepath.filename().c_str()); !res) {
+    std::cerr << "Failed to download " << filepath << ": " << res.Error().message << std::endl;
+  } else {
+    std::ofstream ofs(filepath, std::ofstream::binary);
+    if (!ofs.write(reinterpret_cast<char*>(res->data()), res->size())) {
+      std::cerr << "Failed to write to " << filepath << std::endl;
+      // Remove file so we can try to redownload it later instead of incorrectly
+      // using an empty or truncated file.
+      ofs.close();
+      std::filesystem::remove(filepath);
+    } else {
+      std::cerr << "Downloaded " << filepath << std::endl;
+      return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
+std::string PreparePhaseInput(int phase, const client_factory_t &client_factory) {
+  std::string input_filename = PhaseInputFilename(phase - 2);
+  std::string temp_filename = input_filename + ".tmp";
+  std::string previous_input_filename = PhaseInputFilename(phase - 4);
+  std::string diff_filename = PhaseDiffFilename(phase - 2);
+
+  if (!std::filesystem::exists(input_filename)) {
+    // We will have to generate it.
+    if (std::filesystem::exists(previous_input_filename) ||
+        std::filesystem::exists(temp_filename)) {
+      if (!(
+        MaybeDownload(GetChecksumFilename("metadata", phase - 2).c_str(), client_factory) &&
+        MaybeDownload(diff_filename.c_str(), client_factory))) {
+        std::cerr << "Failed to download the required files!" << std::endl;
+        exit(1);
+      }
+    }
+  }
+
+  if (!GeneratePhaseInput(phase, input_filename.c_str(),
+      temp_filename.c_str(),
+      previous_input_filename.c_str(),
+      diff_filename.c_str())) {
+    exit(1);
+  }
+
+  return input_filename;
 }
