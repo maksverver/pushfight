@@ -34,11 +34,7 @@ UPLOAD_DIR = 'incoming'
 assert os.path.isdir(UPLOAD_DIR)
 
 INPUT_DIR = 'input'
-INPUT_FILES = set()
-if os.path.isdir(INPUT_DIR):
-  for name in os.listdir(INPUT_DIR):
-    INPUT_FILES.add(name)
-else:
+if not os.path.isdir(INPUT_DIR):
   print('Warning: %s does not exist (or is not a directory)' % INPUT_DIR)
 
 ARCHIVE_DIR = 'archive'
@@ -191,13 +187,17 @@ class RequestHandler(socketserver.BaseRequestHandler):
 
   def handle_download_input_file(self, info):
     filename = info[b'filename'].decode('utf-8')
-    if filename not in INPUT_FILES:
+    if not filename or filename.startswith('.') or filename != os.path.basename(filename):
+      self.send_error('Invalid filename')
+      return
+    filepath = os.path.join(INPUT_DIR, filename)
+    if not os.path.isfile(filepath):
       self.send_error('File not found')
-    else:
-      print('DownloadInputFile: sending %s' % filename)
-      with open(os.path.join(INPUT_DIR, filename), 'rb') as f:
-        while buf := f.read(65536):
-          self.request.sendall(buf)
+      return
+    print('DownloadInputFile: sending %s' % filename)
+    with open(os.path.join(INPUT_DIR, filename), 'rb') as f:
+      while buf := f.read(65536):
+        self.request.sendall(buf)
 
   def handle_get_chunks(self, info):
     phase = DecodeInt(info.get(b'phase'))
