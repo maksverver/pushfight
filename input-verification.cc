@@ -176,14 +176,13 @@ void VerifyChecksumsThread(
     const sha256_hash_t &expected_hash = checksums->at(chunk);
     if (computed_hash != expected_hash) {
       std::lock_guard lock(*io_mutex);
-      std::cerr << "Verification of phase " << phase << " chunk " << chunk << " failed!\n"
+      std::cerr << "\rVerification of checksum for phase " << phase << " chunk " << chunk << " failed!\n"
           << "Expected SHA-256 sum: " << HexEncode(expected_hash) << "\n"
           << "Computed SHA-256 sum: " << HexEncode(computed_hash) << std::endl;
       ++(*failures);
-    }
-    if (chunks->size() > 10 && i % 10 == 0) {
+    } else if ((i + 1) % 10 == 0 && chunks->size() > 10) {
       std::lock_guard lock(*io_mutex);
-      std::cerr << "Verified checksum for phase " << phase << " chunk " << chunk << " (" << i << " of " << chunks->size() << ")...\n";
+      std::cerr << "\rVerified checksum for phase " << phase << " chunk " << chunk << " (" << i + 1 << " of " << chunks->size() << ")...";
     }
   }
 }
@@ -209,6 +208,10 @@ int VerifyChecksums(
     }
     REP(i, num_threads) threads[i].join();
     assert(next_index == chunks.size() + num_threads);
+    if (chunks.size() > 10) {
+      // Clear last line.
+      std::cerr << std::endl;
+    }
   }
   return failures;
 }
