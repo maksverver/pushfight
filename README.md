@@ -162,13 +162,27 @@ normal play.
 It follows from the above that the anchor can never be on some squares
 (the eight corner squares: *a2*, *a3*, *b1*, *c4*, *f1*, *g4*, *h2*, and *h3*).
 
-A brute-force search (see
-[count-unreachable-output.txt](results/count-unreachable-output.txt)) shows that
-of 401,567,166,000 total permutations, 172,416,263,040 (42.94%) are reachable
-and 229,150,902,960 (57.06%) are unreachable.
+We can calculate (see [calc-minimal-permutations.py](calc-minimal-permutations.py))
+that out of 401,567,166,000 total permutations, 172,416,263,040 (42.94%) are
+reachable and 229,150,902,960 (57.06%) are unreachable.
 
-Note that it's possible that there are other unreachable permutations that 
-aren't identifiable as described above, but I'm not aware of any.
+This was also confirmed by a brute-force search (see
+[count-unreachable.cc](count-unreachable.cc) and the output in
+[count-unreachable-output.txt](results/count-unreachable-output.txt)).
+
+
+### Symmetric permutations
+
+The board has 180 degrees rotational symmetry. For each permutation, we can
+calculate a twin by rotating the pieces around the center. These twins are
+always distinct (i.e., there are no rotationally symmetric positions) as can be
+seen by the presence of the unique anchor piece, which is always at the top half
+of the board in one rotation and at the bottom half in the other (similar
+arguments can be made about the red pushers).
+
+Normalizing for this reduces the total number of reachable permutations to
+86,208,131,520 permutations up to rotation.
+
 
 ## Solving the game
 
