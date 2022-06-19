@@ -14,18 +14,35 @@ x = black mover
 X = black pusher without anchor
 Y = black pusher with anchor
 
-Note that the board has rotational symmetry. We could use this to normalize
-positions, cutting the number of different positions in half. The solvers don't
-do this, however, since it's hard to map normalized positions to a compact
-range of integers. We could still use rotations to speed up calculations by
-(at most) a factor 2, but it's not clear it's worth the complexity.
-
 401567166000 permutations
 401567166000 = 2^4 × 3^3 × 5^3 × 7 × 11 × 13 × 17 × 19 × 23
 
 401567166000 = 7429 × 54054000
 
 401,567,166,000 = 7429 × 54,054,000
+
+The number of permutations could be reduced using two observations:
+
+  1. Some positions are unreachable. In a reachable position, the anchor is on a
+     piece that has a free space in one direction (e.g., left, top, right, bottom)
+     and an occupied space in the opposite direction (right, bottom, left, top,
+     respectively). Taking this into account reduces the total number of
+     permutations to 172416263040.
+
+        172,416,263,040 = 2^7 × 3^4 × 5 × 7 × 17 × 19 × 1471
+
+  2 The board has rotational symmetry. There are no symmetric positions because
+    the anchor is a unique pieces. We can use this to cut the number of
+    permutations in half again by normalizing somehow, e.g. by taking the
+    lexicographically smallest permutation, or by rotating the board so the
+    anchor is on the top half (or any other half). This would reduce the total
+    number of permutations to 86208131520.
+
+        86,208,131,520 = 2^6 × 3^4 × 5 × 7 × 17 × 19 × 1471
+
+Note the current solvers don't use the above optimizations. For simplicity, they
+operate on the full 401,567,166,000 permutations including rotations and
+unreachable positions.
 
 At 54054000 permutations per chunk, and 10,000 permutations/second, each chunk takes 1.5 hours to process.
 
