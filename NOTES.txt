@@ -31,12 +31,13 @@ The number of permutations could be reduced using two observations:
 
         172,416,263,040 = 2^7 × 3^4 × 5 × 7 × 17 × 19 × 1471
 
-  2 The board has rotational symmetry. There are no symmetric positions because
-    the anchor is a unique pieces. We can use this to cut the number of
-    permutations in half again by normalizing somehow, e.g. by taking the
-    lexicographically smallest permutation, or by rotating the board so the
-    anchor is on the top half (or any other half). This would reduce the total
-    number of permutations to 86208131520.
+  2. The board has rotational symmetry. The presence of the unique anchor piece
+     quarantees that each permutation is different from its rotation. We can
+     use this to cut the number of permutations in half again by normalizing the
+     permutation. For two rotations, we can take either the lexicographically
+     smallest one, or the one where the anchor is on the top half (or the bottom,
+     left, or right half.) This would reduce the total number of permutations
+     to 86208131520.
 
         86,208,131,520 = 2^6 × 3^4 × 5 × 7 × 17 × 19 × 1471
 
