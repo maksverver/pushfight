@@ -57,6 +57,8 @@ int main() {
         return true;
       });
 
+    int old_num_predecessors = num_predecessors;
+
     GeneratePredecessors(perm,
       [index, &perm, &num_predecessors](const Perm &predecessor) {
         ++num_predecessors;
@@ -75,6 +77,8 @@ int main() {
           }
           return true;
         });
+
+    assert(IsReachable(perm) == (old_num_predecessors < num_predecessors));
   }
   std::cerr << "Tested " << num_cases << " random cases." << std::endl;
   std::cerr << "Average number of succcessors: " << num_successors / num_cases << std::endl;
