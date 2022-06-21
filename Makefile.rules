@@ -29,7 +29,7 @@ include $(wildcard $(DEPFILES))
 efcodec_test: $(OBJDIR)/efcodec_test.o $(OBJDIR)/efcodec.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-perms_test: $(OBJDIR)/perms_test.o $(OBJDIR)/perms.o
+perms_test: $(OBJDIR)/perms_test.o $(OBJDIR)/perms.o $(OBJDIR)/board.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 search_test: $(OBJDIR)/search_test.o $(OBJDIR)/search.o $(OBJDIR)/board.o $(OBJDIR)/perms.o
