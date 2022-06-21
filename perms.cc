@@ -22,15 +22,27 @@ int64_t fac[21];
 // that have a starting character strictly smaller than x.
 int64_t indexOf_memo[6][17][3][4][3][3][2];
 
-int64_t IndexOfImpl(const char *begin, const char *end) {
+// Calculates index of a permutation.
+//
+// Elements must be added from back to front!
+struct IndexOfCalculator {
   std::array<int, 6> f = {};
   int64_t idx = 0;
-  while (begin < end) {
-    int x = *--end;
+
+  void Add(int x) {
     ++f[x];
     idx += indexOf_memo[x][f[0]][f[1]][f[2]][f[3]][f[4]][f[5]];
   }
-  return idx;
+
+  void Add(const char *begin, const char *end) {
+    while (begin < end) Add(*--end);
+  }
+};
+
+int64_t IndexOfImpl(const char *begin, const char *end) {
+  IndexOfCalculator calc;
+  calc.Add(begin, end);
+  return calc.idx;
 }
 
 void PermAtIndexImpl(int64_t idx, std::array<int, 6> &f, char *begin, char *end) {
@@ -282,25 +294,20 @@ int64_t MinIndexOf(const Perm &p, bool *rotated) {
     int64_t offset = min_index_anchor_offset_begin[i];
     if ((p[i - 1] == 0) != (p[i + 1] == 0)) {
       offset += min_index_horiz_offset_begin[int{p[i - 1]}][int{p[i + 1]}];
-      // Note: we could eliminate the copy here by inlining IndexOfImpl().
-      char remaining[23];
-      int pos = 0;
-      FOR(j,     0, i - 1) remaining[pos++] = p[j];
-      FOR(j, i + 2,     L) remaining[pos++] = p[j];
-      assert(pos == 23);
-      offset += IndexOfImpl(&remaining[0], &remaining[pos]);
+      IndexOfCalculator calc;
+      calc.Add(&p[i + 2], &p[L]);
+      calc.Add(&p[0], &p[i - 1]);
+      offset += calc.idx;
+
     } else {
       assert(axes[i] == 2);
       offset += min_index_verti_offset_begin[int{p[i - 7]}][int{p[i - 1]}][int{p[i + 1]}][int{p[i + 8]}];
-      // Note: we could eliminate the copy here by inlining IndexOfImpl().
-      char remaining[21];
-      int pos = 0;
-      FOR(j,     0, i - 7) remaining[pos++] = p[j];
-      FOR(j, i - 6, i - 1) remaining[pos++] = p[j];
-      FOR(j, i + 2, i + 8) remaining[pos++] = p[j];
-      FOR(j, i + 9,     L) remaining[pos++] = p[j];
-      assert(pos == 21);
-      offset += IndexOfImpl(&remaining[0], &remaining[pos]);
+      IndexOfCalculator calc;
+      calc.Add(&p[i + 9], &p[L]);
+      calc.Add(&p[i + 2], &p[i + 8]);
+      calc.Add(&p[i - 6], &p[i - 1]);
+      calc.Add(&p[0    ], &p[i - 7]);
+      offset += calc.idx;
     }
     if (rotated) *rotated = false;
     return offset;
