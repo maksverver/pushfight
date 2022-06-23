@@ -191,7 +191,7 @@ class ThreadSafeAccessor {
 public:
   using Reference = AccessorReference<ThreadSafeAccessor<T, A>, T>;
 
-  ThreadSafeAccessor(const char *filename) : delegate_accessor(filename) {}
+  explicit ThreadSafeAccessor(const char *filename) : delegate_accessor(filename) {}
 
   T get(size_t i) const {
     std::lock_guard<std::mutex> guard(mutex);
@@ -302,7 +302,7 @@ const char *CheckLossPropagationOutputFile(const char *filename, bool writable);
 template <class A>
 class LossPropagationAccessorBase {
 public:
-  LossPropagationAccessorBase(const char *filename) : acc(filename) {}
+  explicit LossPropagationAccessorBase(const char *filename) : acc(filename) {}
 
   bool IsWinning(int64_t index) const {
     return acc[loss_propagation_winning_offset_bits + index];
@@ -322,14 +322,14 @@ private:
 class LossPropagationAccessor
   : public LossPropagationAccessorBase<BinaryAccessor<loss_propagation_filesize>> {
 public:
-  LossPropagationAccessor(const char *filename)
+  explicit LossPropagationAccessor(const char *filename)
     : LossPropagationAccessorBase(CheckLossPropagationOutputFile(filename, false)) {}
 };
 
 class MutableLossPropagationAccessor
   : public LossPropagationAccessorBase<ThreadSafeMutableBinaryAccessor<loss_propagation_filesize>> {
 public:
-  MutableLossPropagationAccessor(const char *filename)
+  explicit MutableLossPropagationAccessor(const char *filename)
     : LossPropagationAccessorBase(CheckLossPropagationOutputFile(filename, true)) {}
 
   void MarkWinning(int64_t index) {
