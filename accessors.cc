@@ -163,20 +163,20 @@ const char *CheckLossPropagationOutputFile(const char *filename, bool writable) 
     std::ofstream ofs(filename, std::ofstream::binary);
     if (!ofs) {
       std::cerr << "Failed to create file!" << std::endl;
-      abort();
+      exit(1);
     }
     ofs.close();
     std::filesystem::resize_file(filename, expected_size);
   } else {
     std::cerr << "Output file " << filename << " does not exist!" << std::endl;
-    abort();
+    exit(1);
   }
   auto actual_size = std::filesystem::file_size(filename);
   if (actual_size != expected_size) {
     std::cerr << "Output file " << filename << " has incorrect filesize! "
         << "Expected: " << expected_size << ". "
         << "Actual: " << actual_size << "." << std::endl;
-    abort();
+    exit(1);
   }
   return filename;
 }
