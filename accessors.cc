@@ -1,5 +1,6 @@
 #include "accessors.h"
 
+#include "efcodec.h"
 #include "macros.h"
 
 #include <cstdlib>
@@ -179,4 +180,33 @@ const char *CheckLossPropagationOutputFile(const char *filename, bool writable) 
     exit(1);
   }
   return filename;
+}
+
+EFAccessor::EFAccessor(const char *filename) : data_(filename) {
+  const uint8_t *start = data_.data();
+  size_t size = data_.size();
+  byte_span_t bytes = byte_span_t(start, size);
+  std::cerr << "Indexing EF-encoded file " << filename << "..." << std::endl;
+  while (!bytes.empty()) {
+    size_t offset = bytes.data() - start;
+    auto res = DecodeEF(&bytes);
+    if (!res) {
+      std::cerr << "Failed to decode part " << part_byte_offsets.size() << " of " << filename << "!" << std::endl;
+      exit(1);
+    }
+    part_byte_offsets.push_back(offset);
+  }
+  part_byte_offsets.push_back(size);
+}
+
+std::vector<int64_t> EFAccessor::GetPart(size_t i) {
+  assert(i + 1 < part_byte_offsets.size());
+  size_t begin = part_byte_offsets[i];
+  size_t end = part_byte_offsets[i + 1];
+  assert(begin <= end);
+  byte_span_t bytes = byte_span_t(data_.data() + begin, end - begin);
+  auto res = DecodeEF(&bytes);
+  assert(res);
+  assert(bytes.empty());
+  return std::move(*res);
 }

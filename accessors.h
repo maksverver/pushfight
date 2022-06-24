@@ -1,7 +1,10 @@
 #ifndef ACCESSORS_H_INCLUDED
 #define ACCESSORS_H_INCLUDED
 
+#include <cassert>
 #include <cstdlib>
+#include <filesystem>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -51,6 +54,30 @@ public:
 
   const T* data() const { return MappedFile<T, size>::data_.get(); }
   const T& operator[](size_t i) const { return data()[i]; }
+};
+
+// Like MappedFile, but with an unspecified file size.
+template<class T>
+class DynMappedFile {
+public:
+  explicit DynMappedFile(const char *filename) : DynMappedFile(filename, false) {}
+
+  const T* data() const { return data_.get(); }
+  const T& operator[](size_t i) const { return data()[i]; }
+
+  size_t size() const { return filesize / sizeof(T); }
+
+protected:
+  DynMappedFile(const char *filename, bool writable) :
+      filesize(std::filesystem::file_size(filename)),
+      data_(
+        reinterpret_cast<T*>(MemMap(filename, filesize, writable)),
+        [this](void *data) { MemUnmap(reinterpret_cast<void*>(data), filesize); }) {
+    assert(filesize % sizeof(T) == 0);
+  }
+
+  size_t filesize;
+  std::unique_ptr<T, std::function<void(T*)>> data_;
 };
 
 // Accessor for binary data. Note that file size is in bytes, so the number of
@@ -339,6 +366,27 @@ public:
   void MarkChunkComplete(int chunk) {
     acc[chunk] = true;
   }
+};
+
+// Accessor for files that contain Elias-Fano-encoded lists of integers
+// (see efcodec.h).
+//
+// Each file can consist of multiple parts. The constructor scans the whole
+// file and indexes the byte offset of each part. Individual parts can then
+// be extracted with GetPart().
+class EFAccessor {
+public:
+  explicit EFAccessor(const char *filename);
+
+  std::vector<int64_t> GetPart(size_t i);
+
+  size_t PartCount() {
+    return part_byte_offsets.size() - 1;
+  }
+
+private:
+  DynMappedFile<uint8_t> data_;
+  std::vector<size_t> part_byte_offsets;
 };
 
 #endif  // ndef ACCESSORS_H_INCLUDED
