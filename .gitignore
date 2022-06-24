@@ -19,11 +19,13 @@
 /lookup-rN
 /minimax
 /perms_test
+/potential-new-losses
 /print-ef
 /print-perm
 /print-r1
 /search_test
 /solve2
+/solve3
 /solve-r0
 /solve-r1
 /solve-r1-chunked
