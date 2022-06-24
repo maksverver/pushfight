@@ -1,0 +1,15 @@
+Van hansR:
+
+Server returned 4 more chunks to solve.
+Calculating chunk 3715
+Initializing solver for phase 28...
+Using existing input file input/r26.bin
+Initialization complete!
+Assertion failed: p != LOSS, file solve2.cc, line 201)
+..\Push Fight>. part 212 / 225 (94.22% done)
+
+Machine:
+dbgrensenh27
+
+Resolution:
+recalculated chunks completed by dbgrensenh27.
