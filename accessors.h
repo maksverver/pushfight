@@ -65,18 +65,18 @@ public:
   const T* data() const { return data_.get(); }
   const T& operator[](size_t i) const { return data()[i]; }
 
-  size_t size() const { return filesize / sizeof(T); }
+  size_t size() const { return filesize_ / sizeof(T); }
 
 protected:
   DynMappedFile(const char *filename, bool writable) :
-      filesize(std::filesystem::file_size(filename)),
+      filesize_(std::filesystem::file_size(filename)),
       data_(
-        reinterpret_cast<T*>(MemMap(filename, filesize, writable)),
-        [this](void *data) { MemUnmap(reinterpret_cast<void*>(data), filesize); }) {
-    assert(filesize % sizeof(T) == 0);
+        reinterpret_cast<T*>(MemMap(filename, filesize_, writable)),
+        [size=filesize_](T *data) { MemUnmap(reinterpret_cast<void*>(data), size); }) {
+    assert(filesize_ % sizeof(T) == 0);
   }
 
-  size_t filesize;
+  size_t filesize_;
   std::unique_ptr<T, std::function<void(T*)>> data_;
 };
 
