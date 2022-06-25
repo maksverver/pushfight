@@ -68,8 +68,12 @@ function initializeWidget() {
       setPaletteVisible(selectedField !== -1);
     }
     if (mode === 'move') {
-      setMoveTargets(i === -1 || currentTurn.length >= 2 ? [] :
-            Array.from(generateMoveDestinations(pieces, i)));
+      setMoveTargets(
+          i === -1 ? [] :
+          currentTurn.length >= 2 ?
+              (currentTurn[currentTurn.length - 1][1] === i ?
+                  [currentTurn[currentTurn.length - 1][0]] : []) :
+          Array.from(generateMoveDestinations(pieces, i)));
       setPushTargets(i === -1 || getPieceType(pieces[i]) !== PieceType.PUSHER ? [] :
           Array.from(findPushDestinations(pieces, i)));
     }
@@ -158,8 +162,15 @@ function initializeWidget() {
 
   function addMove(src, dst) {
     const isPush = pieces[dst] !== 0;
-    currentTurn.push([src, dst]);
-    executeMove(pieces, src, dst);
+    if (!isPush && currentTurn.length > 0 && currentTurn[currentTurn.length - 1][1] == src) {
+      const lastMove = currentTurn.pop();
+      executeMove(pieces, lastMove[1], lastMove[0]);  // undo
+      src = lastMove[0];
+    }
+    if (src != dst) {
+      currentTurn.push([src, dst]);
+      executeMove(pieces, src, dst);
+    }
     if (isPush) {
       pastTurns.push(currentTurn);
       currentTurn = [];

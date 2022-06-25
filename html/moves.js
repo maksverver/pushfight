@@ -105,6 +105,8 @@ function* generateAllMoves(state) {
 //
 // Returns 0 or 1 to indicate the winner, or -1 if the game is not over.
 function executeMove(pieces, src, dst) {
+  if(src == dst) return;
+
   if (pieces[dst] === 0) {
     // Move.
     pieces[dst] = pieces[src];
