@@ -1,0 +1,191 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: gray;
+  color: white;
+  font: 12pt sans-serif;
+}
+
+.status {
+  padding: 0.5em;
+  background: black;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.status #status-links a {
+  padding-right: 1em;
+  color: white;
+  text-decoration: none;
+}
+
+.status #status-links a:hover {
+  text-decoration: underline;
+}
+
+.status #status-text {
+  flex-grow: 1;
+}
+
+.status #perm-index:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.board-holder {
+  background: grey;
+  padding: 10px;
+  margin: 10px;
+}
+
+.board {
+  width: 828px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 4px;
+  background: grey;
+}
+
+.palette {
+  padding-top: 20px;
+  width: 724px;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(1, 1fr);
+  display: grid;
+  gap: 4px;
+}
+
+.palette .cell {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.board .field {
+  background: rgb(240, 230, 220);
+  aspect-ratio: 1;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.board .danger {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  /* Note: transparancy is used below to make the danger stripes look good
+     when the background color changes when the field is selected. */
+  background: repeating-linear-gradient(
+    45deg,
+    rgb(240, 230, 220, 0) -10px,
+    rgb(240, 230, 220, 0) 0,
+    rgb(255, 200, 160, 1) 0,
+    rgb(255, 200, 160, 1) 10px
+  );
+}
+
+.board .danger.top    { bottom: 80% }
+.board .danger.left   { right:  80% }
+.board .danger.bottom { top:    80% }
+.board .danger.right  { left:   80% }
+
+.board .field.border-top {
+  border-top: 5px solid rgb(50, 40, 30);
+}
+
+.board .field.border-bottom {
+  border-bottom: 5px solid rgb(50, 40, 30);
+}
+
+.board .field.selected {
+  background: yellow;
+}
+
+.board .piece.red,
+.palette .piece.red {
+  background: rgb(240, 0, 0);
+  border-color: rgb(120, 0, 0);
+}
+
+.board .piece.blue,
+.palette .piece.blue {
+  background: rgb(0, 0, 240);
+  border: 5px solid rgb(0, 0, 120);
+}
+
+.board .piece,
+.board .push-origin,
+.palette .piece,
+.palette .icon {
+  position: absolute;
+  top:    5%;
+  right:  5%;
+  bottom: 5%;
+  left:   5%;
+}
+
+.board .piece,
+.palette .piece,
+.palette .icon {
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-content: center;
+  text-align: center;
+  font-size: 60px;
+  border: 5px solid;
+}
+
+.palette .icon {
+  border: none;
+  color: black;
+}
+
+.palette .cell {
+  cursor: pointer;
+}
+
+.board .piece.circle,
+.palette .piece.circle {
+  border-radius: 50%;
+}
+
+.board .push-origin {
+  border: 10px dotted rgba(0, 0, 0, 0.25);
+}
+
+.board .move-target {
+  position: absolute;
+  top:    25%;
+  right:  25%;
+  bottom: 25%;
+  left:   25%;
+  border-radius: 50%;
+  border: 10px solid rgba(0, 0, 0, 0.125);
+}
+
+.board .push-target {
+  position: absolute;
+  top:    0;
+  right:  0;
+  bottom: 0;
+  left:   0;
+  border: 10px solid rgba(0, 0, 0, 0.25);
+}
+
+.board-history {
+  display: flex;
+  flex-direction: row;
+}
+
+.history {
+  background: rgb(32, 32, 32);
+  color: white;
+  margin: 1em;
+  padding: 0.5em;
+  padding-right: 2em;
+}

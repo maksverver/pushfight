@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Push Fight</title>
+  <link rel="stylesheet" href="pushfight.css">
+</head>
+<body onload="initializeWidget()">
+<div id="status" class="status">
+  <div id="status-text">Loading...</div>
+  <div id="status-links">
+    <a id="moving-link" href="javascript:startMoving()" style="display:none">Start moving</a>
+    <a href="javascript:flipColors()">Flip colors</a>
+  </div>
+  <div id="perm-index" onclick="changePermutation()"></div>
+</div>
+<div class="board-history">
+  <div class="board-holder">
+    <div id="board" class="board"></div>
+    <div id="palette" class="palette" style="display:none">
+      <div class="cell" onclick="choosePiece(-1, PieceType.NONE)">
+        <div class="icon">🗙</div>
+      </div>
+      <div class="cell" onclick="choosePiece(0, PieceType.MOVER)">
+        <div class="piece circle red"></div>
+      </div>
+      <div class="cell" onclick="choosePiece(0, PieceType.PUSHER)">
+        <div class="piece red"></div>
+      </div>
+      <div class="cell" onclick="choosePiece(0, PieceType.ANCHOR)">
+        <div class="piece red">+</div>
+      </div>
+      <div class="cell" onclick="choosePiece(1, PieceType.MOVER)">
+        <div class="piece circle blue"></div>
+      </div>
+      <div class="cell" onclick="choosePiece(1, PieceType.PUSHER)">
+        <div class="piece blue"></div>
+      </div>
+      <div class="cell" onclick="choosePiece(1, PieceType.ANCHOR)">
+        <div class="piece blue">+</div>
+      </div>
+    </div>
+  </div>
+  <div id="history" class="history" style="display:none">
+    <ol id="history-list">
+    </ol>
+  </div>
+</div>
+
+<script src="board.js" defer></script>
+<script src="perms.js" defer></script>
+<script src="moves.js" defer></script>
+<script src="widget.js" defer></script>
+</body>
+</html>
