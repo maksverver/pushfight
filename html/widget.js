@@ -196,14 +196,38 @@ function initializeWidget() {
         if (c === W - 1 || FIELD_INDEX[r][c + 1] === -1) fieldDiv.appendChild(createDiv('danger right'));
 
         fieldDiv.className = 'field';
-        fieldDiv.style.gridRowStart = r + 1;
-        fieldDiv.style.gridColumnStart = c + 1;
+        fieldDiv.style.gridRowStart = r + 2;
+        fieldDiv.style.gridColumnStart = c + 2;
         fieldDiv.classList.toggle('border-top', r === 0);
         fieldDiv.classList.toggle('border-bottom', r === H - 1);
         fieldDiv.onclick = () => handleFieldClick(i);
         boardElem.appendChild(fieldDiv);
         fields.push(new Field(fieldDiv));
       }
+    }
+  }
+
+  // Row coordinates.
+  for (let r = 0; r < H; ++r) {
+    for (let c of [1, W + 2]) {
+      const div = document.createElement('div');
+      div.className = 'coord';
+      div.style.gridRowStart = r + 2;
+      div.style.gridColumnStart = c;
+      div.textContent = String(4 - r);
+      boardElem.appendChild(div);
+    }
+  }
+
+  // Column coordinates.
+  for (let c = 0; c < W; ++c) {
+    for (let r of [1, H + 2]) {
+      const div = document.createElement('div');
+      div.className = 'coord';
+      div.style.gridRowStart = r;
+      div.style.gridColumnStart = c + 2;
+      div.textContent = String.fromCharCode('a'.charCodeAt(0) + c);
+      boardElem.appendChild(div);
     }
   }
 
