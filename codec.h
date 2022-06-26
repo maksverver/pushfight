@@ -136,7 +136,6 @@ private:
   std::ostream &os;
 };
 
-
 class BinaryReader {
 public:
   // Note this is the buffer size in bytes. The number of outcomes will be five
@@ -181,7 +180,6 @@ private:
   std::vector<uint8_t> bytes;
   std::istream &is;
 };
-
 
 class BinaryWriter {
 public:
