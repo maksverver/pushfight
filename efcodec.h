@@ -50,6 +50,13 @@ inline std::optional<std::vector<int64_t>> DecodeEF(byte_span_t bytes) {
   return DecodeEF(&bytes);
 }
 
+// Same as above, but decodes from an input stream.
+//
+// Does not read more bytes than strictly necessary. If decoding fails the
+// return value is an empty optional and the position in the input stream is
+// unspecified.
+std::optional<std::vector<int64_t>> DecodeEF(std::istream &is);
+
 // Returns the number of bits that are encoded literally in the Elias-Fano
 // encoding of `n` integers between 0 and `m` (inclusive!)
 //

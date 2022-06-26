@@ -8,8 +8,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <limits>
 #include <random>
+#include <sstream>
 #include <vector>
 
 #include "bytes.h"
@@ -92,5 +94,37 @@ int main() {
     }
     std::sort(v.begin(), v.end());
     Test(v);
+  }
+
+  {
+    // Create a test stream with three parts.
+    std::vector<int64_t> ints1 = {1, 2, 3};
+    std::vector<int64_t> ints2 = {400, 500, 600};
+    std::vector<int64_t> ints3 = {7000000, 8000000, 9000000};
+    std::vector<uint8_t> part1 = EncodeEF(ints1);
+    std::vector<uint8_t> part2 = EncodeEF(ints2);
+    std::vector<uint8_t> part3 = EncodeEF(ints3);
+    std::vector<uint8_t> combined;
+    combined.insert(combined.end(), part1.begin(), part1.end());
+    combined.insert(combined.end(), part2.begin(), part2.end());
+    combined.insert(combined.end(), part3.begin(), part3.end());
+
+    // Decode multiple parts from memory.
+    byte_span_t bytes(combined.data(), combined.size());
+    assert(DecodeEF(&bytes).value() == ints1);
+    assert(DecodeEF(&bytes).value() == ints2);
+    assert(DecodeEF(&bytes).value() == ints3);
+    assert(bytes.empty());
+    assert(!DecodeEF(&bytes));
+
+    // Decode multiple parts from a file.
+    std::string s(reinterpret_cast<const char*>(combined.data()), combined.size());
+    std::istringstream iss(s);
+    assert(DecodeEF(iss).value() == ints1);
+    assert(DecodeEF(iss).value() == ints2);
+    assert(DecodeEF(iss).value() == ints3);
+    assert(iss);
+    assert(iss.get() == EOF);
+    assert(iss.eof());
   }
 }

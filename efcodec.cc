@@ -1,5 +1,6 @@
 #include "efcodec.h"
 
+#include <iostream>
 #include <cassert>
 #include <limits>
 
@@ -60,18 +61,12 @@ private:
   int pos = 0;
 };
 
-std::optional<uint8_t> NextByte(const uint8_t *&data, size_t &size) {
-  uint8_t byte = *data;
-  ++data;
-  --size;
-  return byte;
-}
-
-std::optional<int64_t> ReadVarInt(const uint8_t *&data, size_t &size) {
+template<class ByteSource>
+std::optional<int64_t> ReadVarInt(ByteSource &byte_source) {
   // Reads up to 9 bytes with 7 payload bits each for a total of 63 bits.
   int64_t value = 0;
   for (int shift = 0; shift <= 56; shift += 7) {
-    auto byte = NextByte(data, size);
+    auto byte = byte_source.NextByte();
     if (!byte) return {};  // end of input
     value |= int64_t{*byte & 0x7f} << shift;
     if ((*byte & 0x80) == 0) return value;
@@ -79,12 +74,45 @@ std::optional<int64_t> ReadVarInt(const uint8_t *&data, size_t &size) {
   return {};
 }
 
+struct InMemoryByteSource {
+  InMemoryByteSource(byte_span_t byte_span)
+      : InMemoryByteSource(byte_span.data(), byte_span.size()) {}
+
+  InMemoryByteSource(const uint8_t *data, size_t size)
+      : data(data), size(size) {}
+
+  std::optional<uint8_t> NextByte() {
+    if (size == 0) return {};
+    --size;
+    return *data++;
+  }
+
+  const uint8_t *data;
+  size_t size;
+};
+
+struct IStreamByteSource {
+  IStreamByteSource(std::istream &is) : is(&is) {}
+
+  std::optional<uint8_t> NextByte() {
+    uint8_t byte;
+    static_assert(sizeof(std::istream::char_type) == sizeof(byte));
+    if (!is->read(reinterpret_cast<std::istream::char_type*>(&byte), 1)) {
+      return {};  // end of input (or error!)
+    }
+    return byte;
+  }
+
+  std::istream *is;
+};
+
+template<class ByteSource>
 struct BitDecoder {
-  BitDecoder(const uint8_t *&data, size_t &size) : data(data), size(size) {}
+  BitDecoder(ByteSource &byte_source) : byte_source(&byte_source) {}
 
   std::optional<bool> ReadBit() {
     if (bits == 0) {
-      auto res = NextByte(data, size);
+      auto res = byte_source->NextByte();
       if (!res) return {};   // end of input
       byte = *res;
       bits = 8;
@@ -122,11 +150,64 @@ struct BitDecoder {
 private:
   uint8_t byte = 0;
   int bits = 0;
-  const uint8_t *&data;
-  size_t &size;
+  ByteSource *byte_source;
 };
 
+template<class ByteSource>
+std::optional<std::vector<int64_t>> DecodeEFImpl(ByteSource &byte_source) {
+  int64_t element_count;
+  if (auto res = ReadVarInt(byte_source); !res) {
+    return {};
+  } else {
+    element_count = *res;
+  }
+  std::vector<int64_t> result;
+  if (element_count > 0) {
+    result.resize(element_count);
+    auto min_value = ReadVarInt(byte_source);
+    if (!min_value) return {};
+    result[0] = *min_value;
+    if (element_count > 1) {
+      int k;
+      if (auto res = byte_source.NextByte(); !res) {
+        return {};
+      } else {
+        k = *res;
+      }
+      if (k > 63) return {};
+      BitDecoder<ByteSource> decoder(byte_source);
+      for (size_t i = 1; i < element_count; ++i) {
+        uint64_t delta;
+        if (auto lower = decoder.ReadLowerBits(k); !lower) {
+          return {};
+        } else {
+          delta = *lower;
+        }
+        if (auto upper = decoder.ReadUnaryNumber(); !upper) {
+          return {};
+        } else {
+          delta |= *upper << k;  // possible overflow here
+        }
+        result[i] = result[i - 1] + delta;  // possible overflow here
+      }
+    }
+  }
+  return result;
+}
+
 }  // namespace
+
+std::optional<std::vector<int64_t>> DecodeEF(byte_span_t *bytes) {
+  InMemoryByteSource byte_source(*bytes);
+  std::optional<std::vector<int64_t>> result = DecodeEFImpl<InMemoryByteSource>(byte_source);
+  *bytes = byte_span_t(byte_source.data, byte_source.size);
+  return result;
+}
+
+std::optional<std::vector<int64_t>> DecodeEF(std::istream &is) {
+  IStreamByteSource byte_source(is);
+  return DecodeEFImpl<IStreamByteSource>(byte_source);
+}
 
 void EncodeEF(const std::vector<int64_t> &sorted_ints, bytes_t &result, int k) {
   const size_t element_count = sorted_ints.size();
@@ -149,50 +230,6 @@ void EncodeEF(const std::vector<int64_t> &sorted_ints, bytes_t &result, int k) {
       }
     }
   }
-}
-
-std::optional<std::vector<int64_t>> DecodeEF(byte_span_t *bytes) {
-  const uint8_t *data = bytes->data();
-  size_t size = bytes->size();
-  int64_t element_count;
-  if (auto res = ReadVarInt(data, size); !res) {
-    return {};
-  } else {
-    element_count = *res;
-  }
-  std::vector<int64_t> result;
-  if (element_count > 0) {
-    result.resize(element_count);
-    auto min_value = ReadVarInt(data, size);
-    if (!min_value) return {};
-    result[0] = *min_value;
-    if (element_count > 1) {
-      int k;
-      if (auto res = NextByte(data, size); !res) {
-        return {};
-      } else {
-        k = *res;
-      }
-      if (k > 63) return {};
-      BitDecoder decoder(data, size);
-      for (size_t i = 1; i < element_count; ++i) {
-        uint64_t delta;
-        if (auto lower = decoder.ReadLowerBits(k); !lower) {
-          return {};
-        } else {
-          delta = *lower;
-        }
-        if (auto upper = decoder.ReadUnaryNumber(); !upper) {
-          return {};
-        } else {
-          delta |= *upper << k;  // possible overflow here
-        }
-        result[i] = result[i - 1] + delta;  // possible overflow here
-      }
-    }
-  }
-  *bytes = byte_span_t(data, size);
-  return result;
 }
 
 int EFTailBits(int64_t n, int64_t m) {
