@@ -291,13 +291,15 @@ bytes_t ComputeChunk(int phase, int chunk) {
   const std::vector<int64_t> potential_losses = pot_loss_acc->GetPart(chunk);
 
   std::vector<int64_t> losses;
-  std::vector<int64_t> wins;
-  ChunkStats1 stats1 = ComputeLosses(chunk, potential_losses, losses);
-  std::cerr << "Loss computation stats: "
-      << stats1.unchanged << " unchanged. "
-      << stats1.changed << " new losses. " << std::endl;
+  if (!potential_losses.empty()) {
+    ChunkStats1 stats1 = ComputeLosses(chunk, potential_losses, losses);
+    std::cerr << "Loss computation stats: "
+        << stats1.unchanged << " unchanged. "
+        << stats1.changed << " new losses. " << std::endl;
+  }
 
-  if (losses.size() > 0) {
+  std::vector<int64_t> wins;
+  if (!losses.empty()) {
     ChunkStats2 stats2 = ComputeWins(chunk, losses, wins);
 
     std::cerr << "Win computation stats: "
