@@ -22,8 +22,7 @@ int num_threads = std::thread::hardware_concurrency();
 struct MinIndexBits {
   static_assert(min_index_size % 8 == 0);
   std::unique_ptr<std::atomic<uint8_t>[]> seen =
-      std::unique_ptr<std::atomic<uint8_t>[]>(
-          new std::atomic<uint8_t>[min_index_size / 8]());
+      std::make_unique<std::atomic<uint8_t>[]>(min_index_size / 8);
 
   bool Get(int64_t i) const {
     assert(i >= 0);
