@@ -60,8 +60,8 @@ static void CountReachableThread(std::atomic<int> *next_chunk) {
         int64_t min_index = MinIndexOf(perm, &rotated);
         if ((rotated ? seen2 : seen1).Set(min_index)) {
           ++duplicates;
-          std::cerr << "Duplicate min-index " << min_index << ' '
-              << (rotated ? "rotated" : "normal")
+          std::cerr << "Duplicate min-index " << min_index
+              << (rotated ? " rotated " : " normal ")
               << "index " << index << std::endl;
         }
       }
