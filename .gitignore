@@ -34,6 +34,7 @@
 /solve-lost
 /ternary_test
 /verify-input-chunks
+/verify-min-index
 /verify-new
 /verify-r0
 /verify-r1

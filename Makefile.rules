@@ -121,6 +121,9 @@ solve-lost: $(OBJDIR)/solve-lost.o $(COMMON_OBJS)
 verify-input-chunks: $(OBJDIR)/verify-input-chunks.o $(COMMON_OBJS) $(OBJDIR)/input-verification.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+verify-min-index: $(OBJDIR)/verify-min-index.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 verify-new: $(OBJDIR)/verify-new.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
