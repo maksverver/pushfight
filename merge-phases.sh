@@ -35,4 +35,19 @@
   <(zstdcat archives/r62-new.bin.zst) \
   <(zstdcat archives/r64-new.bin.zst) \
   <(zstdcat archives/r66-new.bin.zst) \
-  <(zstdcat archives/r68-new.bin.zst)
+  <(zstdcat archives/r68-new.bin.zst) \
+  <(zstdcat archives/r70-new.bin.zst) \
+  <(zstdcat archives/r72-new.bin.zst) \
+  <(zstdcat archives/r74-new.bin.zst) \
+  <(zstdcat archives/r76-new.bin.zst) \
+  <(zstdcat archives/r78-new.bin.zst) \
+  <(zstdcat archives/r80-new.bin.zst) \
+  <(zstdcat archives/r82-new.bin.zst) \
+  <(zstdcat archives/r84-new.bin.zst) \
+  <(zstdcat archives/r86-new.bin.zst) \
+  <(zstdcat archives/r88-new.bin.zst) \
+  <(zstdcat archives/r90-new.bin.zst) \
+  <(zstdcat archives/r92-new.bin.zst) \
+  <(zstdcat archives/r94-new.bin.zst) \
+  <(zstdcat archives/r96-new.bin.zst) \
+  <(zstdcat archives/r98-new.bin.zst)

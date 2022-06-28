@@ -92,10 +92,10 @@ int main(int argc, char *argv[]) {
     std::vector<size_t> new_loss_pos;
     REP(i, diff_count) {
       std::istream &is = *files[full_input_count + i];
-      new_wins.push_back(DecodeEF(is).value());
       new_losses.push_back(DecodeEF(is).value());
-      new_win_pos.push_back(0);
+      new_wins.push_back(DecodeEF(is).value());
       new_loss_pos.push_back(0);
+      new_win_pos.push_back(0);
     }
 
     std::vector<int> freq;
@@ -130,13 +130,13 @@ int main(int argc, char *argv[]) {
         if (new_loss_pos[i] < new_losses[i].size() && new_losses[i][new_loss_pos[i]] <= index) {
           assert(new_losses[i][new_loss_pos[i]] == index);
           assert(value == 0);
-          value = 2*full_input_count + 1;
+          value = 2*(full_input_count + i) + 1;
           ++new_loss_pos[i];
         }
         if (new_win_pos[i] < new_wins[i].size() && new_wins[i][new_win_pos[i]] <= index) {
           assert(new_wins[i][new_win_pos[i]] <= index);
           assert(value == 0);
-          value = 2*full_input_count + 2;
+          value = 2*(full_input_count + i) + 2;
           ++new_win_pos[i];
         }
       }
@@ -151,13 +151,15 @@ int main(int argc, char *argv[]) {
       assert(new_loss_pos[i] == new_losses[i].size());
       assert(new_win_pos[i] == new_wins[i].size());
     }
-    // TODO: write this in a format that allows it to be easily compared against
-    // metadata/rN-counts.txt?
-    std::cerr << "Chunk " << chunk << " frequencies:";
-    REP(i, freq.size()) std::cerr << ' '  << i << ':' << freq[i];
+
+    // Debug-print frequencies for comparison against results/expected-merged-frequencies.txt
+    REP(i, freq.size()) if (freq[i] > 0) {
+      std::cerr << chunk << ' '  << i << ' ' << freq[i] << '\n';
+    }
+
     int total = 0;
     for (int i : freq) total += i;
-    std::cerr << " total:" << total << std::endl;
+    assert(total == 54054000);
 
     // TODO: write output
   }
