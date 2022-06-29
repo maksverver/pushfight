@@ -30,13 +30,16 @@ phase_paths.sort()
 
 value_counts_per_chunk = [[] for _ in range(num_chunks)]
 
-# Immediately-lost positions (value 1)
-for chunk, indices in groupby(map(int, open('results/lost-perm-ids.txt','rt')), lambda index: index // chunk_size):
-  value_counts_per_chunk[chunk].append((1, len(list(indices))))
-
 last_phase = 0
 last_losses_per_chunk = [0]*num_chunks
 last_wins_per_chunk = [0]*num_chunks
+
+# Immediately-lost positions (value 1)
+for chunk, indices in groupby(map(int, open('results/lost-perm-ids.txt','rt')), lambda index: index // chunk_size):
+  count = len(list(indices))
+  value_counts_per_chunk[chunk].append((1, count))
+  last_losses_per_chunk[chunk] += count
+
 for phase, path in phase_paths:
   assert 1 <= phase - last_phase <= 2
   lines = list(open(path, 'rt'))
