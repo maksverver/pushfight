@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::vector<int> freq;
-    std::vector<uint8_t> chunk_ouput(chunk_size);
+    std::vector<uint8_t> output_chunk(chunk_size);
     REP(i, chunk_size) {
       int64_t index = int64_t{chunk} * int64_t{chunk_size} + int64_t{i};
       int value = 0;
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
       }
 
       assert(value >= 0 && value < 256);
-      chunk_ouput[i] = value;
+      output_chunk[i] = value;
 
       if (value >= freq.size()) freq.resize(value + 1);
       ++freq[value];
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
     for (int i : freq) total += i;
     assert(total == 54054000);
 
-    // TODO: write output
+    std::cout.write(reinterpret_cast<const char*>(output_chunk.data()), output_chunk.size());
   }
   assert(imm_lost_pos == imm_lost_end);
 }

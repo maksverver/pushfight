@@ -1,5 +1,13 @@
 #!/bin/sh
 
+set -e -E -o pipefail
+
+output=output/merged.bin
+if [ -e "$output" ]; then
+  echo "$output already exists!"
+  exit 1
+fi
+
 ./merge-phases \
   <(zstdcat archives/r0.bin.zst) \
   <(zstdcat archives/r2.bin.zst) \
@@ -50,4 +58,6 @@
   <(zstdcat archives/r92-new.bin.zst) \
   <(zstdcat archives/r94-new.bin.zst) \
   <(zstdcat archives/r96-new.bin.zst) \
-  <(zstdcat archives/r98-new.bin.zst)
+  <(zstdcat archives/r98-new.bin.zst) \
+  2> output/merged-frequencies.txt \
+  | zstd -19 -o output/merged.bin.zst
