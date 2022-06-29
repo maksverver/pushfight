@@ -162,6 +162,7 @@ int main(int argc, char *argv[]) {
     assert(total == 54054000);
 
     std::cout.write(reinterpret_cast<const char*>(output_chunk.data()), output_chunk.size());
+    std::cout.flush();
   }
   assert(imm_lost_pos == imm_lost_end);
 }

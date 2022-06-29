@@ -19,6 +19,7 @@
 /lookup-rN
 /merge-phases
 /minimax
+/minify-merged
 /perms_test
 /potential-new-losses
 /print-ef

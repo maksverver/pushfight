@@ -82,6 +82,9 @@ integrate-two: $(OBJDIR)/integrate-two.o $(COMMON_OBJS)
 lookup-rN: $(OBJDIR)/lookup-rN.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+minify-merged: $(OBJDIR)/minify-merged.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 merge-phases: $(OBJDIR)/merge-phases.o $(COMMON_OBJS) $(OBJDIR)/lost-positions.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
