@@ -26,10 +26,21 @@ PrettyState Print(const State &state) {
   return PrettyState{.state=state, .compact=print_compact, .coords=print_coords};
 }
 
-void DumpPerm(const Perm &perm) {
-  std::cout << IndexOf(perm) << '\n' << Print(perm) << std::endl;
+void PrintPermId(std::ostream &os, const Perm &perm) {
+  os << IndexOf(perm) << ' ';
+  if (IsReachable(perm)) {
+    bool rotated = false;
+    int64_t min_index = MinIndexOf(perm, &rotated);
+    os << "(min: " << "+-"[rotated] << min_index << ')';
+  } else {
+    os << "(unreachable)";
+  }
+  os << '\n';
+}
 
-  std::cout << "This position is " << (IsReachable(perm) ? "likely" : "NOT") << " reachable.\n";
+void DumpPerm(const Perm &perm) {
+  PrintPermId(std::cout, perm);
+  std::cout << Print(perm) << std::endl;
 
   Outcome o = LOSS;
   if (print_successors) {
@@ -38,8 +49,13 @@ void DumpPerm(const Perm &perm) {
 
   GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
     if (print_successors) {
+      assert((state.outcome == TIE) == IsValid(state.perm));
       std::cout << moves << '\n';
-      std::cout << IndexOf(state.perm) << '\n';
+      if (state.outcome == TIE) {
+        PrintPermId(std::cout, state.perm);
+      } else {
+        std::cout << "(game over)\n";
+      }
       std::cout << Print(state) << '\n';
       if (print_compact) std::cout << '\n';
     }
@@ -50,8 +66,8 @@ void DumpPerm(const Perm &perm) {
   if (print_predecessors) {
     std::cout << "\nPredecessors:\n\n";
     GeneratePredecessors(perm, [](const Perm &pred) {
-      std::cout << IndexOf(pred) << '\n';
-      std::cout << Print(pred) << "\n";
+      PrintPermId(std::cout, pred);
+      std::cout << Print(pred) << '\n';
       if (print_compact) std::cout << '\n';
     });
   }
@@ -61,8 +77,9 @@ void DumpPerm(const Perm &perm) {
 
 void PrintUsage() {
   std::cout << "Usage:\n" <<
-    "  print-perm [options] 123\n"
-    "  print-perm [options] .OX.....oxY....Oox.....OX.\n\n"
+    "  print-perm [options] 123   (standard permutation index)\n"
+    "  print-perm [options] +456  (minimized permutation index)\n"
+    "  print-perm [options] .OX.....oxY....Oox.....OX.  (compact permutation)\n\n"
     "Options:\n"
     "  --compact: print permutations without spaces\n"
     "  --coords: include coordinates in output\n"
@@ -125,37 +142,48 @@ int main(int argc, char *argv[]) {
   print_predecessors = arg_pred == "true";
   print_successors = arg_succ == "true";
 
+  Perm perm;
   if (AllDigits(perm_arg)) {
     // Parse as permutation index.
     int64_t index = ParseInt64(perm_arg);
     if (index < 0 || index >= total_perms) {
       std::cout << "Invalid permutation index " << index << std::endl;
+      return 1;
     }
-    Perm perm = PermAtIndex(index);
-    DumpPerm(perm);
+    perm = PermAtIndex(index);
+  } else if ((perm_arg[0] == '+' || perm_arg[0] == '-') && AllDigits(perm_arg + 1)) {
+    // Parse as minimized permutation index.
+    bool rotated = perm_arg[0] == '-';
+    int64_t min_index = ParseInt64(perm_arg + 1);
+    if (min_index < 0 || min_index >= min_index_size) {
+      std::cout << "Invalid minimized index " << min_index << std::endl;
+      return 1;
+    }
+    perm = PermAtMinIndex(min_index, rotated);
   } else {
     // Parse as permutation string.
     if (strlen(perm_arg) != 26) {
       std::cout << "Invalid length! Expected 26." << std::endl;
-    } else if (
-        Count(perm_arg, 'o') != 2 ||
+      return 1;
+    }
+    if (Count(perm_arg, 'o') != 2 ||
         Count(perm_arg, 'O') != 3 ||
         Count(perm_arg, 'x') != 2 ||
         Count(perm_arg, 'X') != 2 ||
         Count(perm_arg, 'Y') != 1) {
       std::cout << "Invalid character counts." << std::endl;
-    } else {
-      Perm perm;
-      REP(i, 26) {
-        char ch = perm_arg[i];
-        perm[i] =
-            ch == 'o' ? WHITE_MOVER :
-            ch == 'O' ? WHITE_PUSHER :
-            ch == 'x' ? BLACK_MOVER :
-            ch == 'X' ? BLACK_PUSHER :
-            ch == 'Y' ? BLACK_ANCHOR : EMPTY;
-      }
-      DumpPerm(perm);
+      return 1;
+    }
+    REP(i, 26) {
+      char ch = perm_arg[i];
+      perm[i] =
+          ch == 'o' ? WHITE_MOVER :
+          ch == 'O' ? WHITE_PUSHER :
+          ch == 'x' ? BLACK_MOVER :
+          ch == 'X' ? BLACK_PUSHER :
+          ch == 'Y' ? BLACK_ANCHOR : EMPTY;
     }
   }
+  DumpPerm(perm);
+  return 0;
 }

@@ -1,5 +1,6 @@
 #include "flags.h"
 
+#include <cctype>
 #include <cstring>
 #include <iostream>
 
@@ -8,11 +9,8 @@ bool ParseFlags(int &argc, char **&argv, std::map<std::string, Flag> &flags) {
   int pos_out = 1;
   for (int pos_in = 1; pos_in < argc; ++pos_in) {
     char *arg = argv[pos_in];
-    if (arg[0] == '-') {
-      if (arg[1] != '-') {
-        std::cerr << "Invalid argument: " << arg << std::endl;
-        return false;
-      }
+    if (arg[0] == '-' && arg[1] == '-' && arg[2] && isalpha(arg[2])) {
+      // Parse flag of the form --foo=bar or -foo (equivalent to --foo=true).
       const char *start = arg + 2;
       const char *sep = strchr(start, '=');
       std::string key;
@@ -34,7 +32,13 @@ bool ParseFlags(int &argc, char **&argv, std::map<std::string, Flag> &flags) {
         it->second.provided = true;
         it->second.value = std::move(value);
       }
+    } else if (arg[0] == '-' && (arg[1] == '-' || (arg[1] && isalpha(arg[1])))) {
+      // Disallow arguments with a single hyphen (e.g. -foo should be --foo)
+      // Still allow stuff like `-` or `-123` as regular non-flag arguments.
+      std::cerr << "Invalid argument: " << arg << std::endl;
+      return false;
     } else {
+      // Regular argument. Stuff like "foo" or "-" or "-123".
       argv[pos_out++] = arg;
     }
   }
