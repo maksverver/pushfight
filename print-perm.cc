@@ -1,14 +1,13 @@
 #include "board.h"
 #include "flags.h"
-#include "macros.h"
-#include "parse-int.h"
+#include "parse-perm.h"
 #include "perms.h"
 #include "search.h"
 
 #include <cassert>
 #include <cctype>
-#include <cstring>
 #include <iostream>
+#include <optional>
 #include <sstream>
 
 namespace {
@@ -87,21 +86,6 @@ void PrintUsage() {
     "  --pred: print predecessors" << std::endl;
 }
 
-int Count(const char *s, char target) {
-  int n = 0;
-  while (*s) {
-    n += *s++ == target;
-  }
-  return n;
-}
-
-bool AllDigits(const char *s) {
-  do {
-    if (!isdigit(*s++)) return false;
-  } while (*s);
-  return true;
-}
-
 }  // namespace
 
 int main(int argc, char *argv[]) {
@@ -142,48 +126,14 @@ int main(int argc, char *argv[]) {
   print_predecessors = arg_pred == "true";
   print_successors = arg_succ == "true";
 
-  Perm perm;
-  if (AllDigits(perm_arg)) {
-    // Parse as permutation index.
-    int64_t index = ParseInt64(perm_arg);
-    if (index < 0 || index >= total_perms) {
-      std::cout << "Invalid permutation index " << index << std::endl;
-      return 1;
-    }
-    perm = PermAtIndex(index);
-  } else if ((perm_arg[0] == '+' || perm_arg[0] == '-') && AllDigits(perm_arg + 1)) {
-    // Parse as minimized permutation index.
-    bool rotated = perm_arg[0] == '-';
-    int64_t min_index = ParseInt64(perm_arg + 1);
-    if (min_index < 0 || min_index >= min_index_size) {
-      std::cout << "Invalid minimized index " << min_index << std::endl;
-      return 1;
-    }
-    perm = PermAtMinIndex(min_index, rotated);
-  } else {
-    // Parse as permutation string.
-    if (strlen(perm_arg) != 26) {
-      std::cout << "Invalid length! Expected 26." << std::endl;
-      return 1;
-    }
-    if (Count(perm_arg, 'o') != 2 ||
-        Count(perm_arg, 'O') != 3 ||
-        Count(perm_arg, 'x') != 2 ||
-        Count(perm_arg, 'X') != 2 ||
-        Count(perm_arg, 'Y') != 1) {
-      std::cout << "Invalid character counts." << std::endl;
-      return 1;
-    }
-    REP(i, 26) {
-      char ch = perm_arg[i];
-      perm[i] =
-          ch == 'o' ? WHITE_MOVER :
-          ch == 'O' ? WHITE_PUSHER :
-          ch == 'x' ? BLACK_MOVER :
-          ch == 'X' ? BLACK_PUSHER :
-          ch == 'Y' ? BLACK_ANCHOR : EMPTY;
-    }
+  std::string error;
+  std::optional<Perm> perm = ParsePerm(perm_arg, &error);
+  if (!perm) {
+    std::cout << "Could not parse \"" << perm_arg << "\" as a permutation: "
+        << error << std::endl;
+    return 1;
   }
-  DumpPerm(perm);
+
+  DumpPerm(*perm);
   return 0;
 }

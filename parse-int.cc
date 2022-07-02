@@ -14,7 +14,6 @@ int ParseInt(const char *s) {
   return i;
 }
 
-
 int64_t ParseInt64(const char *s) {
   std::istringstream iss(s);
   int64_t i = -1;
