@@ -26,6 +26,8 @@ struct Value {
   static Value LossIn(int moves) { assert(moves >= 0); return Value(moves*2 + 1); }
   static Value WinIn(int moves) { assert(moves > 0); return Value(moves*2); }
 
+  Value() : byte(0) {}
+
   explicit Value(uint8_t byte) : byte(byte) {}
 
   // Returns +1 if the position is won, -1 if lost, or 0 if tied.
@@ -96,11 +98,28 @@ int main(int argc, char *argv[]) {
 
   std::vector<std::pair<Value, std::pair<Moves, State>>> evaluated_successors;
   for (const std::pair<Moves, State> &elem : successors) {
-    int64_t min_index = MinIndexOf(elem.second.perm);
-    evaluated_successors.push_back({-Value(acc[min_index]), elem});
+    const Outcome o = elem.second.outcome;
+    Value value;
+    if (o == LOSS) {
+      // If the successor is losing for the next player, the moves were
+      // winning for the last player.
+      value = Value::WinIn(1);
+    } else if (o == WIN) {
+      // Symmetric to above. Currently GenerateAllSuccessors() does not return
+      // losing moves, so this code never executes.
+      value = Value::LossIn(1);
+    } else {
+      assert(o == TIE);
+      const Perm &p = elem.second.perm;
+      assert(IsValid(p));
+      assert(IsReachable(p));
+      int64_t min_index = MinIndexOf(elem.second.perm);
+      value = -Value(acc[min_index]);
+    }
+    evaluated_successors.push_back({value, elem});
   };
 
-  // Sort by descending value, so that the best moves are on top.
+  // Sort by descending value, so that the best moves come first.
   std::sort(evaluated_successors.begin(), evaluated_successors.end(),
     [](
         const std::pair<Value, std::pair<Moves, State>> &a,
@@ -115,9 +134,12 @@ int main(int argc, char *argv[]) {
       const Value &value = elem.first;
       const Moves &moves = elem.second.first;
       const State &state = elem.second.second;
-      bool rotated = false;
-      int64_t min_index = MinIndexOf(state.perm, &rotated);
-      std::cout << "+-"[rotated] << min_index << ' ' << moves << ' ' << value << std::endl;
+      if (state.outcome == TIE) {
+        bool rotated = false;
+        int64_t min_index = MinIndexOf(state.perm, &rotated);
+        std::cout << "+-"[rotated] << min_index << ' ';
+      }
+      std::cout << moves << ' ' << value << std::endl;
     }
     assert(stored_value == evaluated_successors.front().first);
   }
