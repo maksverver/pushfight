@@ -17,6 +17,7 @@
 /integrate-wins
 /integrate-wins2
 /lookup-rN
+/lookup-min
 /merge-phases
 /minimax
 /minify-merged

@@ -79,6 +79,9 @@ integrate-wins2: $(OBJDIR)/integrate-wins2.o $(COMMON_OBJS)
 integrate-two: $(OBJDIR)/integrate-two.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+lookup-min: $(OBJDIR)/lookup-min.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 lookup-rN: $(OBJDIR)/lookup-rN.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
