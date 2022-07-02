@@ -1,23 +1,17 @@
 // Tool to look up a value at a specific index in a minimized merged file,
 // along with best moves.
 
-// TODO:
-//    1. support for inputting rotated positions (+/-)
-//       requires also inverting the resulting indices / rotating the moves
-//    2. support looking up positions by permutation index or compact permutation.
-//    these can be implemented by extracting logic from print-perm.cc
-
-// TODO: support looking up positions without an anchor too (e.g. starting positions)
-
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <optional>
+#include <string>
 
 #include "accessors.h"
 #include "board.h"
 #include "macros.h"
 #include "perms.h"
-#include "parse-int.h"
+#include "parse-perm.h"
 #include "search.h"
 
 namespace {
@@ -73,25 +67,41 @@ std::ostream &operator<<(std::ostream &os, const Value &v) {
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
-    std::cout << "Usage: lookup-min <minimized.bin> <min-index>\n";
+    std::cout <<
+        "Usage: lookup-min <minimized.bin> <permutation>\n";
     return 0;
   }
 
   const char *filename = argv[1];
-  int64_t min_index = ParseInt64(argv[2]);
+  const char *perm_string = argv[2];
 
   InitializePerms();
 
-  if (min_index < 0 || min_index >= min_index_size) {
-    std::cout << "Invalid minimal permutation index: " << min_index << std::endl;
-    return 1;
+  // Parse permutation argument.
+  Perm perm;
+  {
+    std::string error;
+    std::optional<Perm> res = ParsePerm(perm_string, &error);
+    if (!res) {
+      std::cout << "Could not parse permutation string \"" << perm_string << "\": "
+          << error << std::endl;
+      return 1;
+    }
+    perm = std::move(*res);
+    if (!IsValid(perm)) {
+      std::cout << "Permutation is invalid!" << std::endl;
+      return 1;
+    }
+    if (!IsReachable(perm)) {
+      std::cout << "Position is unreachable!" << std::endl;
+      return 1;
+    }
   }
 
   MappedFile<uint8_t, min_index_size> acc(filename);
 
-  Perm perm = PermAtMinIndex(min_index);
-
-  Value stored_value = Value(acc[min_index]);
+  const int64_t min_index = MinIndexOf(perm);
+  const Value stored_value = Value(acc[min_index]);
 
   std::vector<std::pair<Moves, State>> successors = GenerateAllSuccessors(perm);
   Deduplicate(successors);
@@ -134,13 +144,15 @@ int main(int argc, char *argv[]) {
       const Value &value = elem.first;
       const Moves &moves = elem.second.first;
       const State &state = elem.second.second;
+      std::cout << value << ' ' << moves;
       if (state.outcome == TIE) {
         bool rotated = false;
         int64_t min_index = MinIndexOf(state.perm, &rotated);
-        std::cout << "+-"[rotated] << min_index << ' ';
+        std::cout << ' ' << "+-"[rotated] << min_index;
       }
-      std::cout << moves << ' ' << value << std::endl;
+      std::cout << '\n';
     }
+    std::cout.flush();
     assert(stored_value == evaluated_successors.front().first);
   }
 }
