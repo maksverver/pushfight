@@ -116,6 +116,17 @@ enum Outcome : char {
   WIN  = 2,
 };
 
+// Returns the outcome for a permutation.
+//
+// Precondition: `perm` is valid (started, in-progress, or finished),
+// i.e. ValidatePerm(perm) != PermType::INVALID.
+//
+// If the permutation is in-progress, the result is TIE.
+//
+// If the permutation is finished, the result is WIN or LOSS depending on which
+// player's piece was pushed off the board.
+Outcome GetOutcome(const Perm &perm);
+
 inline Outcome MaxOutcome(Outcome a, Outcome b) {
   if (a == WIN || b == WIN) return WIN;
   if (a == TIE || b == TIE) return TIE;

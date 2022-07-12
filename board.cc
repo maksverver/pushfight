@@ -110,6 +110,12 @@ bool IsReachable(const Perm &perm) {
   return false;
 }
 
+Outcome GetOutcome(const Perm &perm) {
+  int a = perm[WHITE_MOVER] + perm[WHITE_PUSHER];
+  int b = perm[BLACK_MOVER] + perm[BLACK_PUSHER] + perm[BLACK_ANCHOR];
+  return a > b ? WIN : a < b ? LOSS : TIE;
+}
+
 const char *OutcomeToString(Outcome o) {
   return o == WIN ? "WIN" : o == LOSS ? "LOSS" : o == TIE ? "TIE" : "INVALID OUTCOME";
 }

@@ -266,6 +266,9 @@ void GeneratePredecessors(
       r -= dr;
       c -= dc;
       uint32_t pushed = 0;
+      // The push didn't necessarily end at an empty space or the edge of the
+      // board. For example, `.Yooo` has predecessors `Ox.xx`, `Oxx.x` and
+      // `Oxxx.`, not just `Oxxx.` as it might first appear.
       do {
         pushed |= uint32_t{1} << j;
         perm[j] = perm[i];
@@ -275,9 +278,8 @@ void GeneratePredecessors(
         i = getBoardIndex(r, c);
         perm[j] = EMPTY;
 
-        // The push didn't necessarily end at an empty space or the edge of the
-        // board. For example, `.Yooo` has predecessors `Ox.xx`, `Oxx.x` and
-        // `Oxxx.`, not just `Oxxx.` as it might first appear.
+        // Select the previously anchored piece, which could be any of the
+        // black pushers that haven't just been pushed.
         REP(j, L) if (perm[j] == BLACK_PUSHER && ((pushed & (uint32_t{1} << j)) == 0)) {
           // Note: this includes some unreachable positions!
           perm[j] = BLACK_ANCHOR;

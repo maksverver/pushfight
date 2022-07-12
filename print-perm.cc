@@ -37,38 +37,62 @@ void PrintPermId(std::ostream &os, const Perm &perm) {
   os << '\n';
 }
 
-void DumpPerm(const Perm &perm) {
-  PrintPermId(std::cout, perm);
+void DumpPerm(PermType type, const Perm &perm) {
+  assert(type != PermType::INVALID);
+
+  if (type == PermType::IN_PROGRESS) {
+    PrintPermId(std::cout, perm);
+  }
   std::cout << Print(perm) << std::endl;
 
-  Outcome o = LOSS;
-  if (print_successors) {
-    std::cout << "\nSuccessors:\n\n";
+  Outcome o;
+
+  if (type == PermType::FINISHED) {
+    o = GetOutcome(perm);
+    if (print_successors) {
+      std::cout << "Cannot print successors because this position is finished.\n";
+    }
+  } else {
+    assert(type == PermType::STARTED || type == PermType::IN_PROGRESS);
+
+    if (print_successors) {
+      std::cout << "\nSuccessors:\n\n";
+    }
+
+    o = LOSS;  // will be updated below
+    GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
+      assert(ValidatePerm(state.perm) == (state.outcome == TIE ? PermType::IN_PROGRESS : PermType::FINISHED));
+      if (print_successors) {
+        std::cout << moves << '\n';
+        if (state.outcome == TIE) {
+          PrintPermId(std::cout, state.perm);
+        } else {
+          std::cout << "(game over)\n";
+        }
+        std::cout << Print(state) << '\n';
+        if (print_compact) std::cout << '\n';
+      }
+      o = MaxOutcome(o, Invert(state.outcome));
+      return true;
+    });
   }
 
-  GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
-    assert(ValidatePerm(state.perm) == (state.outcome == TIE ? PermType::IN_PROGRESS : PermType::FINISHED));
-    if (print_successors) {
-      std::cout << moves << '\n';
-      if (state.outcome == TIE) {
-        PrintPermId(std::cout, state.perm);
-      } else {
-        std::cout << "(game over)\n";
-      }
-      std::cout << Print(state) << '\n';
-      if (print_compact) std::cout << '\n';
-    }
-    o = MaxOutcome(o, Invert(state.outcome));
-    return true;
-  });
-
   if (print_predecessors) {
-    std::cout << "\nPredecessors:\n\n";
-    GeneratePredecessors(perm, [](const Perm &pred) {
-      PrintPermId(std::cout, pred);
-      std::cout << Print(pred) << '\n';
-      if (print_compact) std::cout << '\n';
-    });
+    if (type == PermType::STARTED) {
+      std::cout << "Cannot print predecessors because this position is just started.\n";
+    } else if (type == PermType::FINISHED) {
+      // In theory, it's' possible to generate predecessor for finished
+      // positions too, since we can figure out which piece was just pushed off
+      // the board. However, this isn't currently implemented.
+      std::cout << "Cannot print predecessors because this position is finished.\n";
+    } else {
+      std::cout << "\nPredecessors:\n\n";
+      GeneratePredecessors(perm, [](const Perm &pred) {
+        PrintPermId(std::cout, pred);
+        std::cout << Print(pred) << '\n';
+        if (print_compact) std::cout << '\n';
+      });
+    }
   }
 
   std::cout << "Verdict: " << (o == WIN ? "win" : o == LOSS ? "loss" : "indeterminate") << std::endl;
@@ -134,6 +158,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  DumpPerm(*perm);
+  PermType type = ValidatePerm(*perm);
+  if (type == PermType::INVALID) {
+    std::cout << "Invalid permutation: " << perm_arg << std::endl;
+    return 1;
+  }
+
+  DumpPerm(type, *perm);
   return 0;
 }

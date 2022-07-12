@@ -19,6 +19,7 @@ namespace {
 struct Value {
   static Value LossIn(int moves) { assert(moves >= 0); return Value(moves*2 + 1); }
   static Value WinIn(int moves) { assert(moves > 0); return Value(moves*2); }
+  static Value Tie() { return Value(0); }
 
   Value() : byte(0) {}
 
@@ -79,6 +80,7 @@ int main(int argc, char *argv[]) {
 
   // Parse permutation argument.
   Perm perm;
+  PermType type;
   {
     std::string error;
     std::optional<Perm> res = ParsePerm(perm_string, &error);
@@ -88,11 +90,17 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     perm = std::move(*res);
-    if (ValidatePerm(perm) != PermType::IN_PROGRESS) {
-      std::cout << "Permutation does not represent an in-progress position!" << std::endl;
+    type = ValidatePerm(perm);
+    if (type == PermType::INVALID) {
+      std::cout << "Permutation is invalid!\n";
       return 1;
     }
-    if (!IsReachable(perm)) {
+    if (type == PermType::FINISHED) {
+      std::cout << "Permutation represents a finished position!\n";
+      return 1;
+    }
+    assert(type == PermType::STARTED || type == PermType::IN_PROGRESS);
+    if (type == PermType::IN_PROGRESS && !IsReachable(perm)) {
       std::cout << "Position is unreachable!" << std::endl;
       return 1;
     }
@@ -100,8 +108,8 @@ int main(int argc, char *argv[]) {
 
   MappedFile<uint8_t, min_index_size> acc(filename);
 
-  const int64_t min_index = MinIndexOf(perm);
-  const Value stored_value = Value(acc[min_index]);
+  const int64_t min_index = type == PermType::IN_PROGRESS ? MinIndexOf(perm) : -1;
+  const Value stored_value = min_index >= 0 ? Value(acc[min_index]) : Value::Tie();
 
   std::vector<std::pair<Moves, State>> successors = GenerateAllSuccessors(perm);
   Deduplicate(successors);
@@ -155,6 +163,6 @@ int main(int argc, char *argv[]) {
       std::cout << '\n';
     }
     std::cout.flush();
-    assert(stored_value == evaluated_successors.front().first);
+    assert(min_index == -1 || stored_value == evaluated_successors.front().first);
   }
 }

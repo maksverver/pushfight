@@ -10,6 +10,8 @@
 
 // Enumerates the successors of `perm`.
 //
+// Precondition: `perm` must be a permutation that is started or in-progress.
+//
 // When the callback returns false, the search is aborted, and this function
 // returns false too. If the callback returns true every time it is called,
 // then all successors are enumerated and this function returns true.
@@ -18,6 +20,8 @@ bool GenerateSuccessors(
     const std::function<bool(const Moves&, const State&)> &callback);
 
 // Enumerates the predecessors of `perm`.
+//
+// Note: this includes predecessors that are themselves unreachable!
 void GeneratePredecessors(
     const Perm &perm,
     const std::function<void(const Perm&)> &callback);

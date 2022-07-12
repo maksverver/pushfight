@@ -51,6 +51,8 @@ enum class PermType {
   INVALID = 0,
 
   // All pieces have been placed on the board, but no move has been made yet.
+  // Note: this does not verify that each player's pieces are placed on the
+  // correct side of the board.
   STARTED = 1,
 
   // All pieces are on the board, and The anchor is placed on one piece.

@@ -64,15 +64,6 @@ std::optional<Perm> ParsePerm(std::string_view s, std::string *error) {
     return {};
   }
 
-  if (Count(s, 'o') != 2 ||
-      Count(s, 'O') != 3 ||
-      Count(s, 'x') != 2 ||
-      Count(s, 'X') != 2 ||
-      Count(s, 'Y') != 1) {
-    if (error) *error = "Incorrect character counts";
-    return {};
-  }
-
   Perm perm;
   for (int i = 0; i < 26; ++i) {
     char ch = s[i];
