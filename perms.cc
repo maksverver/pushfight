@@ -12,6 +12,9 @@ namespace {
 
 static_assert(L == 26);
 
+// Expected frequencies of symbols in any permutation of first_perm (16 0s, 2 1s, etc.)
+constexpr std::array<int, 6> in_progress_freq = {16, 2, 3, 2, 2, 1};
+
 // num_perms[a][b][c][d][e][f] == number of permutations of a string with a 0s, b 1s, etc.
 int64_t num_perms[17][3][4][3][3][2];
 
@@ -103,7 +106,7 @@ Perm PermAtMinIndexImpl(int64_t idx) {
       perm[i    ] = 5;
       perm[i + 1] = b;
 
-      std::array<int, 6> f = all_freq;
+      std::array<int, 6> f = in_progress_freq;
       --f[a];
       --f[5];
       --f[b];
@@ -127,7 +130,7 @@ Perm PermAtMinIndexImpl(int64_t idx) {
       perm[i + 1] = c;
       perm[i + 8] = d;
 
-      std::array<int, 6> f = all_freq;
+      std::array<int, 6> f = in_progress_freq;
       --f[a];
       --f[b];
       --f[5];
@@ -253,13 +256,32 @@ void InitializePerms() {
   }
 }
 
-bool IsValid(const Perm &perm) {
-  std::array<int, 6> f = all_freq;
+#include <iostream>
+
+PermType ValidatePerm(const Perm &perm) {
+  std::array<int, 6> f = {};
   for (int x : perm) {
-    if (x < 0 || x >= 6 || f[x] == 0) return false;
-    --f[x];
+    if (x < 0 || x >= 6) return PermType::INVALID;
+    ++f[x];
   }
-  return true;
+  if (f[0] == 16) {
+    if (f[1] == 2 && f[2] == 3 && f[3] == 2) {
+      if (f[4] == 2 && f[5] == 1) {
+        return PermType::IN_PROGRESS;
+      }
+      if (f[4] == 3 && f[5] == 0) {
+        return PermType::STARTED;
+      }
+    }
+  } else if (f[0] == 17 && f[5] == 1) {
+    if ((f[1] == 1 && f[2] == 3 && f[3] == 2 && f[4] == 2) ||
+        (f[1] == 2 && f[2] == 2 && f[3] == 2 && f[4] == 2) ||
+        (f[1] == 2 && f[2] == 3 && f[3] == 1 && f[4] == 2) ||
+        (f[1] == 2 && f[2] == 3 && f[3] == 2 && f[4] == 1)) {
+      return PermType::FINISHED;
+    }
+  }
+  return PermType::INVALID;
 }
 
 int64_t IndexOf(const Perm &p) {
@@ -268,7 +290,7 @@ int64_t IndexOf(const Perm &p) {
 
 Perm PermAtIndex(int64_t idx) {
   assert(idx >= 0 && idx < total_perms);
-  std::array<int, 6> f = all_freq;
+  std::array<int, 6> f = in_progress_freq;
   Perm perm;
   PermAtIndexImpl(idx, f, perm.begin(), perm.end());
   return perm;

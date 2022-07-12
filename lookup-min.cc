@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     perm = std::move(*res);
-    if (!IsValid(perm)) {
-      std::cout << "Permutation is invalid!" << std::endl;
+    if (ValidatePerm(perm) != PermType::IN_PROGRESS) {
+      std::cout << "Permutation does not represent an in-progress position!" << std::endl;
       return 1;
     }
     if (!IsReachable(perm)) {
@@ -109,19 +109,21 @@ int main(int argc, char *argv[]) {
   std::vector<std::pair<Value, std::pair<Moves, State>>> evaluated_successors;
   for (const std::pair<Moves, State> &elem : successors) {
     const Outcome o = elem.second.outcome;
+    const Perm &p = elem.second.perm;
     Value value;
     if (o == LOSS) {
+      assert(IsFinished(p));
       // If the successor is losing for the next player, the moves were
       // winning for the last player.
       value = Value::WinIn(1);
     } else if (o == WIN) {
+      assert(IsFinished(p));
       // Symmetric to above. Currently GenerateAllSuccessors() does not return
       // losing moves, so this code never executes.
       value = Value::LossIn(1);
     } else {
       assert(o == TIE);
-      const Perm &p = elem.second.perm;
-      assert(IsValid(p));
+      assert(IsInProgress(p));
       assert(IsReachable(p));
       int64_t min_index = MinIndexOf(elem.second.perm);
       value = -Value(acc[min_index]);

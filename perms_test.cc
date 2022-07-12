@@ -22,8 +22,8 @@ std::mt19937 rng(dev());
 int main() {
   InitializePerms();
 
-  assert(IsValid(first_perm));
-  assert(IsValid(last_perm));
+  assert(IsInProgress(first_perm));
+  assert(IsInProgress(last_perm));
 
   assert(PermAtIndex(0) == first_perm);
   assert(PermAtIndex(total_perms - 1) == last_perm);
@@ -35,12 +35,45 @@ int main() {
     std::uniform_int_distribution<int64_t> dist(0, total_perms - 1000);
     int64_t idx = dist(rng);
     Perm perm = PermAtIndex(idx);
-    assert(IsValid(perm));
+    assert(IsInProgress(perm));
     REP(m, 1000) {
       assert(IndexOf(perm) == idx + m);
       std::next_permutation(std::begin(perm), std::end(perm));
-      assert(IsValid(perm));
+      assert(IsInProgress(perm));
     }
+  }
+
+  // Validation
+  {
+    const Perm invalid_perm = {};
+    const Perm started_perm = {
+            0, 2, 4, 0, 0,
+      0, 0, 0, 1, 3, 4, 0, 0,
+      0, 0, 2, 1, 3, 0, 0, 0,
+        0, 0, 4, 2, 0
+    };
+    const Perm in_progress_perm = {
+            0, 0, 2, 1, 2,
+      0, 0, 4, 0, 0, 0, 0, 0,
+      0, 1, 3, 5, 0, 0, 4, 2,
+        0, 0, 3, 0, 0
+    };
+    const Perm finished_perm = {
+            0, 0, 2, 1, 2,
+      0, 0, 4, 0, 0, 0, 0, 0,
+      0, 0, 1, 3, 4, 0, 0, 5,
+        0, 0, 3, 0, 0
+    };
+
+    assert(ValidatePerm(invalid_perm) == PermType::INVALID);
+    assert(ValidatePerm(started_perm) == PermType::STARTED);
+    assert(ValidatePerm(in_progress_perm) == PermType::IN_PROGRESS);
+    assert(ValidatePerm(finished_perm) == PermType::FINISHED);
+
+    assert(IsInvalid(invalid_perm));
+    assert(IsStarted(started_perm));
+    assert(IsInProgress(in_progress_perm));
+    assert(IsFinished(finished_perm));
   }
 
   // Rotation
@@ -64,11 +97,11 @@ int main() {
   // Minimal indices (first and last 10).
   REP(i, 10) {
     Perm p = PermAtMinIndex(i);
-    assert(IsValid(p));
+    assert(IsInProgress(p));
     assert(MinIndexOf(p) == i);
 
     p = PermAtMinIndex(min_index_size - 1 - i);
-    assert(IsValid(p));
+    assert(IsInProgress(p));
     assert(MinIndexOf(p) == min_index_size - 1 - i);
   }
 
@@ -87,7 +120,7 @@ int main() {
     std::uniform_int_distribution<int64_t> dist(0, min_index_size - 1);
     int64_t idx = dist(rng);
     Perm perm = PermAtMinIndex(idx);
-    assert(IsValid(perm));
+    assert(IsInProgress(perm));
     assert(MinIndexOf(perm) == idx);
   }
 

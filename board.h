@@ -104,6 +104,8 @@ inline int getNeighbourIndex(int i, int d) {
 // Returns whether the given permutation can possibly be reached through a
 // sequence of valid moves from a valid starting position.
 //
+// Precondition: `perm` must be an in-progress position (see ValidatePerm()).
+//
 // A return value of `true` implies that the permutation is likely reachable,
 // while `false` implies that the permutation is definitly unreachable.
 bool IsReachable(const Perm &perm);

@@ -28,9 +28,9 @@
 // cannot be parsed, an empty optional is returned, and if `error` is non-null,
 // an error message will be assigned to *error.
 //
-// Currently this function always returns a valid permutation (see IsValid() in
-// perms.h). In the future it may be extended to also parse starting positions
-// (i.e., without an anchor on any piece).
+// Currently this function always returns an in-progress permutation. In the
+// future it may be extended to also parse starting positions (i.e., without an
+// anchor on any piece).
 std::optional<Perm> ParsePerm(std::string_view s, std::string *error = nullptr);
 
 #endif  // ndef PARSE_PERM_H_INCLUDED

@@ -47,8 +47,8 @@ void DumpPerm(const Perm &perm) {
   }
 
   GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
+    assert(ValidatePerm(state.perm) == (state.outcome == TIE ? PermType::IN_PROGRESS : PermType::FINISHED));
     if (print_successors) {
-      assert((state.outcome == TIE) == IsValid(state.perm));
       std::cout << moves << '\n';
       if (state.outcome == TIE) {
         PrintPermId(std::cout, state.perm);

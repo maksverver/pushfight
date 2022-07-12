@@ -32,32 +32,46 @@ constexpr int L = 26;
 // 26! / 16! / 2! / 3! / 2! / 2! = 401,567,166,000
 constexpr int64_t total_perms = 401567166000;
 
-// A permutation of 26 characters, with 16 0s, 2 1s, 3 2s, 2 3s, 2 4s, and 1 5 (see all_freq below).
+// A permutation of 26 values character
 using Perm = std::array<char, L>;
 
-// First permutation.
+// First permutation (of IN_PROGRESS permutations).
 constexpr Perm first_perm = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5};
 
-// Last permutation.
+// Last permutation (of IN_PROGRESS permutations).
 constexpr Perm last_perm = {5, 4, 4, 3, 3, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-// Frequencies of symbols in any permutation of first_perm.
-constexpr std::array<int, 6> all_freq = {16, 2, 3, 2, 2, 1};
-
 
 // Initializes lookup tables. This must be called before any of the other
 // functions. Ideally, it's only called once, but it's possible to call it
 // multiple times.
 void InitializePerms();
 
-// Returns whether this permutation is valid: it contains the right number of
-// copies of each value (see all_freq). This does not determine if the
-// permutation represents a reachable position; see IsReachable() in board.h
-// for that.
-bool IsValid(const Perm &perm);
+enum class PermType {
+  // The permutation does not represent a valid game configuration.
+  INVALID = 0,
 
-// Returns the index of a given permutation. The permutation must be valid
-// (i.e., it must be some permutation of first_perm).
+  // All pieces have been placed on the board, but no move has been made yet.
+  STARTED = 1,
+
+  // All pieces are on the board, and The anchor is placed on one piece.
+  IN_PROGRESS = 2,
+
+  // One piece has been pushed off the board.
+  FINISHED = 3,
+};
+
+// Checks if the permutation is valid or not, and whether the position
+// corresponds to a starting position, an in-progress position, or a finished
+// position (see PermType above).
+PermType ValidatePerm(const Perm &perm);
+
+inline bool IsInvalid(const Perm &perm)    { return ValidatePerm(perm) == PermType::INVALID; }
+inline bool IsStarted(const Perm &perm)    { return ValidatePerm(perm) == PermType::STARTED; }
+inline bool IsInProgress(const Perm &perm) { return ValidatePerm(perm) == PermType::IN_PROGRESS; }
+inline bool IsFinished(const Perm &perm)   { return ValidatePerm(perm) == PermType::FINISHED; }
+
+// Returns the index of a given permutation. The permutation must represent an
+// in-progress position (i.e. it must be some permutation of first_perm).
 int64_t IndexOf(const Perm &p);
 
 // Returns the permutation at a given index. The index must be valid (i.e., it
