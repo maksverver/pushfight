@@ -73,7 +73,7 @@ function* findPushDestinations(fields, i) {
 /*
 function* generateMoves(fields, player) {
   for (let i = 0; i < fields.length; ++i) {
-    if (getPieceType(fields[i]) !== PieceType.NONE && getColor(fields[i]) === player) {
+    if (getPieceType(fields[i]) !== PieceType.NONE && getPlayerColor(fields[i]) === player) {
       // Sort destinations to facilitate debugging.
       const js = Array.from(generateMoveDestinations(fields, i)).sort((a, b) => a - b);
       for (const j of js) {
@@ -85,7 +85,7 @@ function* generateMoves(fields, player) {
 
 function* generatePushes(fields, player) {
   for (let i = 0; i < fields.length; ++i) {
-    if (getPieceType(fields[i]) === PieceType.PUSHER && getColor(fields[i]) === player) {
+    if (getPieceType(fields[i]) === PieceType.PUSHER && getPlayerColor(fields[i]) === player) {
       for (const d of findPushDirections(fields, i)) {
         yield {p: [i, d]};
       }
@@ -116,7 +116,7 @@ function executeMove(pieces, src, dst) {
     // Remove anchor.
     for (let i = 0; i < pieces.length; ++i) {
       if (getPieceType(pieces[i]) === PieceType.ANCHOR) {
-        pieces[i] = makePiece(getColor(pieces[i]), PieceType.PUSHER);
+        pieces[i] = makePiece(getPlayerColor(pieces[i]), PieceType.PUSHER);
       }
     }
 
@@ -126,7 +126,7 @@ function executeMove(pieces, src, dst) {
     let dr = r - FIELD_ROW[src];
     let dc = c - FIELD_COL[src];
     let i = dst;
-    let piece = makePiece(getColor(pieces[src]), PieceType.ANCHOR);
+    let piece = makePiece(getPlayerColor(pieces[src]), PieceType.ANCHOR);
     pieces[src] = 0;
     do {
       let newPiece = pieces[i];
@@ -136,8 +136,16 @@ function executeMove(pieces, src, dst) {
       c += dc;
       i = getFieldIndex(r, c);
     } while (piece !== 0 && i !== -1);
-    return piece === 0 ? -1 : getColor(piece);
+    return piece === 0 ? -1 : getPlayerColor(piece);
   }
+}
+
+// Like executeMove(), but doesn't mutate the pieces argument and returns
+// an updated copy instead.
+function applyMove(pieces, src, dst) {
+  const newPieces = [...pieces];
+  executeMove(newPieces, src, dst);
+  return newPieces;
 }
 
 function formatField(i) {

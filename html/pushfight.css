@@ -14,27 +14,22 @@ body {
   justify-content: space-between;
 }
 
-.status #status-links a {
+.status .status-links .status-link {
+  display: inline;
   padding-right: 1em;
   color: white;
-  text-decoration: none;
 }
 
-.status #status-links a:hover {
-  text-decoration: underline;
-}
-
-.status #status-text {
-  flex-grow: 1;
-}
-
-.status #perm-index:hover {
+.clickable:hover {
   text-decoration: underline;
   cursor: pointer;
 }
 
+.status .status-text {
+  flex-grow: 1;
+}
+
 .board-holder {
-  background: grey;
   padding: 10px;
   margin: 10px;
 }
@@ -111,22 +106,18 @@ body {
   background: yellow;
 }
 
-.board .piece.red,
-.palette .piece.red {
+.board .piece.red {
   background: rgb(240, 0, 0);
   border-color: rgb(120, 0, 0);
 }
 
-.board .piece.blue,
-.palette .piece.blue {
+.board .piece.blue {
   background: rgb(0, 0, 240);
   border: 5px solid rgb(0, 0, 120);
 }
 
 .board .piece,
-.board .push-origin,
-.palette .piece,
-.palette .icon {
+.board .push-origin {
   position: absolute;
   top:    5%;
   right:  5%;
@@ -134,9 +125,7 @@ body {
   left:   5%;
 }
 
-.board .piece,
-.palette .piece,
-.palette .icon {
+.board .piece {
   pointer-events: none;
   user-select: none;
   display: flex;
@@ -148,13 +137,25 @@ body {
   border: 5px solid;
 }
 
-.palette .icon {
-  border: none;
-  color: black;
+.new-palette {
+  background: rgba(0, 0, 0, 0.67);
+  border-radius: 50%;
+  margin: -100%;
 }
 
-.palette .cell {
+.new-palette .cell {
+  user-select: none;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-content: center;
+  text-align: center;
+}
+
+.new-palette .icon {
+  font-size: 30px;
+  color: white;
 }
 
 .board .piece.circle,
@@ -188,6 +189,7 @@ body {
 .board-history {
   display: flex;
   flex-direction: row;
+  align-items: flex-start;
 }
 
 .history {
