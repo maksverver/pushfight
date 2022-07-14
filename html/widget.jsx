@@ -335,7 +335,7 @@ function SetUpComponent({onStart}) {
           onInvertColorsClick={() => setPieces((pieces) => invertColors(pieces))}
           onStartClick={isStartEnabled ? () => onStart(pieces) : null}
       />
-      <div class="board-holder">
+      <div className="board-holder">
         <SetupBoard pieces={pieces} onPiecesChange={setPieces}/>
       </div>
     </React.Fragment>
@@ -408,7 +408,7 @@ class PlayComponent extends React.Component {
     return (
       <React.Fragment>
         <PlayStatusBar text={statusMessage} moves={moves} index={index} />
-        <div class="board-holder">
+        <div className="board-holder">
           <div className="board-history">
             <PlayBoard
               pieces={pieces}
