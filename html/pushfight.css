@@ -43,20 +43,6 @@ body {
   background: grey;
 }
 
-.palette {
-  padding-top: 20px;
-  width: 724px;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: repeat(1, 1fr);
-  display: grid;
-  gap: 4px;
-}
-
-.palette .cell {
-  position: relative;
-  aspect-ratio: 1;
-}
-
 .board .coord {
   color: #404040;
   padding: 0.5em;
@@ -158,8 +144,7 @@ body {
   color: white;
 }
 
-.board .piece.circle,
-.palette .piece.circle {
+.board .piece.circle {
   border-radius: 50%;
 }
 
