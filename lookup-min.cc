@@ -100,16 +100,14 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     assert(type == PermType::STARTED || type == PermType::IN_PROGRESS);
-    if (type == PermType::IN_PROGRESS && !IsReachable(perm)) {
-      std::cout << "Position is unreachable!" << std::endl;
-      return 1;
-    }
   }
 
   MappedFile<uint8_t, min_index_size> acc(filename);
 
-  const int64_t min_index = type == PermType::IN_PROGRESS ? MinIndexOf(perm) : -1;
-  const Value stored_value = min_index >= 0 ? Value(acc[min_index]) : Value::Tie();
+  const int64_t min_index =
+      type == PermType::IN_PROGRESS && IsReachable(perm) ? MinIndexOf(perm) : -1;
+  const Value stored_value =
+      min_index >= 0 ? Value(acc[min_index]) : Value::Tie();
 
   std::vector<std::pair<Moves, State>> successors = GenerateAllSuccessors(perm);
   Deduplicate(successors);
