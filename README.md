@@ -196,6 +196,14 @@ arguments can be made about the red pushers).
 Normalizing for this reduces the total number of reachable permutations to
 86,208,131,520 permutations up to rotation.
 
+### Minimized indexes
+
+Just like it's possible to map permutations to compact indices from 0 to
+~401 billion, it's possible to map *reachable* permutations to *minimized*
+indexes between 0 and ~86 billion (ignoring rotation).
+
+For details, see the functions `MinIndexOf()` and `PermAtMinIndex()` in
+[perms.h](perms.h) and [perms.cc](perms.cc).
 
 ## Solving the game
 
