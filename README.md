@@ -170,6 +170,19 @@ This was also confirmed by a brute-force search (see
 [count-unreachable.cc](count-unreachable.cc) and the output in
 [count-unreachable-output.txt](results/count-unreachable-output.txt)).
 
+#### Permutations without reachable predecessors
+
+There are also positions that cannot be reached because all of their
+predecessors are unreachable. An example is below:
+
+![Example of a non-trivially unreachable position](images/unreachable-2.png)
+
+However, these positions can technically still be reached in 1 move from an
+appropriate starting position.
+
+There are similar positions that may be truly unreachable because the pieces
+are not on the right side of the board for a valid starting position, but I
+did not bother to exclude those.
 
 ### Symmetric permutations
 
@@ -584,9 +597,6 @@ piece at *d1*.
  * List some stats from the final computation
  * Determining the best starting position
  * Finding a compact way to represent the optimal strategy
- * Are there any unreachable positions that I haven't accounted for already?
-   If not, can I prove it? I could probably brute-force it with a breadth-first
-   search starting from all initial positions, but it would be expensive.
 
 ## Puzzles
 
