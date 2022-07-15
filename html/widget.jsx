@@ -342,19 +342,23 @@ function SetUpComponent({onStart}) {
   );
 }
 
-function History({turns, undoEnabled, playEnabled, onUndoClick, onPlayClick}) {
+function History({turns, moves, undoEnabled, playEnabled, onUndoClick, onPlayClick}) {
   function formatTurn(parts) {
-    return parts.length === 0 ? '...' :
-        parts.map(([src, dst]) => formatMove(src, dst)).join(',');
+    return parts.map(([src, dst]) => formatMove(src, dst)).join(',');
+  }
+
+  const turnStrings = turns.map(formatTurn);
+  if (moves != null) {
+    turnStrings.push(formatTurn(moves) + '...');
   }
 
   const rows = [];
-  for (let row = 0; 2*row < turns.length; ++row) {
+  for (let row = 0; 2*row < turnStrings.length; ++row) {
     rows.push(
       <tr key={row}>
         <th>{row}.</th>
-        <td>{formatTurn(turns[2*row])}</td>
-        <td>{2*row + 1 < turns.length && formatTurn(turns[2*row + 1])}</td>
+        <td>{turnStrings[2*row]}</td>
+        <td>{turnStrings[2*row + 1]}</td>
       </tr>
     );
   }
@@ -490,7 +494,8 @@ class PlayComponent extends React.Component {
       if (tab === 'history') {
         return (
           <History
-              turns={isUnfinished ? [...turns, moves]: turns}
+              turns={turns}
+              moves={isUnfinished ? moves : undefined}
               undoEnabled={undoEnabled}
               playEnabled={playEnabled}
               onUndoClick={this.handleUndo}
