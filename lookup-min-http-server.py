@@ -124,15 +124,22 @@ class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
     self.send_json_response(ConvertSuccessors(result.stdout))
     return
 
-  def send_json_response(self,obj):
+  def send_cors_headers(self):
+    self.send_header('Access-Control-Allow-Origin', '*')
+    self.send_header('Access-Control-Max-Age', 3600)  # 1 hour
+
+  def send_json_response(self, obj):
     self.send_response(200)
-    self.send_header('Content-type', 'application/json')
+    self.send_cors_headers()
+    self.send_header('Content-Type', 'application/json')
+    self.send_header('Cache-Control', 'public, max-age=86400')  # 1 day
     self.end_headers()
     self.wfile.write(bytes(json.dumps(obj), 'utf-8'))
 
   def send_error(self, status, error):
     self.send_response(status)
-    self.send_header('Content-type', 'text/plain')
+    self.send_cors_headers()
+    self.send_header('Content-Type', 'text/plain')
     self.end_headers()
     self.wfile.write(bytes(error, 'utf-8'))
 
