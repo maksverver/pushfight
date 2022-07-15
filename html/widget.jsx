@@ -120,6 +120,10 @@ function PlayBoard({pieces, nextPlayer, moves, push, onMove, onPush}) {
     }
   }
 
+  // Clear the current selection whenever the pieces change, because
+  // moves may no longer be valid.
+  React.useEffect(() => setSelectedFieldIndex(-1), [piecesToString(pieces)]);
+
   function isSelectable(i) {
     if (isMoveTarget[i] || isPushTarget[i]) return true;
     const type = getPieceType(pieces[i]);
