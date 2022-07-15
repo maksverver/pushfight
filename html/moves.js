@@ -101,50 +101,53 @@ function* generateAllMoves(state) {
 }
 */
 
-// Executes a move/push, which must be valid.
+// Executes one or moves/pushs, each of which must be valid.
 //
 // Returns 0 or 1 to indicate the winner, or -1 if the game is not over.
-function executeMove(pieces, src, dst) {
-  if(src == dst) return;
+function executeMoves(pieces, ...moves) {
+  for(const [src, dst] of moves) {
+    // Allow no-op move.
+    if(src === dst) continue;
 
-  if (pieces[dst] === 0) {
-    // Move.
-    pieces[dst] = pieces[src];
-    pieces[src] = 0;
-    return -1;
-  } else {
-    // Remove anchor.
-    for (let i = 0; i < pieces.length; ++i) {
-      if (getPieceType(pieces[i]) === PieceType.ANCHOR) {
-        pieces[i] = makePiece(getPlayerColor(pieces[i]), PieceType.PUSHER);
+    if (pieces[dst] === 0) {
+      // Move.
+      pieces[dst] = pieces[src];
+      pieces[src] = 0;
+    } else {
+      // Remove anchor.
+      for (let i = 0; i < pieces.length; ++i) {
+        if (getPieceType(pieces[i]) === PieceType.ANCHOR) {
+          pieces[i] = makePiece(getPlayerColor(pieces[i]), PieceType.PUSHER);
+        }
       }
-    }
 
-    // Push.
-    let r = FIELD_ROW[dst];
-    let c = FIELD_COL[dst];
-    let dr = r - FIELD_ROW[src];
-    let dc = c - FIELD_COL[src];
-    let i = dst;
-    let piece = makePiece(getPlayerColor(pieces[src]), PieceType.ANCHOR);
-    pieces[src] = 0;
-    do {
-      let newPiece = pieces[i];
-      pieces[i] = piece;
-      piece = newPiece;
-      r += dr;
-      c += dc;
-      i = getFieldIndex(r, c);
-    } while (piece !== 0 && i !== -1);
-    return piece === 0 ? -1 : getPlayerColor(piece);
+      // Push.
+      let r = FIELD_ROW[dst];
+      let c = FIELD_COL[dst];
+      let dr = r - FIELD_ROW[src];
+      let dc = c - FIELD_COL[src];
+      let i = dst;
+      let piece = makePiece(getPlayerColor(pieces[src]), PieceType.ANCHOR);
+      pieces[src] = 0;
+      do {
+        let newPiece = pieces[i];
+        pieces[i] = piece;
+        piece = newPiece;
+        r += dr;
+        c += dc;
+        i = getFieldIndex(r, c);
+      } while (piece !== 0 && i !== -1);
+      return piece === 0 ? -1 : getPlayerColor(piece);
+    }
   }
+  return -1;
 }
 
-// Like executeMove(), but doesn't mutate the pieces argument and returns
+// Like executeMoves(), but doesn't mutate the pieces argument and returns
 // an updated copy instead.
-function applyMove(pieces, src, dst) {
-  const newPieces = [...pieces];
-  executeMove(newPieces, src, dst);
+function applyMoves(pieces, ...moves) {
+  const newPieces = [...pieces];  // copy
+  executeMoves(newPieces, ...moves);
   return newPieces;
 }
 
@@ -154,4 +157,32 @@ function formatField(i) {
 
 function formatMove(src, dst) {
   return formatField(src) + '-' + formatField(dst);
+}
+
+function formatTurn(parts) {
+  return parts.map(([src, dst]) => formatMove(src, dst)).join(',');
+}
+
+// Parses `s` into a field index, or returns -1 if it's invalid.
+function parseField(s) {
+  if (s.length !== 2) return -1;
+  const c = s.charCodeAt(0) - 'a'.charCodeAt(0);
+  const r = '4'.charCodeAt(0) - s.charCodeAt(1);
+  return getFieldIndex(r, c);
+}
+
+function parseMove(s) {
+  const parts = s.split('-');
+  if (parts.length !== 2) return undefined;
+  const src = parseField(parts[0]);
+  const dst = parseField(parts[1]);
+  if (src < 0 || dst < 0) return undefined;
+  return [src, dst];
+}
+
+function parseTurn(s) {
+  if (s.length === 0) return undefined;
+  const parts = s.split(',');
+  if (parts.length > 3) return undefined;
+  return parts.map(parseMove);
 }

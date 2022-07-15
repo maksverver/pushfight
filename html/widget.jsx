@@ -1,5 +1,22 @@
 'use strict';
 
+const LOOKUP_URL = window.location.hostname === 'localhost' ? 'http://localhost:8003/' : 'lookup/';
+
+async function analyzePosition(pieces) {
+  const url = LOOKUP_URL + '?perm=' + encodeURIComponent(piecesToNormalizedString(pieces));
+  const response = await fetch(url);
+  if (response.status !== 200) {
+    const error = await response.text();
+    throw new Error(`${error} (HTTP status ${response.status})`);
+  }
+  const obj = await response.json();
+  // Note: this only partially validates the response object.
+  if (typeof obj !== 'object' || typeof obj.status != 'string' || !Array.isArray(obj.successors)) {
+    throw new Error('Invalid response format.');
+  }
+  return obj;
+}
+
 class Board extends React.Component {
   constructor(props) {
     super(props);
@@ -290,6 +307,7 @@ function parsePieces(string) {
   }
 }
 
+// Converts pieces to a 26-character permutation string.
 function piecesToString(pieces) {
   function getChar(p) {
     if (p === NO_PIECE)    return '.';
@@ -301,6 +319,18 @@ function piecesToString(pieces) {
     if (p === BLUE_ANCHOR) return 'Y';
   }
   return pieces.map(getChar).join('');
+}
+
+// Converts pieces to a 26-character permutation string, possibly inverting
+// the players so that red is the next player to move.
+function piecesToNormalizedString(pieces) {
+  let redAnchors = 0;
+  let blueAnchors = 0;
+  for (const piece of pieces) {
+    if (piece === RED_ANCHOR) ++redAnchors;
+    if (piece === BLUE_ANCHOR) ++blueAnchors;
+  }
+  return piecesToString(redAnchors > blueAnchors ? invertColors(pieces) : pieces);
 }
 
 function SetUpComponent({onStart}) {
@@ -343,10 +373,6 @@ function SetUpComponent({onStart}) {
 }
 
 function History({turns, moves, undoEnabled, playEnabled, onUndoClick, onPlayClick}) {
-  function formatTurn(parts) {
-    return parts.map(([src, dst]) => formatMove(src, dst)).join(',');
-  }
-
   const turnStrings = turns.map(formatTurn);
   if (moves != null) {
     turnStrings.push(formatTurn(moves) + '...');
@@ -404,6 +430,10 @@ class PlayComponent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      // Revision number. Used to detect when asynchronous operations have
+      // become stale. This should be incremented whenever the state changes.
+      revision: 0,
+
       // Positions of pieces on the board.
       pieces: props.initialPieces,
 
@@ -425,27 +455,33 @@ class PlayComponent extends React.Component {
   }
 
   handleMove(src, dst) {
-    this.setState(({pieces, moves}) => {
+    const r = this.state.revision;
+    this.setState(({revision, pieces, moves}) => {
+      if (r !== revision) return;
       moves = [...moves];  // copy
       if (moves.length > 0 && moves[moves.length - 1][1] === src) {
         const lastMove = moves.pop();
-        pieces = applyMove(pieces, lastMove[1], lastMove[0]);  // undo last move
+        pieces = applyMoves(pieces, [lastMove[1], lastMove[0]]);  // undo last move
         src = lastMove[0];
       }
       if (src !== dst) {
-        pieces = applyMove(pieces, src, dst);
+        pieces = applyMoves(pieces, [src, dst]);
         moves.push([src, dst]);
       }
-      return {pieces, moves};
+      return {revision: revision + 1, pieces, moves};
     });
   }
 
   handlePush(src, dst) {
-    this.setState(({pieces, turns, moves, piecesAtTurnStart}) => {
-      const newPieces = Object.freeze(applyMove(pieces, src, dst));
+    const r = this.state.revision;
+    this.setState(({revision, pieces, turns, moves, piecesAtTurnStart}) => {
+      if (r !== revision) return;
+      const push = Object.freeze([src, dst]);
+      const newPieces = Object.freeze(applyMoves(pieces, push));
       return {
+        revision: revision + 1,
         pieces: newPieces,
-        turns: [...turns, [...moves, [src, dst]]],
+        turns: [...turns, [...moves, push]],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
       };
@@ -453,23 +489,56 @@ class PlayComponent extends React.Component {
   }
 
   handlePlay() {
-    // TODO: see logic in handlePush() above.
-    // TODO: careful: what if state is asynchronously updated?
-    alert('TODO');
+    const r = this.state.revision;
+    const pieces = this.state.pieces;
+    analyzePosition(pieces).then(
+      (value) => {
+        if (value.successors.length === 0) {
+          alert('No moves available!');
+          return;
+        }
+        // Randomly pick one of the best moves to play.
+        const bestMoves = value.successors[0].moves;
+        const turn = parseTurn(bestMoves[Math.floor(Math.random() * bestMoves.length)]);
+        let newPieces = Object.freeze(applyMoves(pieces, ...turn));
+        this.setState(({revision, turns, piecesAtTurnStart}) => {
+          if (r !== revision) return;
+          return {
+            revision: revision + 1,
+            pieces: newPieces,
+            turns: [...turns, turn],
+            moves: [],
+            piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
+          };
+        });
+      },
+      (error) => {
+        alert('Failed to analyze position! ' + error);
+      }
+    );
   }
 
   handleUndo() {
-    this.setState(({moves, turns, piecesAtTurnStart}) => (
-        moves.length > 0 ?
-            // Undo only the moves in the current turn.
-            { pieces: piecesAtTurnStart[turns.length],
-              moves: [] } :
-        turns.length > 0 ?
-            // Undo the current turn.
-            { pieces: piecesAtTurnStart[turns.length - 1],
-              turns: turns.slice(0, turns.length - 1),
-              piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length) } :
-        null));
+    const r = this.state.revision;
+    this.setState(({revision, moves, turns, piecesAtTurnStart}) => {
+      if (r !== revision) return;
+      if (moves.length > 0) {
+        // Undo only the moves in the current turn.
+        return {
+          pieces: piecesAtTurnStart[turns.length],
+          moves: [],
+        };
+      }
+      if (turns.length > 0) {
+        // Undo the current turn.
+        return {
+          revision: revision + 1,
+          pieces: piecesAtTurnStart[turns.length - 1],
+          turns: turns.slice(0, turns.length - 1),
+          piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length),
+        };
+      }
+    });
   }
 
   render() {

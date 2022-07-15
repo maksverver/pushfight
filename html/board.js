@@ -101,6 +101,8 @@ function replacePiece(pieces, i, piece) {
   return result;
 }
 
+// Returns a copy of `pieces` with the piece colors inverted
+// (red pieces become blue and vice versa).
 function invertColors(pieces) {
   const newPieces = [...pieces];
   for (let i = 0; i < newPieces.length; ++i) {
