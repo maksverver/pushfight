@@ -231,3 +231,18 @@ body {
   min-width: 400px;
   min-height: 600px;
 }
+
+.copyright-notice {
+  font-size: 10pt;
+  padding: 1em;
+  color: #ccc;
+}
+
+.copyright-notice a {
+  color: #aaa;
+  text-decoration: none;
+}
+
+.copyright-notice a:hover {
+  text-decoration: underline;
+}
