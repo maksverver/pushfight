@@ -342,33 +342,82 @@ function SetUpComponent({onStart}) {
   );
 }
 
-function History({turns}) {
+function History({turns, undoEnabled, playEnabled, onUndoClick, onPlayClick}) {
   function formatTurn(parts) {
     return parts.length === 0 ? '...' :
         parts.map(([src, dst]) => formatMove(src, dst)).join(',');
   }
 
+  const rows = [];
+  for (let row = 0; 2*row < turns.length; ++row) {
+    rows.push(
+      <tr key={row}>
+        <th>{row}.</th>
+        <td>{formatTurn(turns[2*row])}</td>
+        <td>{2*row + 1 < turns.length && formatTurn(turns[2*row + 1])}</td>
+      </tr>
+    );
+  }
+
   return (
     <div className="history">
-      <ol>
-        {turns.map((turn, i) => <li key={i}>{formatTurn(turn)}</li>)}
-      </ol>
+      <table>
+        <tbody>{rows}</tbody>
+      </table>
+      <div className="buttons">
+        <button title="Undos the last turn"
+            disabled={!undoEnabled} onClick={onUndoClick}>
+          Undo turn
+        </button>
+        <button title="Automatically plays an optimal move"
+            disabled={!playEnabled} onClick={onPlayClick}>
+          Play best
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Side panel that contains the move history and position analysis tabs.
+function PlayPanel({renderTab}) {
+  const [selectedTab, setSelectedTab] = React.useState('history');
+
+  return (
+    <div className="tab-panel">
+      <div className="tabs">
+        <div className="tab clickable history-tab"
+            onClick={() => setSelectedTab('history')}>Moves</div>
+        <div className="tab clickable analysis-tab"
+            onClick={() => setSelectedTab('analysis')}>Analysis</div>
+      </div>
+      {renderTab(selectedTab)}
     </div>
   );
 }
 
 class PlayComponent extends React.Component {
-  state = {
-    pieces: undefined,  // set in constructor
-    turns: [],
-    moves: [],
-  }
 
   constructor(props) {
     super(props);
-    this.state.pieces = props.initialPieces;
+    this.state = {
+      // Positions of pieces on the board.
+      pieces: props.initialPieces,
+
+      // Turns played so far, not including the current turn.
+      // Each turn is a list of moves followed by one push.
+      turns: [],
+
+      // Moves played in the current turn.
+      moves: [],
+
+      // Pieces at the start of each turn. This has length 1 greater
+      // than `turns`. Used to implement undo.
+      piecesAtTurnStart: [props.initialPieces],
+    };
     this.handleMove = this.handleMove.bind(this);
     this.handlePush = this.handlePush.bind(this);
+    this.handleUndo = this.handleUndo.bind(this);
+    this.handlePlay = this.handlePlay.bind(this);
   }
 
   handleMove(src, dst) {
@@ -388,11 +437,35 @@ class PlayComponent extends React.Component {
   }
 
   handlePush(src, dst) {
-    this.setState(({pieces, turns, moves, push}) => ({
-      pieces: applyMove(pieces, src, dst),
-      turns: [...turns, [...moves, [src, dst]]],
-      moves: [],
-    }));
+    this.setState(({pieces, turns, moves, piecesAtTurnStart}) => {
+      const newPieces = Object.freeze(applyMove(pieces, src, dst));
+      return {
+        pieces: newPieces,
+        turns: [...turns, [...moves, [src, dst]]],
+        moves: [],
+        piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
+      };
+    });
+  }
+
+  handlePlay() {
+    // TODO: see logic in handlePush() above.
+    // TODO: careful: what if state is asynchronously updated?
+    alert('TODO');
+  }
+
+  handleUndo() {
+    this.setState(({moves, turns, piecesAtTurnStart}) => (
+        moves.length > 0 ?
+            // Undo only the moves in the current turn.
+            { pieces: piecesAtTurnStart[turns.length],
+              moves: [] } :
+        turns.length > 0 ?
+            // Undo the current turn.
+            { pieces: piecesAtTurnStart[turns.length - 1],
+              turns: turns.slice(0, turns.length - 1),
+              piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length) } :
+        null));
   }
 
   render() {
@@ -405,11 +478,38 @@ class PlayComponent extends React.Component {
         validity === PiecesValidity.FINISHED ? ['Red', 'Blue'][winner] + ' won.' :
         error || 'Unknown error!';
 
+    // Can undo undo if there is a (partial) turn to be undo.
+    const undoEnabled = turns.length > 0 || moves.length > 0;
+
+    // Can auto-play only at the beginning of a turn.
+    const playEnabled = isUnfinished && moves.length === 0;
+
+    // Note: this is an arrow function so we can use `this` inside to refer
+    // to the PlayComponent instance.
+    const renderTab = (tab) => {
+      if (tab === 'history') {
+        return (
+          <History
+              turns={isUnfinished ? [...turns, moves]: turns}
+              undoEnabled={undoEnabled}
+              playEnabled={playEnabled}
+              onUndoClick={this.handleUndo}
+              onPlayClick={this.handlePlay}
+            />
+        );
+      }
+      if (tab === 'analysis') {
+        return (
+          <div className="analysis">TODO</div>
+        );
+      }
+    }
+
     return (
       <React.Fragment>
         <PlayStatusBar text={statusMessage} moves={moves} index={index} />
         <div className="board-holder">
-          <div className="board-history">
+          <div className="board-with-panel">
             <PlayBoard
               pieces={pieces}
               nextPlayer={nextPlayer}
@@ -417,7 +517,7 @@ class PlayComponent extends React.Component {
               push={null}
               onMove={this.handleMove}
               onPush={this.handlePush}/>
-            <History turns={isUnfinished ? [...turns, moves]: turns}/>
+            <PlayPanel renderTab={renderTab}/>
           </div>
         </div>
       </React.Fragment>

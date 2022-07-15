@@ -171,16 +171,63 @@ body {
   border: 10px solid rgba(0, 0, 0, 0.25);
 }
 
-.board-history {
+.board-with-panel {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
 }
 
-.history {
+.tab-panel {
+  margin-left: 1em;
+}
+
+.tab-panel .tabs {
+  display: flex;
+  flex-direction: row;
+}
+
+.tab-panel .tabs .tab {
+  padding: 0.2em 2em;
+  font-weight: bold;
+}
+
+.history,
+.history-tab {
   background: rgb(32, 32, 32);
   color: white;
-  margin: 1em;
-  padding: 0.5em;
-  padding-right: 2em;
+}
+
+.analysis,
+.analysis-tab {
+  background: rgb(32, 32, 80);
+  color: white;
+}
+
+.history {
+  padding: 8px;
+  min-width: 400px;
+  min-height: 600px;
+}
+
+.history table td {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.history button {
+  background: #333;
+  color: white;
+  border-width: thin;
+  padding: 0.25em 0.5em;
+  margin: 0.5em;
+}
+
+.history button:disabled {
+  color: #666;
+}
+
+.analysis {
+  padding: 8px;
+  min-width: 400px;
+  min-height: 600px;
 }
