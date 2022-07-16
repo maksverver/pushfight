@@ -621,9 +621,15 @@ class PlayComponent extends React.Component {
 function RootComponent() {
   const [initialPieces, setInitialPieces] = React.useState(null);
 
-  return initialPieces == null ?
-      <SetUpComponent onStart={setInitialPieces}/> :
-      <PlayComponent initialPieces={initialPieces}/>;
+  return (
+    <React.StrictMode>
+    {
+      initialPieces == null ?
+        <SetUpComponent onStart={setInitialPieces}/> :
+        <PlayComponent initialPieces={initialPieces}/>
+    }
+    </React.StrictMode>
+  );
 }
 
 // Global initialization.
