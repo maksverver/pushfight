@@ -49,6 +49,9 @@ backpropagate2: $(OBJDIR)/backpropagate2.o $(COMMON_OBJS) $(CLIENT_OBJS) $(SOLVE
 count-bits: $(OBJDIR)/count-bits.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+count-bytes: $(OBJDIR)/count-bytes.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 count-r1: $(OBJDIR)/count-r1.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
