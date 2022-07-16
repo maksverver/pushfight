@@ -602,8 +602,8 @@ class PlayComponent extends React.Component {
   }
 
   handleAutoPlay() {
-    const pieces = this.state.pieces;
-    analyzePosition(pieces).then(
+    const {turns, piecesAtTurnStart} = this.state;
+    analyzePosition(piecesAtTurnStart[turns.length]).then(
       (value) => {
         if (value.successors.length === 0) {
           alert('No moves available!');
@@ -655,9 +655,6 @@ class PlayComponent extends React.Component {
     // Can undo undo if there is a (partial) turn to be undo.
     const undoEnabled = turns.length > 0 || moves.length > 0;
 
-    // Can auto-play only at the beginning of a turn.
-    const playEnabled = isUnfinished && moves.length === 0;
-
     // Note: this is an arrow function so we can use `this` inside to refer
     // to the PlayComponent instance.
     const renderTab = (tab) => {
@@ -668,7 +665,7 @@ class PlayComponent extends React.Component {
               turns={turns}
               moves={isUnfinished ? moves : undefined}
               undoEnabled={undoEnabled}
-              playEnabled={playEnabled}
+              playEnabled={isUnfinished}
               onUndoClick={this.handleUndo}
               onPlayClick={this.handleAutoPlay}
             />
