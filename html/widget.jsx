@@ -376,7 +376,7 @@ function SetUpComponent({onStart}) {
   );
 }
 
-function History({turns, moves, undoEnabled, playEnabled, onUndoClick, onPlayClick}) {
+function History({firstPlayer, turns, moves, undoEnabled, playEnabled, onUndoClick, onPlayClick}) {
   const turnStrings = turns.map(formatTurn);
   if (moves != null) {
     turnStrings.push(formatTurn(moves) + '...');
@@ -396,6 +396,18 @@ function History({turns, moves, undoEnabled, playEnabled, onUndoClick, onPlayCli
   return (
     <div className="history">
       <table>
+        <thead>
+          <tr>
+            <td></td>
+            <th className={["red", "blue"][firstPlayer]}>
+              {["Red","Blue"][firstPlayer]}
+            </th>
+            <th className={["red", "blue"][1 - firstPlayer]}>
+              {["Red", "Blue"][1 - firstPlayer]}
+            </th>
+            <td></td>
+          </tr>
+        </thead>
         <tbody>{rows}</tbody>
       </table>
       <div className="buttons">
@@ -555,6 +567,8 @@ class PlayComponent extends React.Component {
         validity === PiecesValidity.FINISHED ? ['Red', 'Blue'][winner] + ' won.' :
         error || 'Unknown error!';
 
+    const firstPlayer = this.props.initialPieces.includes(RED_ANCHOR) ? BLUE_PLAYER : RED_PLAYER;
+
     // Can undo undo if there is a (partial) turn to be undo.
     const undoEnabled = turns.length > 0 || moves.length > 0;
 
@@ -567,6 +581,7 @@ class PlayComponent extends React.Component {
       if (tab === 'history') {
         return (
           <History
+              firstPlayer={firstPlayer}
               turns={turns}
               moves={isUnfinished ? moves : undefined}
               undoEnabled={undoEnabled}

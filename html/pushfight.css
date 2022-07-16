@@ -209,6 +209,19 @@ body {
   min-height: 600px;
 }
 
+.history table thead th {
+  padding: 0.25em 0.5em;
+  min-width: 10em;
+}
+
+.history table thead th.red {
+  background: rgb(120, 0, 0);
+}
+
+.history table thead th.blue {
+  background: rgb(0, 0, 120);
+}
+
 .history table td {
   padding-left: 1em;
   padding-right: 1em;
