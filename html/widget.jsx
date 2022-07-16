@@ -100,8 +100,11 @@ function SetupBoard({pieces, onPiecesChange}) {
 }
 
 // Version of the board used when playing.
-function PlayBoard({pieces, nextPlayer, moves, push, onMove, onPush}) {
+function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, onPush}) {
   const [selectedFieldIndex, setSelectedFieldIndex] = React.useState(-1);
+
+  const pieceRefs = [];
+  for (let i = 0; i < FIELD_COUNT; ++i) pieceRefs.push(React.useRef());
 
   const isMoveTarget = {};
   const isPushTarget = {};
@@ -122,7 +125,20 @@ function PlayBoard({pieces, nextPlayer, moves, push, onMove, onPush}) {
 
   // Clear the current selection whenever the pieces change, because
   // moves may no longer be valid.
-  React.useEffect(() => setSelectedFieldIndex(-1), [piecesToString(pieces)]);
+  React.useEffect(
+    () => setSelectedFieldIndex(-1),
+    [piecesToString(pieces)]);
+
+  React.useEffect(
+    () => {
+      if (pieceAnimations == null) return;
+      for (const [dst, keyframes, options] of pieceAnimations) {
+        if (pieceRefs[dst].current != null) {
+          pieceRefs[dst].current.animate(keyframes, options);
+        }
+      }
+    },
+    [pieceAnimations]);
 
   function isSelectable(i) {
     if (isMoveTarget[i] || isPushTarget[i]) return true;
@@ -140,7 +156,9 @@ function PlayBoard({pieces, nextPlayer, moves, push, onMove, onPush}) {
       <React.Fragment>
         {isMoveTarget[i] && <div className="move-target"></div>}
         {isPushTarget[i] && <div className="push-target"></div>}
-        <Piece piece={pieces[i]}></Piece>
+        <div className="piece-holder" ref={pieceRefs[i]}>
+          <Piece piece={pieces[i]}></Piece>
+        </div>
       </React.Fragment>
     );
   }
@@ -532,6 +550,58 @@ function PlayPanel({renderTab}) {
   );
 }
 
+function generatePieceAnimations(pieces, ...moves) {
+  const animations = [];
+  let lastMove = null;
+  let startTime = 0;
+  for (const move of moves) {
+    const [src, dst] = move;
+    if (src === dst) {
+      continue;
+    }
+    if (lastMove != null) {
+      pieces = applyMoves(pieces, lastMove);
+    }
+    lastMove = move;
+
+    const dr = FIELD_ROW[dst] - FIELD_ROW[src];
+    const dc = FIELD_COL[dst] - FIELD_COL[src];
+
+    if (pieces[dst] === 0) {
+      // Move.
+      // TODO: pathfinding
+      const keyframes = [
+        { left: -100*dc + '%', top: -100*dr + '%'},
+        { left: 0, top: 0},
+      ];
+      animations.push([dst, keyframes, {delay: startTime, duration: 1000, fill: 'backwards'}]);
+      startTime += 1000;
+    } else {
+      // Push.
+      const keyframes = [
+        { left: -100*dc + '%', top: -100*dr + '%'},
+        { left: 0, top: 0},
+      ];
+      let i = src;
+      let r = FIELD_ROW[i];
+      let c = FIELD_COL[i];
+      console.log('a', i, r, c, getPieceType(pieces[i]));
+      while (getPieceType(pieces[i]) !== PieceType.NONE) {
+        console.log('b', i, r, c, getPieceType(pieces[i]));
+        r += dr;
+        c += dc;
+        i = getFieldIndex(r, c);
+        // FIXME: this doesn't allow us to animate the piece that's pushed off the board :/
+        if (i === -1) break;
+        animations.push([i, keyframes, {delay: startTime, duration: 1000, fill: 'backwards'}]);
+      }
+      startTime += 1000;
+    }
+  }
+  console.log('c', animations);
+  return animations;
+}
+
 class PlayComponent extends React.Component {
 
   constructor(props) {
@@ -550,7 +620,12 @@ class PlayComponent extends React.Component {
       // Pieces at the start of each turn. This has length 1 greater
       // than `turns`. Used to implement undo.
       piecesAtTurnStart: [props.initialPieces],
+
+      // List of animations to apply to pieces.
+      // Each element is a triple: destination index, keyframes, options
+      pieceAnimations: [],
     };
+
     this.handleMove = this.handleMove.bind(this);
     this.handlePush = this.handlePush.bind(this);
     this.handleUndo = this.handleUndo.bind(this);
@@ -560,6 +635,8 @@ class PlayComponent extends React.Component {
 
   handleMove(src, dst) {
     this.setState(({pieces, moves}) => {
+      // Generating animations must be done before we update the moves.
+      const pieceAnimations = generatePieceAnimations(pieces, [src, dst]);
       moves = [...moves];  // copy
       if (moves.length > 0 && moves[moves.length - 1][1] === src) {
         const lastMove = moves.pop();
@@ -570,7 +647,11 @@ class PlayComponent extends React.Component {
         pieces = applyMoves(pieces, [src, dst]);
         moves.push([src, dst]);
       }
-      return {pieces, moves};
+      return {
+        pieces,
+        moves,
+        pieceAnimations: pieceAnimations,
+      };
     });
   }
 
@@ -583,6 +664,7 @@ class PlayComponent extends React.Component {
         turns: [...turns, [...moves, push]],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
+        pieceAnimations: generatePieceAnimations(pieces, push),
       };
     });
   }
@@ -597,6 +679,7 @@ class PlayComponent extends React.Component {
         turns: [...turns, turn],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
+        pieceAnimations: generatePieceAnimations(oldPieces, ...turn),
       };
     });
   }
@@ -641,7 +724,7 @@ class PlayComponent extends React.Component {
   }
 
   render() {
-    const {pieces, turns, moves, piecesAtTurnStart} = this.state;
+    const {pieces, turns, moves, piecesAtTurnStart, pieceAnimations} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
     const isUnfinished = validity === PiecesValidity.STARTED || validity === PiecesValidity.IN_PROGRESS;
@@ -692,7 +775,8 @@ class PlayComponent extends React.Component {
               moves={moves}
               push={null}
               onMove={this.handleMove}
-              onPush={this.handlePush}/>
+              onPush={this.handlePush}
+              pieceAnimations={pieceAnimations}/>
             <PlayPanel renderTab={renderTab}/>
           </div>
         </div>

@@ -52,10 +52,17 @@ body {
 
 .board .field {
   background: rgb(240, 230, 220);
+  /* Note: I use a box-shadow here instead of the equivalent borders,
+     because if fields have borders, pieces are a nightmare to animate! */
+  box-shadow:
+      inset 2px -2px rgb(180, 170, 160),
+      inset -2px 2px rgb(250, 240, 230);
+  /*
   border-top: 2px solid rgb(250, 240, 230);
   border-right: 2px solid rgb(250, 240, 230);
   border-bottom: 2px solid rgb(180, 170, 160);
   border-left: 2px solid rgb(180, 170, 160);
+  */
   aspect-ratio: 1;
   position: relative;
   box-sizing: border-box;
@@ -95,6 +102,14 @@ body {
   background: yellow;
 }
 
+/* This exists for animation purposes. */
+.board .piece-holder {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
 .board .piece.red {
   background: rgb(240, 0, 0);
   border-color: rgb(120, 0, 0);
@@ -108,10 +123,10 @@ body {
 .board .piece,
 .board .push-origin {
   position: absolute;
-  top:    5%;
-  right:  5%;
-  bottom: 5%;
-  left:   5%;
+  top:    7.5%;
+  right:  7.5%;
+  bottom: 7.5%;
+  left:   7.5%;
 }
 
 .board .piece {
