@@ -39,7 +39,6 @@ body {
   display: grid;
   grid-template-columns: auto repeat(8, 1fr) auto;
   grid-template-rows: auto repeat(4, 1fr) auto;
-  gap: 4px;
   background: grey;
 }
 
@@ -53,6 +52,10 @@ body {
 
 .board .field {
   background: rgb(240, 230, 220);
+  border-top: 2px solid rgb(250, 240, 230);
+  border-right: 2px solid rgb(250, 240, 230);
+  border-bottom: 2px solid rgb(180, 170, 160);
+  border-left: 2px solid rgb(180, 170, 160);
   aspect-ratio: 1;
   position: relative;
   box-sizing: border-box;
