@@ -276,6 +276,9 @@ body {
   font-size: 10pt;
   padding: 1em;
   color: #ccc;
+  position: fixed;
+  bottom: 0;
+  z-index: -1;
 }
 
 .copyright-notice a {
