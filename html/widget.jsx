@@ -424,6 +424,97 @@ function History({firstPlayer, turns, moves, undoEnabled, playEnabled, onUndoCli
   );
 }
 
+// Formats status as a human-readable string (e.g. "Win in 2").
+// Assumes status is formatted like 'T', 'L123', or 'W123'.
+function statusDisplayName(status) {
+  return status.replace('T', 'Tie').replace('L', 'Loss in ').replace('W', 'Win in ');
+}
+
+// Successors grouped by status. Used in the analysis tab.
+function SuccessorGroup({status, turns, expanded, onExpand, onSelectTurn}) {
+  function handleTurnClick(turnString) {
+    const turn = parseTurn(turnString);
+    if (turn == null) {
+      console.error('Failed to parse turn string!', turn);
+      return;
+    }
+    onSelectTurn(turn);
+  }
+
+  return  (
+  <div className="group" key={status}>
+    <div className="header clickable" onClick={onExpand} title={expanded ? 'Collapse' : 'Expand'}>
+      {statusDisplayName(status)}
+      <span className="float-right">
+        {turns.length}&nbsp;{expanded ? '▲' : '▼'}
+      </span>
+    </div>
+    {
+      expanded &&
+        <div className="turns">
+          {
+            turns.map((turn) =>
+              <div
+                  key={turn}
+                  className="turn clickable"
+                  onClick={() => handleTurnClick(turn)}>
+                {turn}
+              </div>
+            )
+          }
+        </div>
+    }
+    </div>
+  );
+}
+
+function Analysis({pieces, onSelectTurn}) {
+
+  const [error, setError] = React.useState(null);
+  const [successors, setSuccessors] = React.useState(null);
+  const [expandedStatus, setExpandedStatus] = React.useState(null);
+
+  React.useEffect(() => {
+    setError(null);
+    setSuccessors(null);
+    // FIXME: there is a race condition here. In theory, it's possible for
+    // `pieces` to change while analyzePositions() is in progress.
+    analyzePosition(pieces).then(
+      (obj) => {
+        let successors = obj.successors;
+        if (successors.length === 0) {
+          // Fake entry for the case where there are no moves.
+          successors = [{status: obj.status, moves: []}];
+        }
+        setSuccessors(successors);
+      },
+      (error) => setError(String(error)));
+  }, [pieces]);
+
+  const toggleExpand = (status) =>
+    setExpandedStatus((currentStatus) => status === currentStatus ? null : status);
+
+  return (
+    <div className="analysis">
+    {
+      error != null ?
+          <p>Analysis failed: {String(error)}</p> :
+      successors == null ?
+          <p>Loading...</p> :
+      successors.map(({status, moves}) =>
+          <SuccessorGroup
+              key={status}
+              status={status}
+              turns={moves}
+              expanded={status === expandedStatus}
+              onExpand={() => toggleExpand(status)}
+              onSelectTurn={onSelectTurn}
+          />)
+    }
+    </div>
+  );
+}
+
 // Side panel that contains the move history and position analysis tabs.
 function PlayPanel({renderTab}) {
   const [selectedTab, setSelectedTab] = React.useState('history');
@@ -446,10 +537,6 @@ class PlayComponent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      // Revision number. Used to detect when asynchronous operations have
-      // become stale. This should be incremented whenever the state changes.
-      revision: 0,
-
       // Positions of pieces on the board.
       pieces: props.initialPieces,
 
@@ -467,13 +554,12 @@ class PlayComponent extends React.Component {
     this.handleMove = this.handleMove.bind(this);
     this.handlePush = this.handlePush.bind(this);
     this.handleUndo = this.handleUndo.bind(this);
-    this.handlePlay = this.handlePlay.bind(this);
+    this.handleAutoPlay = this.handleAutoPlay.bind(this);
+    this.playFullTurn = this.playFullTurn.bind(this);
   }
 
   handleMove(src, dst) {
-    const r = this.state.revision;
-    this.setState(({revision, pieces, moves}) => {
-      if (r !== revision) return;
+    this.setState(({pieces, moves}) => {
       moves = [...moves];  // copy
       if (moves.length > 0 && moves[moves.length - 1][1] === src) {
         const lastMove = moves.pop();
@@ -484,18 +570,15 @@ class PlayComponent extends React.Component {
         pieces = applyMoves(pieces, [src, dst]);
         moves.push([src, dst]);
       }
-      return {revision: revision + 1, pieces, moves};
+      return {pieces, moves};
     });
   }
 
   handlePush(src, dst) {
-    const r = this.state.revision;
-    this.setState(({revision, pieces, turns, moves, piecesAtTurnStart}) => {
-      if (r !== revision) return;
+    this.setState(({pieces, turns, moves, piecesAtTurnStart}) => {
       const push = Object.freeze([src, dst]);
       const newPieces = Object.freeze(applyMoves(pieces, push));
       return {
-        revision: revision + 1,
         pieces: newPieces,
         turns: [...turns, [...moves, push]],
         moves: [],
@@ -504,8 +587,21 @@ class PlayComponent extends React.Component {
     });
   }
 
-  handlePlay() {
-    const r = this.state.revision;
+  // Plays the given turn, overriding any partial moves played so far.
+  playFullTurn(turn) {
+    this.setState(({turns, piecesAtTurnStart}) => {
+      const oldPieces = piecesAtTurnStart[turns.length];
+      let newPieces = Object.freeze(applyMoves(oldPieces, ...turn));
+      return {
+        pieces: newPieces,
+        turns: [...turns, turn],
+        moves: [],
+        piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
+      };
+    });
+  }
+
+  handleAutoPlay() {
     const pieces = this.state.pieces;
     analyzePosition(pieces).then(
       (value) => {
@@ -515,18 +611,8 @@ class PlayComponent extends React.Component {
         }
         // Randomly pick one of the best moves to play.
         const bestMoves = value.successors[0].moves;
-        const turn = parseTurn(bestMoves[Math.floor(Math.random() * bestMoves.length)]);
-        let newPieces = Object.freeze(applyMoves(pieces, ...turn));
-        this.setState(({revision, turns, piecesAtTurnStart}) => {
-          if (r !== revision) return;
-          return {
-            revision: revision + 1,
-            pieces: newPieces,
-            turns: [...turns, turn],
-            moves: [],
-            piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
-          };
-        });
+        const randomTurn = parseTurn(bestMoves[Math.floor(Math.random() * bestMoves.length)]);
+        this.playFullTurn(randomTurn);
       },
       (error) => {
         alert('Failed to analyze position! ' + error);
@@ -535,9 +621,7 @@ class PlayComponent extends React.Component {
   }
 
   handleUndo() {
-    const r = this.state.revision;
-    this.setState(({revision, moves, turns, piecesAtTurnStart}) => {
-      if (r !== revision) return;
+    this.setState(({moves, turns, piecesAtTurnStart}) => {
       if (moves.length > 0) {
         // Undo only the moves in the current turn.
         return {
@@ -548,7 +632,6 @@ class PlayComponent extends React.Component {
       if (turns.length > 0) {
         // Undo the current turn.
         return {
-          revision: revision + 1,
           pieces: piecesAtTurnStart[turns.length - 1],
           turns: turns.slice(0, turns.length - 1),
           piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length),
@@ -558,7 +641,7 @@ class PlayComponent extends React.Component {
   }
 
   render() {
-    const {pieces, turns, moves} = this.state;
+    const {pieces, turns, moves, piecesAtTurnStart} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
     const isUnfinished = validity === PiecesValidity.STARTED || validity === PiecesValidity.IN_PROGRESS;
@@ -587,13 +670,16 @@ class PlayComponent extends React.Component {
               undoEnabled={undoEnabled}
               playEnabled={playEnabled}
               onUndoClick={this.handleUndo}
-              onPlayClick={this.handlePlay}
+              onPlayClick={this.handleAutoPlay}
             />
         );
       }
       if (tab === 'analysis') {
         return (
-          <div className="analysis">TODO</div>
+          <Analysis
+              pieces={piecesAtTurnStart[turns.length]}
+              onSelectTurn={this.playFullTurn}
+          />
         );
       }
     }

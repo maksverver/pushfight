@@ -245,6 +245,30 @@ body {
   min-height: 600px;
 }
 
+.analysis .group .header {
+  background: rgb(0, 0, 40);
+  font-weight: bold;
+  padding: 0.25em 0.5em;
+}
+
+.analysis .group:not(:first-of-type) .header {
+  margin-top: 5px;
+}
+
+.float-right {
+  float: right;
+}
+
+.analysis .group .turns {
+  border: 2px solid rgb(0, 0, 40);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.analysis .group .turn {
+  padding: 0.25em 0.5em;
+}
+
 .copyright-notice {
   font-size: 10pt;
   padding: 1em;
