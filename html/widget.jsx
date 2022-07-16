@@ -140,7 +140,9 @@ function PlayBoard({pieces, nextPlayer, moves, push, onMove, onPush}) {
       <React.Fragment>
         {isMoveTarget[i] && <div className="move-target"></div>}
         {isPushTarget[i] && <div className="push-target"></div>}
-        <Piece piece={pieces[i]}></Piece>
+        <div className="piece-holder">
+          <Piece piece={pieces[i]}></Piece>
+        </div>
       </React.Fragment>
     );
   }
