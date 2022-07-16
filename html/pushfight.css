@@ -53,7 +53,9 @@ body {
 .board .field {
   background: rgb(240, 230, 220);
   /* Note: I use a box-shadow here instead of the equivalent borders,
-     because if fields have borders, pieces are a nightmare to animate! */
+     because if fields have borders, pieces are a nightmare to animate!
+     See also .board .field.border-top below.
+  */
   box-shadow:
       inset 2px -2px rgb(180, 170, 160),
       inset -2px 2px rgb(250, 240, 230);
@@ -65,7 +67,6 @@ body {
   */
   aspect-ratio: 1;
   position: relative;
-  box-sizing: border-box;
 }
 
 .board .danger {
@@ -85,18 +86,30 @@ body {
   );
 }
 
+/*
+Similar to .board .field, I use box-shadow to add borders instead of real borders
+to avoid borders messing up the div sizes and distorting the pieces.
+
+Note that the inset borders had to be copied from .board .field, because
+otherwise the box-shadow definition here overrides the one above, instead of
+adding to it.
+*/
+.board .field.border-top {
+  box-shadow: 0 -5px rgb(50, 40, 30),
+    inset 2px -2px rgb(180, 170, 160),
+    inset -2px 2px rgb(250, 240, 230);
+}
+
+.board .field.border-bottom {
+  box-shadow: 0 5px rgb(50, 40, 30),
+    inset 2px -2px rgb(180, 170, 160),
+    inset -2px 2px rgb(250, 240, 230);
+}
+
 .board .danger.top    { bottom: 80% }
 .board .danger.left   { right:  80% }
 .board .danger.bottom { top:    80% }
 .board .danger.right  { left:   80% }
-
-.board .field.border-top {
-  border-top: 5px solid rgb(50, 40, 30);
-}
-
-.board .field.border-bottom {
-  border-bottom: 5px solid rgb(50, 40, 30);
-}
 
 .board .field.selected {
   background: yellow;
