@@ -70,7 +70,7 @@ class Board extends React.Component {
   }
 
   render() {
-    const {selectedFieldIndex, isSelectable, renderField, onFieldClick} = this.props;
+    const {selectedFieldIndex, isSelectable, renderField, renderAnchor, onFieldClick} = this.props;
     const fields = [];
     for (let i = 0; i < FIELD_COUNT; ++i) {
       const r = FIELD_ROW[i];
@@ -83,6 +83,7 @@ class Board extends React.Component {
             selected={selectedFieldIndex === i}
             onClick={() => onFieldClick(i, r, c)}>
           {renderField(i, r, c)}
+          {renderAnchor(i, r, c)}
         </Field>
       );
     }
@@ -135,9 +136,17 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
     return <Piece piece={pieces[i]}/>;
   }
 
+  function renderAnchor(i) {
+    return getPieceType(pieces[i]) === PieceType.ANCHOR && <Anchor/>;
+  }
+
   return (
     <div className="board-holder">
-      <Board renderField={renderField} isSelectable={() => true} onFieldClick={handleFieldClick}>
+      <Board
+          isSelectable={() => true}
+          renderField={renderField}
+          renderAnchor={renderAnchor}
+          onFieldClick={handleFieldClick}>
         <PiecePalette fieldIndex={selectedFieldIndex} onSelect={handlePieceSelect} />
       </Board>
       <div className="setup-panel side-panel">
@@ -203,7 +212,7 @@ class PieceHolder extends React.PureComponent {
 
   render() {
     return (
-      <div className="piece-holder" ref={this.ref}>
+      <div className="piece-holder" ref={this.ref} style={{zIndex: this.props.zIndex}}>
         {this.props.children}
       </div>
     );
@@ -256,10 +265,18 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
       <React.Fragment>
         {isMoveTarget[i] && <div className="move-target"></div>}
         {isPushTarget[i] && <div className="push-target"></div>}
-        <PieceHolder animation={pieceAnimations[i]}>
+        <PieceHolder animation={pieceAnimations[i]} zIndex={1}>
           <Piece piece={pieces[i]}></Piece>
         </PieceHolder>
       </React.Fragment>
+    );
+  }
+
+  function renderAnchor(i) {
+    return getPieceType(pieces[i]) === PieceType.ANCHOR && (
+      <PieceHolder animation={pieceAnimations.anchor} zIndex={2}>
+        <Anchor/>
+      </PieceHolder>
     );
   }
 
@@ -291,6 +308,7 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
       selectedFieldIndex={selectedFieldIndex}
       isSelectable={isSelectable}
       renderField={renderField}
+      renderAnchor={renderAnchor}
       onFieldClick={handleFieldClick}/>
   );
 }
@@ -308,13 +326,13 @@ function PiecePalette({fieldIndex, onSelect}) {
       <div className="cell" style={{position: 'absolute', width: '25%', height: '25%', left:  '5.0%', top: '37.5%'}}
           onClick={() => onSelect(RED_PUSHER, fieldIndex)}><Piece piece={RED_PUSHER}/></div>
       <div className="cell" style={{position: 'absolute', width: '25%', height: '25%', left: '20.0%', top: '67.5%'}}
-          onClick={() => onSelect(RED_ANCHOR,fieldIndex)}><Piece piece={RED_ANCHOR}/></div>
+          onClick={() => onSelect(RED_ANCHOR,fieldIndex)}><Piece piece={RED_ANCHOR}/><Anchor/></div>
       <div className="cell" style={{position: 'absolute', width: '25%', height: '25%', left: '55.0%', top:  '7.5%'}}
           onClick={() => onSelect(BLUE_MOVER, fieldIndex)}><Piece piece={BLUE_MOVER}/></div>
       <div className="cell" style={{position: 'absolute', width: '25%', height: '25%', left: '70.0%', top: '37.5%'}}
           onClick={() => onSelect(BLUE_PUSHER, fieldIndex)}><Piece piece={BLUE_PUSHER}/></div>
       <div className="cell" style={{position: 'absolute', width: '25%', height: '25%', left: '55.0%', top: '67.5%'}}
-          onClick={() => onSelect(BLUE_ANCHOR, fieldIndex)}><Piece piece={BLUE_ANCHOR}/></div>
+          onClick={() => onSelect(BLUE_ANCHOR, fieldIndex)}><Piece piece={BLUE_ANCHOR}/><Anchor/></div>
       <div className="cell icon" style={{position: 'absolute', width: '25%', height: '25%', left: '37.5%', top: '37.5%'}}
           onClick={() => onSelect(NO_PIECE, fieldIndex)}>🗙</div>
     </div>
@@ -356,11 +374,11 @@ function Piece({piece}) {
   const colorClass = ['red', 'blue'][color];
   const classNames = ['piece', shapeClass, colorClass];
   const className = classNames.join(' ');
-  return (
-    <div className={className}>
-      {type === PieceType.ANCHOR ? '+' : ''}
-    </div>
-  );
+  return <div className={className}></div>;
+}
+
+function Anchor() {
+  return <div className="anchor">+</div>;
 }
 
 // Status bar shown at the top of the screen.
@@ -633,6 +651,7 @@ function PlayPanel({renderTab}) {
 function generatePieceAnimations(oldPieces, ...moves) {
   const moveTime = 200; // milliseconds
   const pushTime = 800; // milliseconds
+  const anchorMoveTime = 500; // milliseconds
   const pieces = [...oldPieces];
 
   // Uses breath-first search to find a path from `src` to `dst` that only covers
@@ -673,6 +692,8 @@ function generatePieceAnimations(oldPieces, ...moves) {
   // For each piece, we keep a list of [time, position] pairs.
   const movements = oldPieces.map(p => getPieceType(p) === PieceType.NONE ? null : []);
 
+  let oldAnchorIndex = -1;
+  let newAnchorIndex = -1;
   let time = 0;
   for (const move of moves) {
     const [src, dst] = move;
@@ -699,6 +720,7 @@ function generatePieceAnimations(oldPieces, ...moves) {
       // Remove old anchor.
       for (let i = 0; i < pieces.length; ++i) {
         if (getPieceType(pieces[i]) === PieceType.ANCHOR) {
+          oldAnchorIndex = i;
           pieces[i] = makePiece(getPlayerColor(pieces[i]), PieceType.PUSHER);
         }
       }
@@ -720,6 +742,9 @@ function generatePieceAnimations(oldPieces, ...moves) {
         m.push([time, i], [time + pushTime, j]);
         const q = pieces[j];
         const n = movements[j];
+        if (getPieceType(p) === PieceType.ANCHOR) {
+          newAnchorIndex = j;
+        }
         pieces[j] = p;
         movements[j] = m;
         if (getPieceType(q) === PieceType.NONE) {
@@ -747,13 +772,29 @@ function generatePieceAnimations(oldPieces, ...moves) {
     const keyframes = [];
     for (let [t, i] of m) {
       keyframes.push({
+        offset: (t - tStart) / duration,
         left: -100*(cEnd - FIELD_COL[i]) + '%',
         top: -100*(rEnd - FIELD_ROW[i]) + '%',
-        offset: (t - tStart) / duration,
       });
     }
     const options = { delay: tStart, duration: duration, fill: 'backwards' };
     animations[iEnd] = { keyframes, options };
+  }
+
+  // Anchor animation.
+  if (newAnchorIndex >= 0) {
+    let keyframes;
+    if (oldAnchorIndex < 0) {
+      // Fade in.
+      keyframes = [{color: 'transparent'}, {color: 'white'}];
+    } else {
+      // Translate.
+      const dr = FIELD_ROW[newAnchorIndex] - FIELD_ROW[oldAnchorIndex];
+      const dc = FIELD_COL[newAnchorIndex] - FIELD_COL[oldAnchorIndex];
+      keyframes = [{left: -100*dc + '%', top: -100*dr + '%'}, {left: 0, top: 0}];
+    }
+    const options = { delay: time, duration: anchorMoveTime, fill: 'backwards' };
+    animations.anchor = { keyframes, options };
   }
 
   return [animations, pieces];
@@ -810,7 +851,7 @@ class PlayComponent extends React.Component {
       return {
         pieces: Object.freeze(newPieces),
         moves,
-        pieceAnimations: pieceAnimations,
+        pieceAnimations,
       };
     });
   }
@@ -824,7 +865,7 @@ class PlayComponent extends React.Component {
         turns: [...turns, [...moves, push]],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
-        pieceAnimations: pieceAnimations,
+        pieceAnimations,
       };
     });
   }
@@ -839,7 +880,7 @@ class PlayComponent extends React.Component {
         turns: [...turns, turn],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
-        pieceAnimations: pieceAnimations,
+        pieceAnimations,
       };
     });
   }
@@ -870,6 +911,7 @@ class PlayComponent extends React.Component {
         return {
           pieces: piecesAtTurnStart[turns.length],
           moves: [],
+          pieceAnimations: {},
         };
       }
       if (turns.length > 0) {
@@ -878,6 +920,7 @@ class PlayComponent extends React.Component {
           pieces: piecesAtTurnStart[turns.length - 1],
           turns: turns.slice(0, turns.length - 1),
           piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length),
+          pieceAnimations: {},
         };
       }
     });

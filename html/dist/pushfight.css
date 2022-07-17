@@ -133,7 +133,6 @@ adding to it.
   position: absolute;
   width: 100%;
   height: 100%;
-  z-index: 1;
 }
 
 .board .piece.red {
@@ -147,6 +146,7 @@ adding to it.
 }
 
 .board .piece,
+.board .anchor,
 .board .push-origin {
   position: absolute;
   top:    7.5%;
@@ -156,6 +156,12 @@ adding to it.
 }
 
 .board .piece {
+  border: 5px solid;
+  pointer-events: none;
+  user-select: none;
+}
+
+.board .anchor {
   pointer-events: none;
   user-select: none;
   display: flex;
@@ -164,7 +170,6 @@ adding to it.
   align-content: center;
   text-align: center;
   font-size: 60px;
-  border: 5px solid;
 }
 
 .palette {
