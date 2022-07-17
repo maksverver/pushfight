@@ -113,6 +113,28 @@ function invertColors(pieces) {
   return newPieces;
 }
 
+function permToPieces(perm) {
+  function getPieceValue(i) {
+    if (i === 0) return NO_PIECE;
+    if (i === 1) return RED_MOVER;
+    if (i === 2) return RED_PUSHER;
+    if (i === 3) return BLUE_MOVER;
+    if (i === 4) return BLUE_PUSHER;
+    if (i === 5) return BLUE_ANCHOR;
+  }
+  return perm.map(getPieceValue);
+}
+
+function piecesToPerm(pieces, nextPlayer) {
+  function getPermValue(piece) {
+    const type = getPieceType(piece);
+    if (type === PieceType.NONE) return 0;
+    const color = getPlayerColor(piece);
+    return color === nextPlayer ? type : type + 2;
+  }
+  return pieces.map(getPermValue);
+}
+
 // Validates the pieces represent a valid position on the board.
 //
 // Returns an object:
@@ -177,15 +199,8 @@ function validatePieces(pieces) {
       };
     }
 
-    // Calculate permutation index.
-    const nextPlayer = redAnchors > 0 ? 1 : 0;
-    function getPermValue(piece) {
-      const type = getPieceType(piece);
-      if(type === PieceType.NONE) return 0;
-      const color = getPlayerColor(piece);
-      return color === nextPlayer ? type : type + 2;
-    }
-    const perm = pieces.map(getPermValue);
+    const nextPlayer = redAnchors > 0 ? BLUE_PLAYER : RED_PLAYER;
+    const perm = piecesToPerm(pieces, nextPlayer);
     return {
       validity: PiecesValidity.IN_PROGRESS,
       index: indexOfPerm(perm),

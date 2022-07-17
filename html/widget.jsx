@@ -360,17 +360,7 @@ function parsePieces(string) {
     if (index >= totalPerms) {
       return [undefined, "Permutation index out of range: " + string];
     }
-    function getPieceValue(i) {
-      if (i === 0) return NO_PIECE;
-      if (i === 1) return RED_MOVER;
-      if (i === 2) return RED_PUSHER;
-      if (i === 3) return BLUE_MOVER;
-      if (i === 4) return BLUE_PUSHER;
-      if (i === 5) return BLUE_ANCHOR;
-    }
-    const perm = permAtIndex(index);
-    const pieces = perm.map(getPieceValue);
-    return [pieces];
+    return [permToPieces(permAtIndex(index))];
   } else if (string.match(/^[.oOPxXY]{26}$/)) {
     function getPieceValue(i) {
       if (i === '.') return NO_PIECE;
