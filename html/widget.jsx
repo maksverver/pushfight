@@ -96,6 +96,11 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
     onPiecesChange(invertColors(pieces));
   }
 
+  function handleRandomize() {
+    const index = Math.floor(Math.random() * totalPerms);
+    onPiecesChange(permToPieces(permAtIndex(index)));
+  }
+
   function handlePieceSelect(piece, i) {
     setSelectedFieldIndex(-1);
     onPiecesChange(replacePiece(pieces, i, piece));
@@ -125,6 +130,7 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
         <p className="buttons">
           <button onClick={handleChangePermutation}>Enter permutation</button>
           <button onClick={handleInvertColors}>Invert colors</button>
+          <button onClick={handleRandomize}>Randomize</button>
           <button disabled={onStart == null} onClick={onStart}>Start game</button>
         </p>
       </div>
