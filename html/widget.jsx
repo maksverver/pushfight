@@ -78,26 +78,57 @@ class Board extends React.Component {
 }
 
 // Version of the board used during setup.
-function SetupBoard({pieces, onPiecesChange}) {
+function SetupBoard({pieces, onPiecesChange, onStart}) {
   const [selectedFieldIndex, setSelectedFieldIndex] = React.useState(-1);
+
+  function handleChangePermutation() {
+    const response = prompt('Permutation index or string:');
+    if (response == null) return;
+    const [pieces, error] = parsePieces(response);
+    if (pieces != null) {
+      onPiecesChange(pieces);
+    } else {
+      alert(error);
+    }
+  }
+
+  function handleInvertColors() {
+    onPiecesChange(invertColors(pieces));
+  }
 
   function handlePieceSelect(piece, i) {
     setSelectedFieldIndex(-1);
     onPiecesChange(replacePiece(pieces, i, piece));
   }
 
-  function renderField(i) {
-    return <Piece piece={pieces[i]}/>;
-  }
-
   function handleFieldClick(i) {
     setSelectedFieldIndex((j) => j === i ? -1 : i);
   }
 
+  function renderField(i) {
+    return <Piece piece={pieces[i]}/>;
+  }
+
   return (
-    <Board renderField={renderField} isSelectable={() => true} onFieldClick={handleFieldClick}>
-      <PiecePalette fieldIndex={selectedFieldIndex} onSelect={handlePieceSelect} />
-    </Board>
+    <div className="board-holder">
+      <Board renderField={renderField} isSelectable={() => true} onFieldClick={handleFieldClick}>
+        <PiecePalette fieldIndex={selectedFieldIndex} onSelect={handlePieceSelect} />
+      </Board>
+      <div className="setup-panel side-panel">
+        <h1>Push Fight Setup</h1>
+        <p>
+          Change the initial placement of the pieces by clicking on fields.
+          Press the <em>Start game</em> button to start playing from the chosen position.
+        </p>
+        <h4>Permutation string</h4>
+        <code>{piecesToString(pieces)}</code>
+        <p className="buttons">
+          <button onClick={handleChangePermutation}>Enter permutation</button>
+          <button onClick={handleInvertColors}>Invert colors</button>
+          <button disabled={onStart == null} onClick={onStart}>Start game</button>
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -305,32 +336,18 @@ function Piece({piece}) {
   );
 }
 
-// Status bar shown while playing moves.
-function PlayStatusBar({text, moves, index}) {
+// Status bar shown at the top of the screen.
+function StatusBar({text, moves, index}) {
+  const moveCount = moves == null ? 0 : moves.length;
   const permText =
-      moves.length === 1 ? '1 move left' :
-      moves.length === 2 ? '0 moves left' :
-      moves.length > 0 || index == null ? 'Index indeterminate' :
-      String(index  );
+      moveCount === 1 ? '1 move left' :
+      moveCount === 2 ? '0 moves left' :
+      moveCount > 0 || index == null ? 'Index indeterminate' :
+      String(index);
   return (
     <div className="status">
       <div className="status-text">{text}</div>
-      <div className="perm-index">{permText}</div>
-    </div>
-  );
-}
-
-// Enhanced version of the status bar that is used during setup.
-function SetupStatusBar({text, index, onStartClick, onInvertColorsClick, onIndexClick}) {
-  return (
-    <div className="status">
-      <div className="status-text">{text}</div>
-      <div className="status-links">
-        {onStartClick &&
-            <div className="status-link clickable" onClick={onStartClick}>Start moving</div>}
-        <div className="status-link clickable" onClick={onInvertColorsClick}>Invert colors</div>
-      </div>
-      <div className="clickable" onClick={onIndexClick}>{index == null ? 'Index indeterminate' : String(index)}</div>
+      <div className="perm-index" title="Permutation index">{permText}</div>
     </div>
   );
 }
@@ -367,7 +384,7 @@ function parsePieces(string) {
     const pieces = [...string].map(getPieceValue);
     return [pieces];
   } else {
-    return [undefined, "Don't know how to parse: " + result];
+    return [undefined, "Don't know how to parse: " + string];
   }
 }
 
@@ -401,17 +418,6 @@ function SetUpComponent({onStart}) {
   const [pieces, setPieces] = React.useState(INITIAL_PIECES);
   const {validity, error, winner, index} = validatePieces(pieces);
 
-  function changePermutation() {
-    const response = prompt('Permutation string or index:', index);
-    if (response == null) return;
-    const [pieces, error] = parsePieces(response);
-    if (pieces != null) {
-      setPieces(pieces);
-    } else {
-      alert(error);
-    }
-  }
-
   const statusMessage =
     validity === PiecesValidity.STARTED ? 'Valid starting position.' :
     validity === PiecesValidity.IN_PROGRESS ? 'Valid position.' :
@@ -422,16 +428,12 @@ function SetUpComponent({onStart}) {
 
   return (
     <React.Fragment>
-      <SetupStatusBar
-          text={statusMessage}
-          index={index}
-          onIndexClick={changePermutation}
-          onInvertColorsClick={() => setPieces((pieces) => invertColors(pieces))}
-          onStartClick={isStartEnabled ? () => onStart(pieces) : null}
+      <StatusBar text={statusMessage} index={index} />
+      <SetupBoard
+          pieces={pieces}
+          onPiecesChange={setPieces}
+          onStart={isStartEnabled ? () => onStart(pieces) : null}
       />
-      <div className="board-holder">
-        <SetupBoard pieces={pieces} onPiecesChange={setPieces}/>
-      </div>
     </React.Fragment>
   );
 }
@@ -589,7 +591,7 @@ function PlayPanel({renderTab}) {
   const [selectedTab, setSelectedTab] = React.useState('history');
 
   return (
-    <div className="tab-panel">
+    <div className="tab-panel side-panel">
       <div className="tabs">
         <div className="tab clickable history-tab"
             onClick={() => setSelectedTab('history')}>Moves</div>
@@ -902,19 +904,17 @@ class PlayComponent extends React.Component {
 
     return (
       <React.Fragment>
-        <PlayStatusBar text={statusMessage} moves={moves} index={index} />
+        <StatusBar text={statusMessage} moves={moves} index={index} />
         <div className="board-holder">
-          <div className="board-with-panel">
-            <PlayBoard
-              pieces={pieces}
-              nextPlayer={nextPlayer}
-              moves={moves}
-              push={null}
-              onMove={this.handleMove}
-              onPush={this.handlePush}
-              pieceAnimations={pieceAnimations}/>
-            <PlayPanel renderTab={renderTab}/>
-          </div>
+          <PlayBoard
+            pieces={pieces}
+            nextPlayer={nextPlayer}
+            moves={moves}
+            push={null}
+            onMove={this.handleMove}
+            onPush={this.handlePush}
+            pieceAnimations={pieceAnimations}/>
+          <PlayPanel renderTab={renderTab}/>
         </div>
       </React.Fragment>
     );

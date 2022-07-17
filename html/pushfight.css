@@ -32,6 +32,19 @@ body {
 .board-holder {
   padding: 10px;
   margin: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.setup-panel h1 {
+  font-size: 14pt;
+}
+
+.setup-panel code {
+  background: black;
+  color: #eee;
+  font: 10pt monospace;
 }
 
 .board {
@@ -202,10 +215,13 @@ adding to it.
   border: 10px solid rgba(0, 0, 0, 0.25);
 }
 
-.board-with-panel {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
+.setup-panel {
+  margin-left: 1em;
+  padding: 0.5em 1em;
+  width: 400px;
+  min-height: 600px;
+  background: rgb(32, 32, 32);
+  color: white;
 }
 
 .tab-panel {
@@ -258,7 +274,7 @@ adding to it.
   padding-right: 1em;
 }
 
-.history button {
+.side-panel button {
   background: #333;
   color: white;
   border-width: thin;
@@ -266,7 +282,7 @@ adding to it.
   margin: 0.5em;
 }
 
-.history button:disabled {
+.side-panel button:disabled {
   color: #666;
 }
 
