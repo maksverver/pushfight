@@ -410,8 +410,8 @@ function piecesToNormalizedString(pieces) {
   return piecesToString(redAnchors > blueAnchors ? invertColors(pieces) : pieces);
 }
 
-function SetUpComponent({onStart}) {
-  const [pieces, setPieces] = React.useState(INITIAL_PIECES);
+function SetUpComponent({initialPieces, onStart}) {
+  const [pieces, setPieces] = React.useState(initialPieces);
   const {validity, error, winner, index} = validatePieces(pieces);
 
   const statusMessage =
@@ -434,7 +434,8 @@ function SetUpComponent({onStart}) {
   );
 }
 
-function History({firstPlayer, turns, moves, undoEnabled, playEnabled, onUndoClick, onPlayClick}) {
+function History({firstPlayer, turns, moves, undoEnabled, playEnabled,
+    onUndoClick, onPlayClick, onExitClick}) {
   const turnStrings = turns.map(formatTurn);
   if (moves != null) {
     turnStrings.push(formatTurn(moves) + '...');
@@ -476,6 +477,9 @@ function History({firstPlayer, turns, moves, undoEnabled, playEnabled, onUndoCli
         <button title="Automatically plays an optimal move"
             disabled={!playEnabled} onClick={onPlayClick}>
           Play best
+        </button>
+        <button onClick={onExitClick}>
+          Return to setup
         </button>
       </div>
     </div>
@@ -764,6 +768,7 @@ class PlayComponent extends React.Component {
     this.handlePush = this.handlePush.bind(this);
     this.handleUndo = this.handleUndo.bind(this);
     this.handleAutoPlay = this.handleAutoPlay.bind(this);
+    this.handleExit = this.handleExit.bind(this);
     this.playFullTurn = this.playFullTurn.bind(this);
   }
 
@@ -857,6 +862,13 @@ class PlayComponent extends React.Component {
     });
   }
 
+  handleExit() {
+    if (this.state.turns.length == 0 ||
+        confirm('Are you sure? The move history will be lost.')) {
+      this.props.onExit(this.state.piecesAtTurnStart[this.state.turns.length]);
+    }
+  }
+
   render() {
     const {pieces, turns, moves, piecesAtTurnStart, pieceAnimations} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
@@ -885,6 +897,7 @@ class PlayComponent extends React.Component {
               playEnabled={isUnfinished}
               onUndoClick={this.handleUndo}
               onPlayClick={this.handleAutoPlay}
+              onExitClick={this.handleExit}
             />
         );
       }
@@ -917,19 +930,36 @@ class PlayComponent extends React.Component {
   }
 }
 
-function RootComponent() {
-  const [initialPieces, setInitialPieces] = React.useState(null);
+class RootComponent extends React.Component {
+  state = {
+    initialPieces: INITIAL_PIECES,
+    setupComplete: false,
+  };
 
-  let content =
-    initialPieces == null ?
-      <SetUpComponent onStart={setInitialPieces}/> :
-      <PlayComponent initialPieces={initialPieces}/>
-
-  if (reactStrictMode) {
-    content = <React.StrictMode>{content}</React.StrictMode>;
+  constructor(props) {
+    super(props);
+    this.handleStart = this.handleStart.bind(this);
+    this.handleExit = this.handleExit.bind(this);
   }
 
-  return content;
+  handleStart(pieces) {
+    this.setState({initialPieces: pieces, setupComplete: true});
+  }
+
+  handleExit(pieces) {
+    this.setState({initialPieces: pieces, setupComplete: false});
+  }
+
+  render() {
+    const {initialPieces, setupComplete} = this.state;
+    let content = !setupComplete ?
+        <SetUpComponent initialPieces={initialPieces} onStart={this.handleStart}/> :
+        <PlayComponent initialPieces={initialPieces} onExit={this.handleExit}/>;
+    if (reactStrictMode) {
+      content = <React.StrictMode>{content}</React.StrictMode>;
+    }
+    return content;
+  }
 }
 
 // Global initialization.
