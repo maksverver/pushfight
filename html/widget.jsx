@@ -101,6 +101,57 @@ function SetupBoard({pieces, onPiecesChange}) {
   );
 }
 
+// Component intended to be a simple div that wraps a piece on the board,
+// while supporting animation.
+//
+// The animation prop is an object with two keys: "keyframes" and "options".
+// These are the arguments passed to animate() on the div whenever the prop
+// changes.
+class PieceHolder extends React.PureComponent {
+  ref = React.createRef();
+
+  // The last value of the animation prop.
+  lastAnimation = null;
+
+  // The Animation object returned from animate()
+  currentAnimation = null;
+
+  constructor(props) {
+    super(props);
+  }
+
+  componentDidMount() {
+    this.maybeAnimate();
+  }
+
+  componentDidUpdate() {
+    this.maybeAnimate();
+  }
+
+  maybeAnimate() {
+    const {animation} = this.props;
+    if (animation == this.lastAnimation) return;
+    if (this.currentAnimation) {
+      this.currentAnimation.finish();
+    }
+    this.lastAnimation = animation;
+    if (animation == null) {
+      this.currentAnimation = null;
+    } else {
+      const {keyframes, options} = animation;
+      this.currentAnimation = this.ref.current.animate(keyframes, options);
+    }
+  }
+
+  render() {
+    return (
+      <div className="piece-holder" ref={this.ref}>
+        {this.props.children}
+      </div>
+    );
+  }
+}
+
 // Version of the board used when playing.
 function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, onPush}) {
   const [selectedFieldIndex, setSelectedFieldIndex] = React.useState(-1);
@@ -131,17 +182,6 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
     () => setSelectedFieldIndex(-1),
     [piecesToString(pieces)]);
 
-  React.useEffect(
-    () => {
-      if (pieceAnimations == null) return;
-      for (const [dst, keyframes, options] of pieceAnimations) {
-        if (pieceRefs[dst].current != null) {
-          pieceRefs[dst].current.animate(keyframes, options);
-        }
-      }
-    },
-    [pieceAnimations]);
-
   function isSelectable(i) {
     if (isMoveTarget[i] || isPushTarget[i]) return true;
     const type = getPieceType(pieces[i]);
@@ -158,9 +198,9 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
       <React.Fragment>
         {isMoveTarget[i] && <div className="move-target"></div>}
         {isPushTarget[i] && <div className="push-target"></div>}
-        <div className="piece-holder" ref={pieceRefs[i]}>
+        <PieceHolder animation={pieceAnimations[i]}>
           <Piece piece={pieces[i]}></Piece>
-        </div>
+        </PieceHolder>
       </React.Fragment>
     );
   }
@@ -561,56 +601,139 @@ function PlayPanel({renderTab}) {
   );
 }
 
-function generatePieceAnimations(pieces, ...moves) {
-  const animations = [];
-  let lastMove = null;
-  let startTime = 0;
+// This executes moves, similar to applyMoves(), but it also calculates
+// piece animations as a side effect.
+//
+// Returns a list [animations, pieces], where `animations` is an object
+// with field indexes as keys and animation objects as values, while `pieces`
+// is an updated copy of the pieces array after executing the given moves.
+function generatePieceAnimations(oldPieces, ...moves) {
+  const moveTime = 200; // milliseconds
+  const pushTime = 800; // milliseconds
+  const pieces = [...oldPieces];
+
+  // Uses breath-first search to find a path from `src` to `dst` that only covers
+  // empty fields. Returns undefined if no such path exists. The result is an array
+  // representing the path, starting with `src` and ending with `dst`.
+  function findShortestPath(src, dst) {
+    const visited = new Map();
+    visited.set(src, src);
+    const todo = [src];
+    for (let i = 0; i < todo.length; ++i) {
+      const i1 = todo[i];
+      const r1 = FIELD_ROW[i1];
+      const c1 = FIELD_COL[i1];
+      for (let d = 0; d < 4; ++d) {
+        const r2 = r1 + DR[d];
+        const c2 = c1 + DC[d];
+        const i2 = getFieldIndex(r2, c2);
+        if (i2 >= 0 && getPieceType(pieces[i2]) === PieceType.NONE && !visited.has(i2)) {
+          visited.set(i2, i1);
+          if (i2 === dst) {
+            // Solution found!
+            const path = [];
+            let i = dst;
+            for (;;) {
+              path.push(i);
+              if (i === src) break;
+              i = visited.get(i);
+            }
+            path.reverse();
+            return path;
+          }
+          todo.push(i2);
+        }
+      }
+    }
+  }
+
+  // For each piece, we keep a list of [time, position] pairs.
+  const movements = oldPieces.map(p => getPieceType(p) === PieceType.NONE ? null : []);
+
+  let time = 0;
   for (const move of moves) {
     const [src, dst] = move;
     if (src === dst) {
       continue;
     }
-    if (lastMove != null) {
-      pieces = applyMoves(pieces, lastMove);
-    }
-    lastMove = move;
-
-    const dr = FIELD_ROW[dst] - FIELD_ROW[src];
-    const dc = FIELD_COL[dst] - FIELD_COL[src];
 
     if (pieces[dst] === 0) {
       // Move.
-      // TODO: pathfinding
-      const keyframes = [
-        { left: -100*dc + '%', top: -100*dr + '%'},
-        { left: 0, top: 0},
-      ];
-      animations.push([dst, keyframes, {delay: startTime, duration: 1000, fill: 'backwards'}]);
-      startTime += 1000;
+      const path = findShortestPath(src, dst) || [src, dst];
+      for (let i = 0; i + 1 < path.length; ++i) {
+        const a = path[i], b = path[i + 1];
+        pieces[b] = pieces[a];
+        pieces[a] = 0;
+        movements[b] = movements[a];
+        movements[a] = null;
+        movements[b].push([time, a], [time += moveTime, b]);
+      }
     } else {
       // Push.
-      const keyframes = [
-        { left: -100*dc + '%', top: -100*dr + '%'},
-        { left: 0, top: 0},
-      ];
+      const dr = FIELD_ROW[dst] - FIELD_ROW[src];
+      const dc = FIELD_COL[dst] - FIELD_COL[src];
+
+      // Remove old anchor.
+      for (let i = 0; i < pieces.length; ++i) {
+        if (getPieceType(pieces[i]) === PieceType.ANCHOR) {
+          pieces[i] = makePiece(getPlayerColor(pieces[i]), PieceType.PUSHER);
+        }
+      }
+
       let i = src;
       let r = FIELD_ROW[i];
       let c = FIELD_COL[i];
-      console.log('a', i, r, c, getPieceType(pieces[i]));
-      while (getPieceType(pieces[i]) !== PieceType.NONE) {
-        console.log('b', i, r, c, getPieceType(pieces[i]));
-        r += dr;
-        c += dc;
-        i = getFieldIndex(r, c);
-        // FIXME: this doesn't allow us to animate the piece that's pushed off the board :/
-        if (i === -1) break;
-        animations.push([i, keyframes, {delay: startTime, duration: 1000, fill: 'backwards'}]);
+      let p = pieces[i];
+      let m = movements[i];
+      p = makePiece(getPlayerColor(p), PieceType.ANCHOR);  // place anchor
+      pieces[i] = NO_PIECE;
+      movements[i] = null;
+      for (;;) {
+        const j = getFieldIndex(r += dr, c += dc);
+        if (j === -1) {
+          // FIXME: this piece is pushed off the board! Also support this.
+          break;
+        }
+        m.push([time, i], [time + pushTime, j]);
+        const q = pieces[j];
+        const n = movements[j];
+        pieces[j] = p;
+        movements[j] = m;
+        if (getPieceType(q) === PieceType.NONE) {
+          // End of push.
+          break;
+        }
+        p = q;
+        m = n;
+        i = j;
       }
-      startTime += 1000;
+      time += pushTime;
     }
   }
-  console.log('c', animations);
-  return animations;
+
+  // Calculate animations from movements.
+  const animations = {};
+  for (let i = 0; i < FIELD_COUNT; ++i) {
+    const m = movements[i];
+    if (m == null || m.length === 0) continue;
+    const [tStart, iStart] = m[0];
+    const [tEnd, iEnd] = m[m.length - 1];
+    const duration = tEnd - tStart;
+    const rEnd = FIELD_ROW[iEnd];
+    const cEnd = FIELD_COL[iEnd];
+    const keyframes = [];
+    for (let [t, i] of m) {
+      keyframes.push({
+        left: -100*(cEnd - FIELD_COL[i]) + '%',
+        top: -100*(rEnd - FIELD_ROW[i]) + '%',
+        offset: (t - tStart) / duration,
+      });
+    }
+    const options = { delay: tStart, duration: duration, fill: 'backwards' };
+    animations[iEnd] = { keyframes, options };
+  }
+
+  return [animations, pieces];
 }
 
 class PlayComponent extends React.Component {
@@ -632,9 +755,11 @@ class PlayComponent extends React.Component {
       // than `turns`. Used to implement undo.
       piecesAtTurnStart: [props.initialPieces],
 
-      // List of animations to apply to pieces.
-      // Each element is a triple: destination index, keyframes, options
-      pieceAnimations: [],
+      // Animations to apply to pieces.
+      // Keys are destination field indices, values are lists of objects
+      // with two keys: `keyframes` and `options`, which are pased to
+      // animate().
+      pieceAnimations: {},
     };
 
     this.handleMove = this.handleMove.bind(this);
@@ -647,19 +772,19 @@ class PlayComponent extends React.Component {
   handleMove(src, dst) {
     this.setState(({pieces, moves}) => {
       // Generating animations must be done before we update the moves.
-      const pieceAnimations = generatePieceAnimations(pieces, [src, dst]);
+      const [pieceAnimations, newPieces] = generatePieceAnimations(pieces, [src, dst]);
       moves = [...moves];  // copy
-      if (moves.length > 0 && moves[moves.length - 1][1] === src) {
-        const lastMove = moves.pop();
-        pieces = applyMoves(pieces, [lastMove[1], lastMove[0]]);  // undo last move
-        src = lastMove[0];
-      }
-      if (src !== dst) {
-        pieces = applyMoves(pieces, [src, dst]);
+      const lastMove = moves.length > 0 ? moves[moves.length - 1] : undefined;
+      if (lastMove != null && lastMove[1] === src) {
+        // For convenience: moving the last-moved piece updates the last move.
+        // This allows undoing part of a turn without undoing the entire turn.
+        lastMove[1] = dst;
+        if (lastMove[0] === lastMove[1]) moves.pop();
+      } else {
         moves.push([src, dst]);
       }
       return {
-        pieces,
+        pieces: Object.freeze(newPieces),
         moves,
         pieceAnimations: pieceAnimations,
       };
@@ -669,13 +794,13 @@ class PlayComponent extends React.Component {
   handlePush(src, dst) {
     this.setState(({pieces, turns, moves, piecesAtTurnStart}) => {
       const push = Object.freeze([src, dst]);
-      const newPieces = Object.freeze(applyMoves(pieces, push));
+      const [pieceAnimations, newPieces] = generatePieceAnimations(pieces, push);
       return {
-        pieces: newPieces,
+        pieces: Object.freeze(newPieces),
         turns: [...turns, [...moves, push]],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
-        pieceAnimations: generatePieceAnimations(pieces, push),
+        pieceAnimations: pieceAnimations,
       };
     });
   }
@@ -684,13 +809,13 @@ class PlayComponent extends React.Component {
   playFullTurn(turn) {
     this.setState(({turns, piecesAtTurnStart}) => {
       const oldPieces = piecesAtTurnStart[turns.length];
-      let newPieces = Object.freeze(applyMoves(oldPieces, ...turn));
+      const [pieceAnimations, newPieces] = generatePieceAnimations(oldPieces, ...turn);
       return {
         pieces: newPieces,
         turns: [...turns, turn],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
-        pieceAnimations: generatePieceAnimations(oldPieces, ...turn),
+        pieceAnimations: pieceAnimations,
       };
     });
   }
