@@ -86,10 +86,9 @@ const MAX_MOVES = 2;
 
 const PiecesValidity = Object.freeze({
   INVALID:     0,
-  UNREACHABLE: 1,
-  STARTED:     2,
-  IN_PROGRESS: 3,
-  FINISHED:    4,
+  STARTED:     1,
+  IN_PROGRESS: 2,
+  FINISHED:    3,
 });
 
 // Replace a piece non-destructibly.

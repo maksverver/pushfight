@@ -492,9 +492,14 @@ function Analysis({pieces, onSelectTurn}) {
   const [successors, setSuccessors] = React.useState(null);
   const [expandedStatus, setExpandedStatus] = React.useState(null);
 
+  const {validity} = validatePieces(pieces);
+
+  // Recalculate contents every time `pieces` changes.
   React.useEffect(() => {
     setError(null);
     setSuccessors(null);
+    if (validity === PiecesValidity.INVALID) return;
+    if (validity === PiecesValidity.FINISHED) return;
     // FIXME: there is a race condition here. In theory, it's possible for
     // `pieces` to change while analyzePositions() is in progress.
     analyzePosition(pieces).then(
@@ -515,6 +520,10 @@ function Analysis({pieces, onSelectTurn}) {
   return (
     <div className="analysis">
     {
+      validity === PiecesValidity.INVALID ?
+          <p>Position is invalid!</p> :
+      validity === PiecesValidity.FINISHED ?
+          <p>Game is finished.</p> :
       error != null ?
           <p>Analysis failed: {String(error)}</p> :
       successors == null ?
