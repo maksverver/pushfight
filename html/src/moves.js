@@ -1,6 +1,10 @@
-'use strict';
+import {
+  H, W, FIELD_ROW, FIELD_COL, DR, DC, getFieldIndex,
+  PieceType, getPieceType, getPlayerColor, makePiece,
+} from './board.js';
 
-function* generateMoveDestinations(fields, initialField) {
+
+export function* generateMoveDestinations(fields, initialField) {
   // Breadth-first search for spaces reachable from field i without going through pieces.
   const visited = new Set();
   visited.add(initialField);
@@ -12,14 +16,12 @@ function* generateMoveDestinations(fields, initialField) {
     for (let d = 0; d < 4; ++d) {
       const r2 = r1 + DR[d];
       const c2 = c1 + DC[d];
-      if (r2 >= 0 && r2 < H && c2 >= 0 && c2 < W) {
-        const i2 = FIELD_INDEX[r2][c2];
-        if (i2 >= 0 && getPieceType(fields[i2]) === PieceType.NONE) {
-          if (!visited.has(i2)) {
-            visited.add(i2);
-            todo.push(i2);
-            yield i2;
-          }
+      const i2 = getFieldIndex(r2, c2);
+      if (i2 >= 0 && getPieceType(fields[i2]) === PieceType.NONE) {
+        if (!visited.has(i2)) {
+          visited.add(i2);
+          todo.push(i2);
+          yield i2;
         }
       }
     }
@@ -62,7 +64,7 @@ function* findPushDirections(fields, i) {
   }
 }
 
-function* findPushDestinations(fields, i) {
+export function* findPushDestinations(fields, i) {
   const r = FIELD_ROW[i];
   const c = FIELD_COL[i];
   for (const d of findPushDirections(fields, i)) {
@@ -104,7 +106,7 @@ function* generateAllMoves(state) {
 // Executes one or moves/pushs, each of which must be valid.
 //
 // Returns 0 or 1 to indicate the winner, or -1 if the game is not over.
-function executeMoves(pieces, ...moves) {
+export function executeMoves(pieces, ...moves) {
   for(const [src, dst] of moves) {
     // Allow no-op move.
     if(src === dst) continue;
@@ -145,33 +147,33 @@ function executeMoves(pieces, ...moves) {
 
 // Like executeMoves(), but doesn't mutate the pieces argument and returns
 // an updated copy instead.
-function applyMoves(pieces, ...moves) {
+export function applyMoves(pieces, ...moves) {
   const newPieces = [...pieces];  // copy
   executeMoves(newPieces, ...moves);
   return newPieces;
 }
 
-function formatField(i) {
+export function formatField(i) {
   return String.fromCharCode('a'.charCodeAt(0) + FIELD_COL[i]) + String(4 - FIELD_ROW[i]);
 }
 
-function formatMove(src, dst) {
+export function formatMove(src, dst) {
   return formatField(src) + '-' + formatField(dst);
 }
 
-function formatTurn(parts) {
+export function formatTurn(parts) {
   return parts.map(([src, dst]) => formatMove(src, dst)).join(',');
 }
 
 // Parses `s` into a field index, or returns -1 if it's invalid.
-function parseField(s) {
+export function parseField(s) {
   if (s.length !== 2) return -1;
   const c = s.charCodeAt(0) - 'a'.charCodeAt(0);
   const r = '4'.charCodeAt(0) - s.charCodeAt(1);
   return getFieldIndex(r, c);
 }
 
-function parseMove(s) {
+export function parseMove(s) {
   const parts = s.split('-');
   if (parts.length !== 2) return undefined;
   const src = parseField(parts[0]);
@@ -180,7 +182,7 @@ function parseMove(s) {
   return [src, dst];
 }
 
-function parseTurn(s) {
+export function parseTurn(s) {
   if (s.length === 0) return undefined;
   const parts = s.split(',');
   if (parts.length > 3) return undefined;

@@ -1,17 +1,23 @@
-'use strict';
+// Library to convert Push Fight permutations to permutation indices, and vice versa.
+//
+// A permutation is an array of 26 integers. Values have the following meaning:
+//
+//  - 0: empty field (occurs 17 times)
+//  - 1: first player mover (occurs 2 times)
+//  - 2: first player pusher (occurs 3 times)
+//  - 3: second player mover (occurs 2 times)
+//  - 4: second player pusher (occurs 2 times)
+//  - 5: second player pusher with anchor (occurs 1 time)
+//
+// Example:
+// [0, 4, 2, 0, 0, 0, 0, 4, 0, 1, 2, 0, 0, 3, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0, 5, 2]
+//
+// These permutations can be mapped to and from permutation indexes:
+// values between 0 and 401,567,166,000, exclusive.
 
-const L = 26;
+const L = 26;  // actually the same as FIELD_COUNT in board.js
 
-const totalPerms = 401567166000;
-
-const Perm = {
-  EMPTY:   0,
-  MOVER1:  1,
-  PUSHER1: 2,
-  MOVER2:  3,
-  PUSHER2: 4,
-  ANCHOR2: 5,
-};
+export const totalPerms = 401567166000;
 
 function generateFactorials() {
   const fac = [1, 1];
@@ -40,7 +46,7 @@ const numPerms = createMultidimensionalArray([17, 3, 4, 3, 3, 2], 0);
 // that have a starting character strictly smaller than x.
 const indexOf_memo = createMultidimensionalArray([6, 17, 3, 4, 3, 3, 2], 0);
 
-function indexOfPerm(p) {
+export function indexOfPerm(p) {
   let f = [0, 0, 0, 0, 0, 0];
   let idx = 0;
   for (let i = L - 1; i >= 0; --i) {
@@ -51,7 +57,7 @@ function indexOfPerm(p) {
   return idx;
 }
 
-function permAtIndex(index) {
+export function permAtIndex(index) {
   if (!Number.isInteger(index) || index < 0 || index > totalPerms) {
     return undefined;
   }

@@ -1,4 +1,27 @@
-'use strict';
+import React from "react";
+import ReactDOM from 'react-dom/client';
+
+import {
+  totalPerms, indexOfPerm, permAtIndex,
+} from './perms.js';
+
+import {
+  H, W, DR, DC, FIELD_COUNT, FIELD_INDEX, getFieldIndex, FIELD_ROW, FIELD_COL,
+  PieceType, getPieceType, getPlayerColor, makePiece,
+  EMPTY_PIECES, INITIAL_PIECES, validatePieces, PiecesValidity,
+  RED_PLAYER, BLUE_PLAYER, NO_PIECE,
+  RED_MOVER, RED_PUSHER, RED_ANCHOR,
+  BLUE_MOVER, BLUE_PUSHER, BLUE_ANCHOR,
+  invertColors,
+  permToPieces, piecesToPerm,
+} from './board.js';
+
+
+import {
+  generateMoveDestinations, findPushDestinations,
+  parseField, parseMove, parseTurn,
+  formatField, formatMove, formatTurn,
+} from './moves.js';
 
 const reactStrictMode = true;
 

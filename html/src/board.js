@@ -1,29 +1,28 @@
+import { indexOfPerm } from './perms.js';
+
 // Defines the Push Fight board layout, as well as the representation of pieces.
+export const H = 4;
+export const W = 8;
 
-'use strict';
+export const DR = Object.freeze([ -1,  0,  0,  1 ]);
+export const DC = Object.freeze([  0, -1, +1,  0 ]);
 
-const H = 4;
-const W = 8;
-
-const DR = Object.freeze([ -1,  0,  0,  1 ]);
-const DC = Object.freeze([  0, -1, +1,  0 ]);
-
-const FIELD_COUNT = 26;
+export const FIELD_COUNT = 26;
 
 // Maps from (row, col) to field index (between 0 and 26, exclusive).
-const FIELD_INDEX = Object.freeze([
+export const FIELD_INDEX = Object.freeze([
   [ -1, -1,  0,  1,  2,  3,  4, -1 ],
   [  5,  6,  7,  8,  9, 10, 11, 12 ],
   [ 13, 14, 15, 16, 17, 18, 19, 20 ],
   [ -1, 21, 22, 23, 24, 25, -1, -1 ],
 ].map(Object.freeze));
 
-function getFieldIndex(r, c) {
+export function getFieldIndex(r, c) {
   return r >= 0 && r < H && c >= 0 && c < W ? FIELD_INDEX[r][c] : -1;
 }
 
 // Maps from field index to row.
-const FIELD_ROW = Object.freeze([
+export const FIELD_ROW = Object.freeze([
           0,  0,  0,  0,  0,
   1,  1,  1,  1,  1,  1,  1,  1,
   2,  2,  2,  2,  2,  2,  2,  2,
@@ -31,60 +30,58 @@ const FIELD_ROW = Object.freeze([
 ]);
 
 // Maps from field index to column.
-const FIELD_COL = Object.freeze([
+export const FIELD_COL = Object.freeze([
           2,  3,  4,  5,  6,
   0,  1,  2,  3,  4,  5,  6,  7,
   0,  1,  2,  3,  4,  5,  6,  7,
       1,  2,  3,  4,  5
 ]);
 
-const PieceType = Object.freeze({
+export const PieceType = Object.freeze({
   NONE:   0,  // empty space
   MOVER:  1,  // movable piece (circle)
   PUSHER: 2,  // pushing piece (square)
   ANCHOR: 3,  // immobile pusher
 });
 
-function getPieceType(i) {
+export function getPieceType(i) {
   return i & 3;
 }
 
-function getPlayerColor(i) {
+export function getPlayerColor(i) {
   return (i >> 2) & 1;
 }
 
-function makePiece(color, type) {
+export function makePiece(color, type) {
   return type | (color << 2);
 }
 
-const RED_PLAYER = 0;
-const BLUE_PLAYER = 1
+export const RED_PLAYER = 0;
+export const BLUE_PLAYER = 1
 
-const NO_PIECE = 0;
-const RED_MOVER = makePiece(RED_PLAYER, PieceType.MOVER);
-const RED_PUSHER = makePiece(RED_PLAYER, PieceType.PUSHER);
-const RED_ANCHOR = makePiece(RED_PLAYER, PieceType.ANCHOR);
-const BLUE_MOVER = makePiece(BLUE_PLAYER, PieceType.MOVER);
-const BLUE_PUSHER = makePiece(BLUE_PLAYER, PieceType.PUSHER);
-const BLUE_ANCHOR = makePiece(BLUE_PLAYER, PieceType.ANCHOR);
+export const NO_PIECE = 0;
+export const RED_MOVER = makePiece(RED_PLAYER, PieceType.MOVER);
+export const RED_PUSHER = makePiece(RED_PLAYER, PieceType.PUSHER);
+export const RED_ANCHOR = makePiece(RED_PLAYER, PieceType.ANCHOR);
+export const BLUE_MOVER = makePiece(BLUE_PLAYER, PieceType.MOVER);
+export const BLUE_PUSHER = makePiece(BLUE_PLAYER, PieceType.PUSHER);
+export const BLUE_ANCHOR = makePiece(BLUE_PLAYER, PieceType.ANCHOR);
 
-const EMPTY_PIECES = Object.freeze([
+export const EMPTY_PIECES = Object.freeze([
          0, 0, 0, 0, 0,
    0, 0, 0, 0, 0, 0, 0, 0,
    0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0,
 ]);
 
-const INITIAL_PIECES = Object.freeze([
+export const INITIAL_PIECES = Object.freeze([
           0, 2, 6, 0, 0,
     0, 0, 0, 1, 5, 6, 0, 0,
     0, 0, 2, 1, 5, 0, 0, 0,
        0, 0, 2, 6, 0,
 ]);
 
-const MAX_MOVES = 2;
-
-const PiecesValidity = Object.freeze({
+export const PiecesValidity = Object.freeze({
   INVALID:     0,
   STARTED:     1,
   IN_PROGRESS: 2,
@@ -94,7 +91,7 @@ const PiecesValidity = Object.freeze({
 // Replace a piece non-destructibly.
 //
 // Returns a copy of `pieces` where the i-the piece has been replaced with `piece`.
-function replacePiece(pieces, i, piece) {
+export function replacePiece(pieces, i, piece) {
   const result = [...pieces];
   result[i] = piece;
   return result;
@@ -102,7 +99,7 @@ function replacePiece(pieces, i, piece) {
 
 // Returns a copy of `pieces` with the piece colors inverted
 // (red pieces become blue and vice versa).
-function invertColors(pieces) {
+export function invertColors(pieces) {
   const newPieces = [...pieces];
   for (let i = 0; i < newPieces.length; ++i) {
     const type = getPieceType(pieces[i]);
@@ -113,7 +110,7 @@ function invertColors(pieces) {
   return newPieces;
 }
 
-function permToPieces(perm) {
+export function permToPieces(perm) {
   function getPieceValue(i) {
     if (i === 0) return NO_PIECE;
     if (i === 1) return RED_MOVER;
@@ -125,7 +122,7 @@ function permToPieces(perm) {
   return perm.map(getPieceValue);
 }
 
-function piecesToPerm(pieces, nextPlayer) {
+export function piecesToPerm(pieces, nextPlayer) {
   function getPermValue(piece) {
     const type = getPieceType(piece);
     if (type === PieceType.NONE) return 0;
@@ -146,7 +143,7 @@ function piecesToPerm(pieces, nextPlayer) {
 //    index: int (permutation index, defined only if IN_PROGRESS)
 //    nextPlayer: int (defined only if STARTED or IN_PROGRESS)
 //  }
-function validatePieces(pieces) {
+export function validatePieces(pieces) {
 
   function makeError(message) {
     return {validity: PiecesValidity.INVALID, error: message};
