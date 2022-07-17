@@ -468,7 +468,7 @@ function History({firstPlayer, turns, moves, undoEnabled, playEnabled,
   for (let row = 0; 2*row < turnStrings.length; ++row) {
     rows.push(
       <tr key={row}>
-        <th>{row}.</th>
+        <th>{row + 1}.</th>
         <td>{turnStrings[2*row]}</td>
         <td>{turnStrings[2*row + 1]}</td>
       </tr>
