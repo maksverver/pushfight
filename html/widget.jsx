@@ -1,5 +1,7 @@
 'use strict';
 
+const reactStrictMode = true;
+
 const LOOKUP_URL = window.location.hostname === 'localhost' ? 'http://localhost:8003/' : 'lookup/';
 
 async function analyzePosition(pieces) {
@@ -797,15 +799,16 @@ class PlayComponent extends React.Component {
 function RootComponent() {
   const [initialPieces, setInitialPieces] = React.useState(null);
 
-  return (
-    <React.StrictMode>
-    {
-      initialPieces == null ?
-        <SetUpComponent onStart={setInitialPieces}/> :
-        <PlayComponent initialPieces={initialPieces}/>
-    }
-    </React.StrictMode>
-  );
+  let content =
+    initialPieces == null ?
+      <SetUpComponent onStart={setInitialPieces}/> :
+      <PlayComponent initialPieces={initialPieces}/>
+
+  if (reactStrictMode) {
+    content = <React.StrictMode>{content}</React.StrictMode>;
+  }
+
+  return content;
 }
 
 // Global initialization.
