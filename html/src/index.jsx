@@ -13,7 +13,7 @@ import {
   RED_MOVER, RED_PUSHER, RED_ANCHOR,
   BLUE_MOVER, BLUE_PUSHER, BLUE_ANCHOR,
   invertColors,
-  permToPieces, piecesToPerm,
+  permToPieces, piecesToPerm, replacePiece,
 } from './board.js';
 
 
