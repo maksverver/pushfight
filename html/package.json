@@ -4,6 +4,7 @@
   "author": "Maks Verver",
   "description": "A web app to analyze Push Fight positions.",
   "private": true,
+  "browserslist": ["defaults", "not dead"],
   "scripts": {
     "build": "webpack",
     "serve": "webpack serve --mode development",
