@@ -145,6 +145,23 @@ adding to it.
   border: 5px solid rgb(0, 0, 120);
 }
 
+.board .piece .color-blind-marker {
+  position: absolute;
+  top: 5%;
+  right: 5%;
+  bottom: 5%;
+  left: 5%;
+}
+
+.board .piece.blue.square .color-blind-marker {
+  border: 4px solid rgb(0 0 160);
+}
+
+.board .piece.circle.blue .color-blind-marker {
+  border: 4px solid rgb(0 0 160);
+  border-radius: 50%;
+}
+
 .board .piece,
 .board .anchor,
 .board .push-origin {

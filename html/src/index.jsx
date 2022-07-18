@@ -364,7 +364,11 @@ function Piece({piece}) {
   const colorClass = ['red', 'blue'][color];
   const classNames = ['piece', shapeClass, colorClass];
   const className = classNames.join(' ');
-  return <div className={className}></div>;
+  return (
+    <div className={className}>
+      {color === BLUE_PLAYER ? <div className="color-blind-marker"/> : null}
+    </div>
+  );
 }
 
 function Anchor() {
