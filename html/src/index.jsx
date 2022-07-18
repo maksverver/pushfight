@@ -16,7 +16,7 @@ import {
 } from './board.js';
 import {
   generateMoveDestinations, findPushDestinations,
-  parseTurn, formatTurn,
+  validateTurn, parseTurn, formatTurn,
 } from './moves.js';
 
 // For development: set to `true` to enable React strict mode.
@@ -479,6 +479,16 @@ function History({firstPlayer, turns, analyses, moves, undoEnabled, playEnabled,
         </thead>
         <tbody>{rows}</tbody>
       </table>
+      <p>
+        <label>
+          <input
+              type="checkbox"
+              disabled={analyses == null}
+              checked={analyses != null && showAnalysis}
+              onChange={(e) => setShowAnalysis(e.target.checked)}/>
+          Show analysis
+        </label>
+      </p>
       <div className="buttons">
         <button title="Undos the last turn"
             disabled={!undoEnabled} onClick={onUndoClick}>
@@ -491,14 +501,6 @@ function History({firstPlayer, turns, analyses, moves, undoEnabled, playEnabled,
         <button onClick={onExitClick}>
           Return to setup
         </button>
-        <label>
-          <input
-              type="checkbox"
-              disabled={analyses == null}
-              checked={analyses != null && showAnalysis}
-              onChange={(e) => setShowAnalysis(e.target.checked)}/>
-          Analysis
-        </label>
       </div>
     </div>
   );
@@ -635,11 +637,34 @@ function PlayPanel({renderTab}) {
   );
 }
 
+function UpdateUrlHash({pieces, turns}) {
+  React.useEffect(() => {
+    const oldHash = window.location.hash;
+    const stateString = formatState(pieces, turns);
+    // Note: this assumes all characters in stateString are safe to use in the
+    // hash fragment. In particular, they should not contain '&', '#' or '='.
+    window.history.replaceState(null, '', '#history=' + stateString);
+    return () => {
+      window.history.replaceState(null, '', '#' + oldHash);
+    };
+  }, [pieces, turns]);
+  return null;
+}
+
+function formatState(pieces, turns) {
+  let string = formatPieces(pieces);
+  for (const turn of turns) {
+    string += ';' + formatTurn(turn);
+  }
+  return string;
+}
+
 class PlayComponent extends React.Component {
 
   constructor(props) {
     super(props);
 
+    this.forceUpdate = this.forceUpdate.bind(this);  // used below!
     this.handleMove = this.handleMove.bind(this);
     this.handlePush = this.handlePush.bind(this);
     this.handleUndo = this.handleUndo.bind(this);
@@ -647,27 +672,26 @@ class PlayComponent extends React.Component {
     this.handleAutoPlay = this.handleAutoPlay.bind(this);
     this.handleExit = this.handleExit.bind(this);
     this.playFullTurn = this.playFullTurn.bind(this);
-    this.forceUpdate = this.forceUpdate.bind(this);  // used below!
 
     this.state = {
       // Positions of pieces on the board.
-      pieces: props.initialPieces,
+      pieces: props.initialPiecesAtTurnStart[props.initialTurns.length],
 
       // Turns played so far, not including the current turn.
       // Each turn is a list of moves followed by one push.
-      turns: [],
+      turns: props.initialTurns,
 
       // Moves played in the current turn.
       moves: [],
 
       // Pieces at the start of each turn. This has length 1 greater
       // than `turns`. Used to implement undo.
-      piecesAtTurnStart: [props.initialPieces],
+      piecesAtTurnStart: props.initialPiecesAtTurnStart,
 
       // Position analysis at start of the turn. This has length 1 greater
       // than `turns`. Used to implement analysis/auto play.
-      analysisAtTurnStart: [
-          new PositionAnalysis(props.initialPieces, this.forceUpdate)],
+      analysisAtTurnStart: props.initialPiecesAtTurnStart.map(pieces =>
+          new PositionAnalysis(pieces, this.forceUpdate)),
 
       // Animations to apply to pieces.
       // Keys are destination field indices, values are lists of objects
@@ -793,7 +817,7 @@ class PlayComponent extends React.Component {
   }
 
   render() {
-    const {pieces, turns, moves, analysisAtTurnStart, pieceAnimations} = this.state;
+    const {pieces, turns, moves, analysisAtTurnStart, piecesAtTurnStart, pieceAnimations} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
     const isUnfinished = validity === PiecesValidity.STARTED || validity === PiecesValidity.IN_PROGRESS;
@@ -802,7 +826,7 @@ class PlayComponent extends React.Component {
         validity === PiecesValidity.FINISHED ? ['Red', 'Blue'][winner] + ' won.' :
         error || 'Unknown error!';
 
-    const firstPlayer = this.props.initialPieces.includes(RED_ANCHOR) ? BLUE_PLAYER : RED_PLAYER;
+    const firstPlayer = this.state.piecesAtTurnStart[0].includes(RED_ANCHOR) ? BLUE_PLAYER : RED_PLAYER;
 
     // Can undo if there is a (partial) turn to be undo.
     const undoEnabled = turns.length > 0 || moves.length > 0;
@@ -853,36 +877,99 @@ class PlayComponent extends React.Component {
             pieceAnimations={pieceAnimations}/>
           <PlayPanel renderTab={renderTab}/>
         </div>
+        <UpdateUrlHash pieces={piecesAtTurnStart[0]} turns={turns}/>
       </React.Fragment>
     );
   }
 }
 
+// Parse the history parameter written by UpdateUrlHash.
+//
+// Returns an object with keys {turns, piecesAtTurnStart} or undefined if the
+// string could not be parsed.
+function parseHistoryValue(string) {
+  const parts = string.split(';');
+  let pieces = parsePieces(parts[0]);
+  if (pieces == null) return undefined;
+  const {validity} = validatePieces(pieces);
+  if (validity === PiecesValidity.INVALID) return undefined;
+  const turns = [];
+  const piecesAtTurnStart = [];
+console.log('##', parts.length);
+  for (let i = 1; i < parts.length; ++i) {
+    console.log('##', i);
+    const {validity, nextPlayer} = validatePieces(pieces);
+    if (validity === PiecesValidity.INVALID) {
+      console.log('a');
+      return undefined;
+    }
+    if (validity === PiecesValidity.FINISHED) {
+      console.log('b');
+      break;
+    }
+    const turn = parseTurn(parts[i]);
+    if (turn == null) {
+      console.log('c');
+      return undefined;
+    }
+    const oldPieces = pieces;
+    const newPieces = validateTurn(pieces, nextPlayer, turn);
+    if (newPieces == null) {
+      console.log('d');
+      break;
+    }
+    turns.push(turn);
+    piecesAtTurnStart.push(oldPieces);
+    pieces = newPieces;
+    console.log('## here');
+  }
+  piecesAtTurnStart.push(pieces);
+  return {turns, piecesAtTurnStart};
+}
+
 class RootComponent extends React.Component {
   state = {
-    initialPieces: INITIAL_PIECES,
     setupComplete: false,
+    turns: [],
+    piecesAtTurnStart: [INITIAL_PIECES],
   };
 
   constructor(props) {
     super(props);
     this.handleStart = this.handleStart.bind(this);
     this.handleExit = this.handleExit.bind(this);
+
+    // Parse initial state from the URL hash. This is the reverse of what UpdateUrlHash does.
+    if (window.location.hash && window.location.hash[0] === '#') {
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      const historyParam = params.get('history');
+      if (historyParam) {
+        const parsedHistory = parseHistoryValue(historyParam);
+        this.state.piecesAtTurnStart = parsedHistory.piecesAtTurnStart;
+        this.state.turns = parsedHistory.turns;
+        this.state.setupComplete = true;
+      }
+    }
   }
 
   handleStart(pieces) {
-    this.setState({initialPieces: pieces, setupComplete: true});
+    this.setState({setupComplete: true, piecesAtTurnStart: [pieces], turns: []});
   }
 
   handleExit(pieces) {
-    this.setState({initialPieces: pieces, setupComplete: false});
+    this.setState({setupComplete: false, piecesAtTurnStart: [pieces], turns: []});
   }
 
   render() {
-    const {initialPieces, setupComplete} = this.state;
+    const {setupComplete, piecesAtTurnStart, turns} = this.state;
     let content = !setupComplete ?
-        <SetUpComponent initialPieces={initialPieces} onStart={this.handleStart}/> :
-        <PlayComponent initialPieces={initialPieces} onExit={this.handleExit}/>;
+        <SetUpComponent
+            initialPieces={piecesAtTurnStart[0]}
+            onStart={this.handleStart}/> :
+        <PlayComponent
+            initialTurns={turns}
+            initialPiecesAtTurnStart={piecesAtTurnStart}
+            onExit={this.handleExit}/>;
     if (reactStrictMode) {
       content = <React.StrictMode>{content}</React.StrictMode>;
     }

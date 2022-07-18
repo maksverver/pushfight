@@ -4,7 +4,7 @@ import {
 } from './board.js';
 
 
-export function* generateMoveDestinations(fields, initialField) {
+export function* generateMoveDestinations(pieces, initialField) {
   // Breadth-first search for spaces reachable from field i without going through pieces.
   const visited = new Set();
   visited.add(initialField);
@@ -17,7 +17,7 @@ export function* generateMoveDestinations(fields, initialField) {
       const r2 = r1 + DR[d];
       const c2 = c1 + DC[d];
       const i2 = getFieldIndex(r2, c2);
-      if (i2 >= 0 && getPieceType(fields[i2]) === PieceType.NONE) {
+      if (i2 >= 0 && getPieceType(pieces[i2]) === PieceType.NONE) {
         if (!visited.has(i2)) {
           visited.add(i2);
           todo.push(i2);
@@ -28,7 +28,7 @@ export function* generateMoveDestinations(fields, initialField) {
   }
 }
 
-function isValidPush(fields, i, d) {
+function canPush(pieces, i, d) {
   let r = FIELD_ROW[i];
   let c = FIELD_COL[i];
   const dr = DR[d];
@@ -36,12 +36,12 @@ function isValidPush(fields, i, d) {
   r += dr;
   c += dc;
   i = getFieldIndex(r, c);
-  if (i === -1 || fields[i] === 0) {
+  if (i === -1 || pieces[i] === 0) {
     // Must push at least one piece.
     return false;
   }
-  while (i !== -1 && fields[i] !== 0) {
-    if (getPieceType(fields[i]) === PieceType.ANCHOR) {
+  while (i !== -1 && pieces[i] !== 0) {
+    if (getPieceType(pieces[i]) === PieceType.ANCHOR) {
       // Cannot push anchored piece.
       return false;
     }
@@ -56,52 +56,83 @@ function isValidPush(fields, i, d) {
   return true;
 }
 
-function* findPushDirections(fields, i) {
+function* findPushDirections(pieces, i) {
   for (let d = 0; d < 4; ++d) {
-    if (isValidPush(fields, i, d)) {
+    if (canPush(pieces, i, d)) {
       yield d;
     }
   }
 }
 
-export function* findPushDestinations(fields, i) {
+export function* findPushDestinations(pieces, i) {
   const r = FIELD_ROW[i];
   const c = FIELD_COL[i];
-  for (const d of findPushDirections(fields, i)) {
+  for (const d of findPushDirections(pieces, i)) {
     yield getFieldIndex(r + DR[d], c + DC[d]);
   }
 }
 
-/*
-function* generateMoves(fields, player) {
-  for (let i = 0; i < fields.length; ++i) {
-    if (getPieceType(fields[i]) !== PieceType.NONE && getPlayerColor(fields[i]) === player) {
+export function* generateMoves(pieces, player) {
+  for (let i = 0; i < pieces.length; ++i) {
+    if (getPieceType(pieces[i]) !== PieceType.NONE && getPlayerColor(pieces[i]) === player) {
       // Sort destinations to facilitate debugging.
-      const js = Array.from(generateMoveDestinations(fields, i)).sort((a, b) => a - b);
+      const js = Array.from(generateMoveDestinations(pieces, i)).sort((a, b) => a - b);
       for (const j of js) {
-        yield {m: [i, j]};
+        yield [i, j];
       }
     }
   }
 }
 
-function* generatePushes(fields, player) {
-  for (let i = 0; i < fields.length; ++i) {
-    if (getPieceType(fields[i]) === PieceType.PUSHER && getPlayerColor(fields[i]) === player) {
-      for (const d of findPushDirections(fields, i)) {
-        yield {p: [i, d]};
+export function isValidMove(pieces, player, i, j) {
+  for (const [k, l] of generateMoves(pieces, player)) {
+    if (i === k && j === l) return true;
+  }
+  return false;
+}
+
+export function* generatePushes(pieces, player) {
+  for (let i = 0; i < pieces.length; ++i) {
+    if (getPieceType(pieces[i]) === PieceType.PUSHER && getPlayerColor(pieces[i]) === player) {
+      for (const d of findPushDirections(pieces, i)) {
+        yield [i, getFieldIndex(FIELD_ROW[i] + DR[d], FIELD_COL[i] + DC[d])];
       }
     }
   }
 }
 
-function* generateAllMoves(state) {
-  if (state.movesLeft > 0) {
-    yield* generateMoves(state.fields, state.nextPlayer);
+export function isValidPush(pieces, player, i, j) {
+  for (const [k, l] of generatePushes(pieces, player)) {
+    console.log(i, j, k, l);
+    if (i === k && j === l) return true;
   }
-  yield* generatePushes(state.fields, state.nextPlayer);
+  return false;
 }
-*/
+
+// Checks that the given turn is valid for the given player, and returns
+// a copy of the original pieces updated to reflect the turn, or null if the
+// turn was invalid.
+//
+// Assumes turn has been parsed by parseTurn() so it's superfically valid.
+export function validateTurn(oldPieces, player, turn) {
+  const pieces = [...oldPieces];  // copy
+  let i;
+  for (i = 0; i < turn.length - 1; ++i) {
+    const move = turn[i];
+    if (!isValidMove(pieces, player, ...move)) {
+      console.log('!!', i);
+      return null;
+    }
+    executeMoves(pieces, move);
+  }
+  const push = turn[i];
+  if (!isValidPush(pieces, player, ...push)) {
+    console.log('!!push');
+    return null;
+  }
+  executeMoves(pieces, push);
+  return pieces;
+}
 
 // Executes one or moves/pushs, each of which must be valid.
 //
@@ -185,6 +216,12 @@ export function parseMove(s) {
 export function parseTurn(s) {
   if (s.length === 0) return undefined;
   const parts = s.split(',');
-  if (parts.length > 3) return undefined;
-  return parts.map(parseMove);
+  if (parts.length < 1 || parts.length > 3) return undefined;
+  const moves = [];
+  for (const part of parts) {
+    const move = parseMove(part);
+    if (move == null) return undefined;
+    moves.push(move);
+  }
+  return moves;
 }
