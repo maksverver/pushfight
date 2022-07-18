@@ -215,12 +215,10 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
   const isMoveTarget = {};
   const isPushTarget = {};
   if (selectedFieldIndex !== -1 && push == null) {
-    if (moves.length < 2) {
+    if (moves.length < 2 || selectedFieldIndex === moves[moves.length - 1][1]) {
       for (const field of generateMoveDestinations(pieces, selectedFieldIndex)) {
         isMoveTarget[field] = true;
       }
-    } else if (selectedFieldIndex === moves[moves.length - 1][1]) {
-      isMoveTarget[moves[moves.length - 1][0]] = true;
     }
     if (getPieceType(pieces[selectedFieldIndex]) === PieceType.PUSHER) {
       for (const field of findPushDestinations(pieces, selectedFieldIndex)) {
