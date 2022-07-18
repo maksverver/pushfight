@@ -434,8 +434,10 @@ function SetUpComponent({initialPieces, onStart}) {
   );
 }
 
-function History({firstPlayer, turns, moves, undoEnabled, playEnabled,
+function History({firstPlayer, turns, analyses, moves, undoEnabled, playEnabled,
     onUndoClick, onPlayClick, onExitClick}) {
+  const [showAnalysis, setShowAnalysis] = React.useState(analyses != null);
+
   const turnStrings = turns.map(formatTurn);
   if (moves != null) {
     turnStrings.push(formatTurn(moves) + '...');
@@ -443,11 +445,19 @@ function History({firstPlayer, turns, moves, undoEnabled, playEnabled,
 
   const rows = [];
   for (let row = 0; 2*row < turnStrings.length; ++row) {
+
     rows.push(
       <tr key={row}>
         <th>{row + 1}.</th>
-        <td>{turnStrings[2*row]}</td>
-        <td>{turnStrings[2*row + 1]}</td>
+        <td>
+          <Move label={turnStrings[2*row]}
+              analysis={showAnalysis ? analyses[2*row] : null}/>
+        </td>
+        <td>
+          {2*row + 1 < turnStrings.length &&
+            <Move label={turnStrings[2*row + 1]}
+                analysis={showAnalysis ? analyses[2*row + 1] : null}/>}
+        </td>
       </tr>
     );
   }
@@ -481,9 +491,47 @@ function History({firstPlayer, turns, moves, undoEnabled, playEnabled,
         <button onClick={onExitClick}>
           Return to setup
         </button>
+        <label>
+          <input
+              type="checkbox"
+              disabled={analyses == null}
+              checked={analyses != null && showAnalysis}
+              onChange={(e) => setShowAnalysis(e.target.checked)}/>
+          Analysis
+        </label>
       </div>
     </div>
   );
+}
+
+// Renders a move in the history panel (optionally with analysis).
+function Move({label, analysis}) {
+  return (
+    <div>
+      <AnalysisChip analysis={analysis}/>
+      {label}
+    </div>
+  );
+}
+
+function AnalysisChip({analysis}) {
+  if (analysis == null || analysis.skipped || analysis.isLoading()) return undefined;
+
+  let content = undefined;
+  let title = undefined;
+  let className = 'analysis-chip';
+  if (analysis.failed || analysis.result?.status == null) {
+    className += ' failed';
+    content = '!';
+    title = 'Analysis failed!';
+  } else {
+    content = analysis.result.status;
+    if (content[0] === 'T') className += ' tie';
+    if (content[0] === 'L') className += ' loss';
+    if (content[0] === 'W') className += ' win';
+    title = statusDisplayName(content);
+  }
+  return <span className={className} title={title}>{content}</span>
 }
 
 // Formats status as a human-readable string (e.g. "Win in 2").
@@ -770,6 +818,7 @@ class PlayComponent extends React.Component {
               firstPlayer={firstPlayer}
               turns={turns}
               moves={isUnfinished ? moves : undefined}
+              analyses={analysisAtTurnStart}
               undoEnabled={undoEnabled}
               playEnabled={analysis.result != null}
               onUndoClick={this.handleUndo}

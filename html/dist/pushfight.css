@@ -296,6 +296,29 @@ adding to it.
   padding-right: 1em;
 }
 
+.history .analysis-chip {
+  border-radius: 20%;
+  font-size: 10pt;
+  padding: 2px;
+  margin: 5px;
+}
+
+.history .analysis-chip.tie {
+  background: rgb(128, 128, 128);
+}
+
+.history .analysis-chip.win {
+  background: rgb(0, 120, 0);
+}
+
+.history .analysis-chip.loss {
+  background: rgb(120, 0, 0);
+}
+
+.history .analysis-chip.failed {
+  background: rgb(224, 128, 0);
+}
+
 .side-panel button {
   background: #333;
   color: white;
