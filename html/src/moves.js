@@ -48,7 +48,7 @@ function isValidPush(fields, i, d) {
     r += dr;
     c += dc;
     if (r < 0 || r >= H) {
-      // Canot push pieces past the anchor at the top/bottom of the board.
+      // Canot push pieces past the guard rail at the top/bottom of the board.
       return false;
     }
     i = getFieldIndex(r, c);
