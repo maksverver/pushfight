@@ -1,21 +1,18 @@
 import React from "react";
 import ReactDOM from 'react-dom/client';
 
-import {
-  totalPerms, permAtIndex,
-} from './perms.js';
-
+import {PositionAnalysis} from './analysis.js';
+import {totalPerms, permAtIndex} from './perms.js';
 import {
   H, W, DR, DC, FIELD_COUNT, FIELD_INDEX, getFieldIndex, FIELD_ROW, FIELD_COL,
-  PieceType, getPieceType, getPlayerColor, makePiece,
+  PieceType, getPieceType, getPlayerColor, makePiece, replacePiece,
   INITIAL_PIECES, validatePieces, PiecesValidity,
   RED_PLAYER, BLUE_PLAYER, NO_PIECE,
   RED_MOVER, RED_PUSHER, RED_ANCHOR,
   BLUE_MOVER, BLUE_PUSHER, BLUE_ANCHOR,
   invertColors,
-  permToPieces, replacePiece,
+  permToPieces, parsePieces, formatPieces,
 } from './board.js';
-
 import {
   generateMoveDestinations, findPushDestinations,
   parseTurn, formatTurn,
@@ -24,101 +21,6 @@ import {
 // For development: set to `true` to enable React strict mode.
 // https://reactjs.org/docs/strict-mode.html
 const reactStrictMode = true;
-
-// For development: make the RPC to analyze positions intentionally slow and unreliable.
-const unreliableAnalysis = false;
-
-const LOOKUP_URL = window.location.hostname === 'localhost' ? 'http://localhost:8003/' : 'lookup/';
-
-// Fetches the position analysis using LOOKUP_URL. Don't call this directly;
-// use PositionAnalysis instead.
-async function fetchPositionAnalysis(pieces) {
-  async function fetchImpl(pieces) {
-    const url = LOOKUP_URL + '?perm=' + encodeURIComponent(piecesToNormalizedString(pieces));
-    const response = await fetch(url);
-    if (response.status !== 200) {
-      const error = await response.text();
-      throw new Error(`${error} (HTTP status ${response.status})`);
-    }
-    const obj = await response.json();
-    // Note: this only partially validates the response object.
-    if (typeof obj !== 'object' || typeof obj.status != 'string' || !Array.isArray(obj.successors)) {
-      throw new Error('Invalid response format.');
-    }
-    return obj;
-  }
-
-  if (!unreliableAnalysis) {
-    return fetchImpl(pieces);
-  }
-
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.25) {
-        reject(new Error('Fake error'));
-      }
-      resolve(fetchImpl(pieces));
-    }, Math.random() * 3000);
-  });
-}
-
-// Returns an object that represents the analysis of a game position.
-//
-// It can be in one of four states:
-//
-//   - Skipped (position was invalid, or game is over)
-//   - Loading (RPC started, but not yet completed)
-//   - Failed (error != null)
-//   - Succeeded (result != null)
-//
-class PositionAnalysis {
-  // Set to true if analysis was skipped because this position cannot be
-  // analyzed (either the game is over, or the position is invalid).
-  skipped = false
-
-  // If loading failed, this is an Error object describing the reason.
-  error = undefined;
-
-  // If loading succeeded, this contains the result as an object with two
-  // keys: "status" and "successors".
-  //
-  // "status" is the position status as a string (e.g. 'T' or 'L1').
-  //
-  // "successors" is a list of successors grouped by result status. Example:
-  // [{'status': 'T', moves: [['a1-b1]]}, {'status': 'L1', moves: [...]}, ...]
-  // Elements are ordered by decreasing status values (best first).
-  result = undefined;
-
-  // Note: callback is called only when the object is updated (i.e., it is
-  // never called if analysis is skipped).
-  constructor(pieces, callback) {
-    const {validity} = validatePieces(pieces);
-
-    if (validity === PiecesValidity.INVALID ||
-        validity === PiecesValidity.FINISHED) {
-      this.skipped = true;
-      return;
-    }
-
-    fetchPositionAnalysis(pieces)
-      .then(result => {
-        this.result = result;
-        if (callback) callback();
-      })
-      .catch(error => {
-        this.error = error;
-        if (callback) callback();
-      });
-  }
-
-  isLoading() {
-    return !this.skipped && this.error == null && this.result == null;
-  }
-
-  isLoaded() {
-    return !this.isLoading();
-  }
-}
 
 class Board extends React.Component {
   constructor(props) {
@@ -185,7 +87,7 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
   function handleChangePermutation() {
     const response = prompt('Permutation index or string:');
     if (response == null) return;
-    const [pieces, error] = parsePieces(response);
+    const [pieces, error] = parsePermutation(response);
     if (pieces != null) {
       onPiecesChange(pieces);
     } else {
@@ -235,7 +137,7 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
           Press the <em>Start game</em> button to start playing from the chosen position.
         </p>
         <h4>Permutation string</h4>
-        <code>{piecesToString(pieces)}</code>
+        <code>{formatPieces(pieces)}</code>
         <p className="buttons">
           <button onClick={handleChangePermutation}>Enter permutation</button>
           <button onClick={handleInvertColors}>Invert colors</button>
@@ -330,7 +232,7 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
   // moves may no longer be valid.
   React.useEffect(
     () => setSelectedFieldIndex(-1),
-    [piecesToString(pieces)]);
+    [formatPieces(pieces)]);
 
   function isSelectable(i) {
     if (isMoveTarget[i] || isPushTarget[i]) return true;
@@ -485,7 +387,7 @@ function StatusBar({text, moves, index}) {
 }
 
 // Returns a pair of [pieces, error] where exactly one element is set.
-function parsePieces(string) {
+function parsePermutation(string) {
   if (string.match(/^\d+$/)) {
     // Parse as permutation index.
     const index = Number(string);
@@ -493,47 +395,14 @@ function parsePieces(string) {
       return [undefined, "Permutation index out of range: " + string];
     }
     return [permToPieces(permAtIndex(index))];
-  } else if (string.match(/^[.oOPxXY]{26}$/)) {
-    function getPieceValue(i) {
-      if (i === '.') return NO_PIECE;
-      if (i === 'o') return RED_MOVER;
-      if (i === 'O') return RED_PUSHER;
-      if (i === 'P') return RED_ANCHOR;
-      if (i === 'x') return BLUE_MOVER;
-      if (i === 'X') return BLUE_PUSHER;
-      if (i === 'Y') return BLUE_ANCHOR;
-    }
-    const pieces = [...string].map(getPieceValue);
+  }
+
+  const pieces = parsePieces(string);
+  if (pieces != null) {
     return [pieces];
-  } else {
-    return [undefined, "Don't know how to parse: " + string];
   }
-}
 
-// Converts pieces to a 26-character permutation string.
-function piecesToString(pieces) {
-  function getChar(p) {
-    if (p === NO_PIECE)    return '.';
-    if (p === RED_MOVER)   return 'o';
-    if (p === RED_PUSHER)  return 'O';
-    if (p === RED_ANCHOR)  return 'P';
-    if (p === BLUE_MOVER)  return 'x';
-    if (p === BLUE_PUSHER) return 'X';
-    if (p === BLUE_ANCHOR) return 'Y';
-  }
-  return pieces.map(getChar).join('');
-}
-
-// Converts pieces to a 26-character permutation string, possibly inverting
-// the players so that red is the next player to move.
-function piecesToNormalizedString(pieces) {
-  let redAnchors = 0;
-  let blueAnchors = 0;
-  for (const piece of pieces) {
-    if (piece === RED_ANCHOR) ++redAnchors;
-    if (piece === BLUE_ANCHOR) ++blueAnchors;
-  }
-  return piecesToString(redAnchors > blueAnchors ? invertColors(pieces) : pieces);
+  return [undefined, "Don't know how to parse: " + string];
 }
 
 function SetUpComponent({initialPieces, onStart}) {

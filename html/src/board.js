@@ -132,6 +132,55 @@ export function piecesToPerm(pieces, nextPlayer) {
   return pieces.map(getPermValue);
 }
 
+// Converts pieces to a 26-character permutation string.
+//
+// If `normalize` is true, then the position is normalized so that the anchor
+// (if any) is on a blue piece. This loses information about which player is
+// which color.
+export function formatPieces(pieces, normalize) {
+  if (normalize === true) {
+    let redAnchors = 0;
+    let blueAnchors = 0;
+    for (const piece of pieces) {
+      if (piece === RED_ANCHOR) ++redAnchors;
+      if (piece === BLUE_ANCHOR) ++blueAnchors;
+    }
+    if (redAnchors > blueAnchors) {
+      pieces = invertColors(pieces);
+    }
+  }
+
+  function getChar(p) {
+    if (p === NO_PIECE)    return '.';
+    if (p === RED_MOVER)   return 'o';
+    if (p === RED_PUSHER)  return 'O';
+    if (p === RED_ANCHOR)  return 'P';
+    if (p === BLUE_MOVER)  return 'x';
+    if (p === BLUE_PUSHER) return 'X';
+    if (p === BLUE_ANCHOR) return 'Y';
+  }
+  return pieces.map(getChar).join('');
+}
+
+const PIECES_STRING_PATTERN = /^[.oOPxXY]{26}$/;
+
+// Parses a 26-character permutation string.
+export function parsePieces(string) {
+  if (!PIECES_STRING_PATTERN.test(string)) {
+    return undefined;
+  }
+  function getPieceValue(i) {
+    if (i === '.') return NO_PIECE;
+    if (i === 'o') return RED_MOVER;
+    if (i === 'O') return RED_PUSHER;
+    if (i === 'P') return RED_ANCHOR;
+    if (i === 'x') return BLUE_MOVER;
+    if (i === 'X') return BLUE_PUSHER;
+    if (i === 'Y') return BLUE_ANCHOR;
+  }
+  return [...string].map(getPieceValue);
+}
+
 // Validates the pieces represent a valid position on the board.
 //
 // Returns an object:
