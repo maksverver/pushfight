@@ -5,8 +5,8 @@ import {PositionAnalysis} from './analysis.js';
 import {generatePieceAnimations} from './animation.js';
 import {totalPerms, permAtIndex} from './perms.js';
 import {
-  H, W, DR, DC, FIELD_COUNT, FIELD_INDEX, getFieldIndex, FIELD_ROW, FIELD_COL,
-  PieceType, getPieceType, getPlayerColor, makePiece, replacePiece,
+  H, W, FIELD_COUNT, FIELD_INDEX, FIELD_ROW, FIELD_COL,
+  PieceType, getPieceType, getPlayerColor, replacePiece,
   INITIAL_PIECES, validatePieces, PiecesValidity,
   RED_PLAYER, BLUE_PLAYER, NO_PIECE,
   RED_MOVER, RED_PUSHER, RED_ANCHOR,
