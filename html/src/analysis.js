@@ -1,3 +1,7 @@
+// Implements the logic for fetching position analysis results from the server.
+//
+// See lookup-min-http-server.py for a description of the server API.
+
 import { validatePieces, PiecesValidity, formatPieces } from './board.js';
 
 // For development: make the RPC to analyze positions intentionally slow and unreliable.
