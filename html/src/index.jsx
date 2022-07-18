@@ -21,23 +21,103 @@ import {
   parseTurn, formatTurn,
 } from './moves.js';
 
+// For development: set to `true` to enable React strict mode.
+// https://reactjs.org/docs/strict-mode.html
 const reactStrictMode = true;
+
+// For development: make the RPC to analyze positions intentionally slow and unreliable.
+const unreliableAnalysis = false;
 
 const LOOKUP_URL = window.location.hostname === 'localhost' ? 'http://localhost:8003/' : 'lookup/';
 
-async function analyzePosition(pieces) {
-  const url = LOOKUP_URL + '?perm=' + encodeURIComponent(piecesToNormalizedString(pieces));
-  const response = await fetch(url);
-  if (response.status !== 200) {
-    const error = await response.text();
-    throw new Error(`${error} (HTTP status ${response.status})`);
+// Fetches the position analysis using LOOKUP_URL. Don't call this directly;
+// use PositionAnalysis instead.
+async function fetchPositionAnalysis(pieces) {
+  async function fetchImpl(pieces) {
+    const url = LOOKUP_URL + '?perm=' + encodeURIComponent(piecesToNormalizedString(pieces));
+    const response = await fetch(url);
+    if (response.status !== 200) {
+      const error = await response.text();
+      throw new Error(`${error} (HTTP status ${response.status})`);
+    }
+    const obj = await response.json();
+    // Note: this only partially validates the response object.
+    if (typeof obj !== 'object' || typeof obj.status != 'string' || !Array.isArray(obj.successors)) {
+      throw new Error('Invalid response format.');
+    }
+    return obj;
   }
-  const obj = await response.json();
-  // Note: this only partially validates the response object.
-  if (typeof obj !== 'object' || typeof obj.status != 'string' || !Array.isArray(obj.successors)) {
-    throw new Error('Invalid response format.');
+
+  if (!unreliableAnalysis) {
+    return fetchImpl(pieces);
   }
-  return obj;
+
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() < 0.25) {
+        reject(new Error('Fake error'));
+      }
+      resolve(fetchImpl(pieces));
+    }, Math.random() * 3000);
+  });
+}
+
+// Returns an object that represents the analysis of a game position.
+//
+// It can be in one of four states:
+//
+//   - Skipped (position was invalid, or game is over)
+//   - Loading (RPC started, but not yet completed)
+//   - Failed (error != null)
+//   - Succeeded (result != null)
+//
+class PositionAnalysis {
+  // Set to true if analysis was skipped because this position cannot be
+  // analyzed (either the game is over, or the position is invalid).
+  skipped = false
+
+  // If loading failed, this is an Error object describing the reason.
+  error = undefined;
+
+  // If loading succeeded, this contains the result as an object with two
+  // keys: "status" and "successors".
+  //
+  // "status" is the position status as a string (e.g. 'T' or 'L1').
+  //
+  // "successors" is a list of successors grouped by result status. Example:
+  // [{'status': 'T', moves: [['a1-b1]]}, {'status': 'L1', moves: [...]}, ...]
+  // Elements are ordered by decreasing status values (best first).
+  result = undefined;
+
+  // Note: callback is called only when the object is updated (i.e., it is
+  // never called if analysis is skipped).
+  constructor(pieces, callback) {
+    const {validity} = validatePieces(pieces);
+
+    if (validity === PiecesValidity.INVALID ||
+        validity === PiecesValidity.FINISHED) {
+      this.skipped = true;
+      return;
+    }
+
+    fetchPositionAnalysis(pieces)
+      .then(result => {
+        this.result = result;
+        if (callback) callback();
+      })
+      .catch(error => {
+        this.error = error;
+        if (callback) callback();
+      });
+  }
+
+  isLoading() {
+    return !this.skipped && this.error == null && this.result == null;
+  }
+
+  isLoaded() {
+    return !this.isLoading();
+  }
 }
 
 class Board extends React.Component {
@@ -70,7 +150,7 @@ class Board extends React.Component {
   }
 
   render() {
-    const {selectedFieldIndex, isSelectable, renderField, renderAnchor, onFieldClick} = this.props;
+    const {selectedFieldIndex, isSelectable, renderField, onFieldClick} = this.props;
     const fields = [];
     for (let i = 0; i < FIELD_COUNT; ++i) {
       const r = FIELD_ROW[i];
@@ -78,12 +158,11 @@ class Board extends React.Component {
       // Possible optimization: cache field click handlers to avoid unnecessary
       // updates (assuming Field is implemented as a PureComponent).
       fields.push(
-        <Field key={`${r},${c}`} r={r} c={c} i={i}
+        <Field key={`${r},${c}`} r={r} c={c}
             selectable={isSelectable(i)}
             selected={selectedFieldIndex === i}
             onClick={() => onFieldClick(i, r, c)}>
           {renderField(i, r, c)}
-          {renderAnchor(i, r, c)}
         </Field>
       );
     }
@@ -133,11 +212,12 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
   }
 
   function renderField(i) {
-    return <Piece piece={pieces[i]}/>;
-  }
-
-  function renderAnchor(i) {
-    return getPieceType(pieces[i]) === PieceType.ANCHOR && <Anchor/>;
+    return (
+      <React.Fragment>
+        <Piece piece={pieces[i]}/>
+        {getPieceType(pieces[i]) === PieceType.ANCHOR && <Anchor/>}
+      </React.Fragment>
+    );
   }
 
   return (
@@ -145,7 +225,6 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
       <Board
           isSelectable={() => true}
           renderField={renderField}
-          renderAnchor={renderAnchor}
           onFieldClick={handleFieldClick}>
         <PiecePalette fieldIndex={selectedFieldIndex} onSelect={handlePieceSelect} />
       </Board>
@@ -211,8 +290,12 @@ class PieceHolder extends React.PureComponent {
   }
 
   render() {
+    const style = {
+      zIndex: this.props.zIndex,
+      visibility: this.props.invisible ? 'hidden' : 'visible',
+    };
     return (
-      <div className="piece-holder" ref={this.ref} style={{zIndex: this.props.zIndex}}>
+      <div className="piece-holder" ref={this.ref} style={style}>
         {this.props.children}
       </div>
     );
@@ -261,6 +344,7 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
   }
 
   function renderField(i) {
+    const pushed = pieceAnimations.pushed;
     return (
       <React.Fragment>
         {isMoveTarget[i] && <div className="move-target"></div>}
@@ -268,15 +352,19 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
         <PieceHolder animation={pieceAnimations[i]} zIndex={1}>
           <Piece piece={pieces[i]}></Piece>
         </PieceHolder>
+        {
+          getPieceType(pieces[i]) === PieceType.ANCHOR &&
+            <PieceHolder animation={pieceAnimations.anchor} zIndex={2}>
+              <Anchor/>
+            </PieceHolder>
+        }
+        {
+          pushed != null && pushed.position === i &&
+            <PieceHolder animation={pushed} zIndex={1} invisible>
+              <Piece piece={pushed.piece}></Piece>
+            </PieceHolder>
+        }
       </React.Fragment>
-    );
-  }
-
-  function renderAnchor(i) {
-    return getPieceType(pieces[i]) === PieceType.ANCHOR && (
-      <PieceHolder animation={pieceAnimations.anchor} zIndex={2}>
-        <Anchor/>
-      </PieceHolder>
     );
   }
 
@@ -308,7 +396,6 @@ function PlayBoard({pieces, nextPlayer, moves, push, pieceAnimations, onMove, on
       selectedFieldIndex={selectedFieldIndex}
       isSelectable={isSelectable}
       renderField={renderField}
-      renderAnchor={renderAnchor}
       onFieldClick={handleFieldClick}/>
   );
 }
@@ -569,33 +656,12 @@ function SuccessorGroup({status, turns, expanded, onExpand, onSelectTurn}) {
   );
 }
 
-function Analysis({pieces, onSelectTurn}) {
-
-  const [error, setError] = React.useState(null);
-  const [successors, setSuccessors] = React.useState(null);
+function Analysis({validity, analysis, onSelectTurn, onRetryAnalysisClick}) {
   const [expandedStatus, setExpandedStatus] = React.useState(null);
 
-  const {validity} = validatePieces(pieces);
-
-  // Recalculate contents every time `pieces` changes.
-  React.useEffect(() => {
-    setError(null);
-    setSuccessors(null);
-    if (validity === PiecesValidity.INVALID) return;
-    if (validity === PiecesValidity.FINISHED) return;
-    // FIXME: there is a race condition here. In theory, it's possible for
-    // `pieces` to change while analyzePositions() is in progress.
-    analyzePosition(pieces).then(
-      (obj) => {
-        let successors = obj.successors;
-        if (successors.length === 0) {
-          // Fake entry for the case where there are no moves.
-          successors = [{status: obj.status, moves: []}];
-        }
-        setSuccessors(successors);
-      },
-      (error) => setError(String(error)));
-  }, [pieces]);
+  // Collapse expanded status when analysis changes, because it's a bit weird
+  // to keep the selection between different positions.
+  React.useEffect(() => setExpandedStatus(null), [analysis]);
 
   const toggleExpand = (status) =>
     setExpandedStatus((currentStatus) => status === currentStatus ? null : status);
@@ -607,11 +673,16 @@ function Analysis({pieces, onSelectTurn}) {
           <p>Position is invalid!</p> :
       validity === PiecesValidity.FINISHED ?
           <p>Game is finished.</p> :
-      error != null ?
-          <p>Analysis failed: {String(error)}</p> :
-      successors == null ?
-          <p>Loading...</p> :
-      successors.map(({status, moves}) =>
+      analysis.isLoading() ?
+          <p>Analysis is loading...</p> :
+      analysis.skipped ?
+          <p>Analysis was skipped.</p> :
+      analysis.error != null ?
+          <React.Fragment>
+            <p>Analysis failed: {analysis.error.message || String(analysis.error)}</p>
+            <p className="buttons"><button onClick={onRetryAnalysisClick}>Retry analysis</button></p>
+          </React.Fragment> :
+      analysis.result.successors.map(({status, moves}) =>
           <SuccessorGroup
               key={status}
               status={status}
@@ -645,13 +716,26 @@ function PlayPanel({renderTab}) {
 // This executes moves, similar to applyMoves(), but it also calculates
 // piece animations as a side effect.
 //
-// Returns a list [animations, pieces], where `animations` is an object
-// with field indexes as keys and animation objects as values, while `pieces`
-// is an updated copy of the pieces array after executing the given moves.
+// `moves` may be a single more or push, or one or more moves followed by
+// a push, but it cannot include multiple turns (i.e., there can be at most
+// one push, and it must happen at the end).
+//
+// Returns a list [animations, pieces].
+//
+// The animations object has three types of keys:
+//
+//    integers: animations for pieces at the given field positions (after the move!)
+//    "anchor": animation for the anchor
+//    "pushed": animation for the pushed piece.
+//
+// Each value is an object with "keyframes" and "options" as keys.
+// The "pushed" object additionally has "piece" and "position" fields,
+// indicating the piece type and the final position where it should be rendered.
 function generatePieceAnimations(oldPieces, ...moves) {
   const moveTime = 200; // milliseconds
   const pushTime = 800; // milliseconds
   const anchorMoveTime = 500; // milliseconds
+  const vanishTime = 800; // milliseconds
   const pieces = [...oldPieces];
 
   // Uses breath-first search to find a path from `src` to `dst` that only covers
@@ -689,8 +773,37 @@ function generatePieceAnimations(oldPieces, ...moves) {
     }
   }
 
-  // For each piece, we keep a list of [time, position] pairs.
+  // For each piece, we keep a list of [time, row, col] pairs.
   const movements = oldPieces.map(p => getPieceType(p) === PieceType.NONE ? null : []);
+
+  const animations = {};
+
+  // Converts a list of  [time, position] pairs to an animation object with keyframes/options.
+  // `m` must be nonempty! If `pushed` is true, the movements represent a piece that is pushed off
+  // the board, and an additional vanishing animation is appended.
+  function movementToAnimation(m, rEnd, cEnd, pushed) {
+    const [tStart] = m[0];
+    const [tEnd] = m[m.length - 1];
+    const duration = tEnd - tStart + (pushed ? vanishTime : 0);
+    const keyframes = [];
+    if (pushed) {
+      keyframes.push({offset: 0, visibility: 'visible'})
+    }
+    let lastLeft, lastTop;
+    for (let [t, r, c] of m) {
+      lastLeft = -100*(cEnd - c) + '%';
+      lastTop = -100*(rEnd - r) + '%'
+      keyframes.push({offset: (t - tStart) / duration, left: lastLeft, top: lastTop});
+    }
+    if (pushed) {
+      // Make pushed piece disappear by scaling it down to zero.
+      keyframes.push(
+          {offset: (tEnd - tStart) / duration, transform: 'scale(1)'},
+          {offset: 1, transform: 'scale(0)', left: lastLeft, top: lastTop});
+    }
+    const options = { delay: tStart, duration: duration, fill: 'backwards' };
+    return { keyframes, options };
+  }
 
   let oldAnchorIndex = -1;
   let newAnchorIndex = -1;
@@ -710,7 +823,9 @@ function generatePieceAnimations(oldPieces, ...moves) {
         pieces[a] = 0;
         movements[b] = movements[a];
         movements[a] = null;
-        movements[b].push([time, a], [time += moveTime, b]);
+        movements[b].push(
+            [time, FIELD_ROW[a], FIELD_COL[a]],
+            [time += moveTime, FIELD_ROW[b], FIELD_COL[b]]);
       }
     } else {
       // Push.
@@ -734,12 +849,17 @@ function generatePieceAnimations(oldPieces, ...moves) {
       pieces[i] = NO_PIECE;
       movements[i] = null;
       for (;;) {
-        const j = getFieldIndex(r += dr, c += dc);
+        const r2 = r + dr;
+        const c2 = c + dc;
+        const j = getFieldIndex(r2, c2);
+        m.push([time, r, c], [time + pushTime, r2, c2]);
         if (j === -1) {
-          // FIXME: this piece is pushed off the board! Also support this.
+          // This piece is pushed off the board!
+          animations.pushed = movementToAnimation(m, r, c, true);
+          animations.pushed.position = i;
+          animations.pushed.piece = p;
           break;
         }
-        m.push([time, i], [time + pushTime, j]);
         const q = pieces[j];
         const n = movements[j];
         if (getPieceType(p) === PieceType.ANCHOR) {
@@ -751,34 +871,21 @@ function generatePieceAnimations(oldPieces, ...moves) {
           // End of push.
           break;
         }
+        i = j;
+        r = r2;
+        c = c2;
         p = q;
         m = n;
-        i = j;
       }
       time += pushTime;
     }
   }
 
   // Calculate animations from movements.
-  const animations = {};
   for (let i = 0; i < FIELD_COUNT; ++i) {
     const m = movements[i];
     if (m == null || m.length === 0) continue;
-    const [tStart, iStart] = m[0];
-    const [tEnd, iEnd] = m[m.length - 1];
-    const duration = tEnd - tStart;
-    const rEnd = FIELD_ROW[iEnd];
-    const cEnd = FIELD_COL[iEnd];
-    const keyframes = [];
-    for (let [t, i] of m) {
-      keyframes.push({
-        offset: (t - tStart) / duration,
-        left: -100*(cEnd - FIELD_COL[i]) + '%',
-        top: -100*(rEnd - FIELD_ROW[i]) + '%',
-      });
-    }
-    const options = { delay: tStart, duration: duration, fill: 'backwards' };
-    animations[iEnd] = { keyframes, options };
+    animations[i] = movementToAnimation(m, FIELD_ROW[i], FIELD_COL[i]);
   }
 
   // Anchor animation.
@@ -804,6 +911,16 @@ class PlayComponent extends React.Component {
 
   constructor(props) {
     super(props);
+
+    this.handleMove = this.handleMove.bind(this);
+    this.handlePush = this.handlePush.bind(this);
+    this.handleUndo = this.handleUndo.bind(this);
+    this.handleRetryAnalysis = this.handleRetryAnalysis.bind(this);
+    this.handleAutoPlay = this.handleAutoPlay.bind(this);
+    this.handleExit = this.handleExit.bind(this);
+    this.playFullTurn = this.playFullTurn.bind(this);
+    this.forceUpdate = this.forceUpdate.bind(this);  // used below!
+
     this.state = {
       // Positions of pieces on the board.
       pieces: props.initialPieces,
@@ -819,19 +936,17 @@ class PlayComponent extends React.Component {
       // than `turns`. Used to implement undo.
       piecesAtTurnStart: [props.initialPieces],
 
+      // Position analysis at start of the turn. This has length 1 greater
+      // than `turns`. Used to implement analysis/auto play.
+      analysisAtTurnStart: [
+          new PositionAnalysis(props.initialPieces, this.forceUpdate)],
+
       // Animations to apply to pieces.
       // Keys are destination field indices, values are lists of objects
       // with two keys: `keyframes` and `options`, which are pased to
       // animate().
       pieceAnimations: {},
     };
-
-    this.handleMove = this.handleMove.bind(this);
-    this.handlePush = this.handlePush.bind(this);
-    this.handleUndo = this.handleUndo.bind(this);
-    this.handleAutoPlay = this.handleAutoPlay.bind(this);
-    this.handleExit = this.handleExit.bind(this);
-    this.playFullTurn = this.playFullTurn.bind(this);
   }
 
   handleMove(src, dst) {
@@ -857,7 +972,7 @@ class PlayComponent extends React.Component {
   }
 
   handlePush(src, dst) {
-    this.setState(({pieces, turns, moves, piecesAtTurnStart}) => {
+    this.setState(({pieces, turns, moves, piecesAtTurnStart, analysisAtTurnStart}) => {
       const push = Object.freeze([src, dst]);
       const [pieceAnimations, newPieces] = generatePieceAnimations(pieces, push);
       return {
@@ -865,14 +980,25 @@ class PlayComponent extends React.Component {
         turns: [...turns, [...moves, push]],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
+        analysisAtTurnStart: [
+            ...analysisAtTurnStart,
+            new PositionAnalysis(newPieces, this.forceUpdate)],
         pieceAnimations,
       };
     });
   }
 
+  handleRetryAnalysis() {
+    this.setState(({turns, piecesAtTurnStart, analysisAtTurnStart}) => ({
+      analysisAtTurnStart: [
+        ...analysisAtTurnStart.slice(0, turns.length),
+        new PositionAnalysis(piecesAtTurnStart[turns.length], this.forceUpdate)]
+    }));
+  }
+
   // Plays the given turn, overriding any partial moves played so far.
   playFullTurn(turn) {
-    this.setState(({turns, piecesAtTurnStart}) => {
+    this.setState(({turns, piecesAtTurnStart, analysisAtTurnStart}) => {
       const oldPieces = piecesAtTurnStart[turns.length];
       const [pieceAnimations, newPieces] = generatePieceAnimations(oldPieces, ...turn);
       return {
@@ -880,32 +1006,36 @@ class PlayComponent extends React.Component {
         turns: [...turns, turn],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
+        analysisAtTurnStart: [
+            ...analysisAtTurnStart,
+            new PositionAnalysis(newPieces, this.forceUpdate)],
         pieceAnimations,
       };
     });
   }
 
   handleAutoPlay() {
-    const {turns, piecesAtTurnStart} = this.state;
-    analyzePosition(piecesAtTurnStart[turns.length]).then(
-      (value) => {
-        if (value.successors.length === 0) {
-          alert('No moves available!');
-          return;
-        }
-        // Randomly pick one of the best moves to play.
-        const bestMoves = value.successors[0].moves;
-        const randomTurn = parseTurn(bestMoves[Math.floor(Math.random() * bestMoves.length)]);
-        this.playFullTurn(randomTurn);
-      },
-      (error) => {
-        alert('Failed to analyze position! ' + error);
-      }
-    );
+    const {turns, analysisAtTurnStart} = this.state;
+    const analysis = analysisAtTurnStart[turns.length];
+    if (analysis == null || analysis.isLoading()) {
+      // This shouldn't be possible, since the button is supposed
+      // to be disabled until analysis is loaded.
+      alert('Analysis not complete!');
+      return;
+    }
+    const successors = analysis.result.successors;
+    if (successors.length === 0) {
+      alert('No moves available!');
+      return;
+    }
+    // Randomly pick one of the best moves to play.
+    const bestMoves = successors[0].moves;
+    const randomTurn = parseTurn(bestMoves[Math.floor(Math.random() * bestMoves.length)]);
+    this.playFullTurn(randomTurn);
   }
 
   handleUndo() {
-    this.setState(({moves, turns, piecesAtTurnStart}) => {
+    this.setState(({moves, turns, piecesAtTurnStart, analysisAtTurnStart}) => {
       if (moves.length > 0) {
         // Undo only the moves in the current turn.
         return {
@@ -920,6 +1050,7 @@ class PlayComponent extends React.Component {
           pieces: piecesAtTurnStart[turns.length - 1],
           turns: turns.slice(0, turns.length - 1),
           piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length),
+          analysisAtTurnStart: analysisAtTurnStart.slice(0, turns.length),
           pieceAnimations: {},
         };
       }
@@ -934,7 +1065,7 @@ class PlayComponent extends React.Component {
   }
 
   render() {
-    const {pieces, turns, moves, piecesAtTurnStart, pieceAnimations} = this.state;
+    const {pieces, turns, moves, analysisAtTurnStart, pieceAnimations} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
     const isUnfinished = validity === PiecesValidity.STARTED || validity === PiecesValidity.IN_PROGRESS;
@@ -945,8 +1076,10 @@ class PlayComponent extends React.Component {
 
     const firstPlayer = this.props.initialPieces.includes(RED_ANCHOR) ? BLUE_PLAYER : RED_PLAYER;
 
-    // Can undo undo if there is a (partial) turn to be undo.
+    // Can undo if there is a (partial) turn to be undo.
     const undoEnabled = turns.length > 0 || moves.length > 0;
+
+    const analysis = analysisAtTurnStart[turns.length];
 
     // Note: this is an arrow function so we can use `this` inside to refer
     // to the PlayComponent instance.
@@ -958,7 +1091,7 @@ class PlayComponent extends React.Component {
               turns={turns}
               moves={isUnfinished ? moves : undefined}
               undoEnabled={undoEnabled}
-              playEnabled={isUnfinished}
+              playEnabled={analysis.result != null}
               onUndoClick={this.handleUndo}
               onPlayClick={this.handleAutoPlay}
               onExitClick={this.handleExit}
@@ -968,8 +1101,10 @@ class PlayComponent extends React.Component {
       if (tab === 'analysis') {
         return (
           <Analysis
-              pieces={piecesAtTurnStart[turns.length]}
+              validity={validity}
+              analysis={analysis}
               onSelectTurn={this.playFullTurn}
+              onRetryAnalysisClick={this.handleRetryAnalysis}
           />
         );
       }
