@@ -459,8 +459,9 @@ function SetUpComponent({initialPieces, onStart}) {
   );
 }
 
-function History({firstPlayer, turns, analyses, moves, strength,
-    undoEnabled, playEnabled, onUndoClick, onPlayClick, onExitClick, onChangeStrength}) {
+function History({firstPlayer, turns, analyses, moves, strength, aiPlayer,
+    undoEnabled, playEnabled, onUndoClick, onPlayClick, onExitClick, onChangeStrength,
+    onChangeAiPlayer}) {
   const [showAnalysis, setShowAnalysis] = React.useState(analyses != null);
 
   const turnStrings = turns.map(formatTurn);
@@ -521,6 +522,18 @@ function History({firstPlayer, turns, analyses, moves, strength,
               onChange={(e) => onChangeStrength(parseInt(e.target.value, 10))}/>
           {' ' + String(strength) + (strength === 0 ? ' (random)' :
               strength === ai.MAX_STRENGTH ? ' (perfect)' : '')}
+        </label>
+      </p>
+      <p>
+        <label>
+          {'AI automatically plays: '}
+          <select
+              value={['none', 'red', 'blue'][aiPlayer + 1]}
+              onChange={(e) => onChangeAiPlayer(['red', 'blue'].indexOf(e.target.value))}>
+            <option value="none">Never</option>
+            <option value="red">Red</option>
+            <option value="blue">Blue</option>
+          </select>
         </label>
       </p>
       <div className="buttons">
@@ -701,9 +714,10 @@ class PlayComponent extends React.Component {
     this.handlePush = this.handlePush.bind(this);
     this.handleUndo = this.handleUndo.bind(this);
     this.handleRetryAnalysis = this.handleRetryAnalysis.bind(this);
-    this.handleAutoPlay = this.handleAutoPlay.bind(this);
+    this.handlePlayAiMove = this.handlePlayAiMove.bind(this);
     this.handleExit = this.handleExit.bind(this);
     this.playFullTurn = this.playFullTurn.bind(this);
+    this.maybeAutoplayAiMove = this.maybeAutoplayAiMove.bind(this);
 
     this.state = {
       // Positions of pieces on the board.
@@ -733,7 +747,68 @@ class PlayComponent extends React.Component {
 
       // AI strength.
       strength: 5,
+
+      // AI player that plays automatically.
+      aiPlayer: -1,
+
+      // When set, AI does not autoplay. This is used to prevent autoplaying
+      // after undo.
+      preventAutoplay: false,
     };
+
+    this.lastPieceAnimations = null;
+    this.animationEndTime = 0;
+    this.aiTimeoutId = null;
+  }
+
+  componentDidUpdate() {
+    // Keep track of the end time for animations, so we can schedule an AI move
+    // right after the current piece animations end.
+    const now = Date.now();
+    if (this.state.pieceAnimations != this.lastPieceAnimations) {
+      this.lastPieceAnimations = this.state.pieceAnimations;
+      if (this.state.pieceAnimations?.duration != null) {
+        this.animationEndTime = Math.max(this.animationEndTime,
+          now + this.state.pieceAnimations?.duration);
+      }
+    }
+    // Delay before auto-playing.
+    const aiDelay = 1000;  // milliseconds
+    // Schedule an attempt to play as the AI.
+    if (this.aiTimeoutId != null) {
+      clearTimeout(this.aiTimeoutId);
+    }
+    this.aiTimeoutId = setTimeout(
+      this.maybeAutoplayAiMove,
+      Math.max(0, this.animationEndTime - now + aiDelay));
+  }
+
+  maybeAutoplayAiMove() {
+    const {turns, moves, analysisAtTurnStart, strength, aiPlayer, preventAutoplay} = this.state;
+
+    if (preventAutoplay) return;
+
+    const {validity, nextPlayer} = validatePieces(this.state.pieces);
+
+    // Check that it's my turn.
+    if (nextPlayer !== aiPlayer) return;
+
+    // Check that the position is in a playable state.
+    if (validity !== PiecesValidity.STARTED && validity !== PiecesValidity.IN_PROGRESS) return;
+
+    // Don't auto-play if the player has already started moving.
+    if (moves.length !== 0) return;
+
+    // Wait until analysis is available.
+    const analysis = analysisAtTurnStart[turns.length];
+    if (analysis?.result == null) return;
+
+    // Make sure there are successors available.
+    const successors = analysis.result.successors;
+    if (successors.length === 0) return;
+
+    // Randomly pick one of the best moves to play.
+    this.playFullTurn(parseTurn(ai.selectMove(strength, successors)));
   }
 
   handleMove(src, dst) {
@@ -771,6 +846,7 @@ class PlayComponent extends React.Component {
             ...analysisAtTurnStart,
             new PositionAnalysis(newPieces, this.forceUpdate)],
         pieceAnimations,
+        preventAutoplay: false,
       };
     });
   }
@@ -797,11 +873,12 @@ class PlayComponent extends React.Component {
             ...analysisAtTurnStart,
             new PositionAnalysis(newPieces, this.forceUpdate)],
         pieceAnimations,
+        preventAutoplay: false,
       };
     });
   }
 
-  handleAutoPlay() {
+  handlePlayAiMove() {
     const {turns, analysisAtTurnStart, strength} = this.state;
     const analysis = analysisAtTurnStart[turns.length];
     if (analysis == null || analysis.isLoading()) {
@@ -837,6 +914,7 @@ class PlayComponent extends React.Component {
           piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length),
           analysisAtTurnStart: analysisAtTurnStart.slice(0, turns.length),
           pieceAnimations: {},
+          preventAutoplay: true,
         };
       }
     });
@@ -851,7 +929,7 @@ class PlayComponent extends React.Component {
 
   render() {
     const {pieces, turns, moves, analysisAtTurnStart, piecesAtTurnStart,
-        pieceAnimations, strength} = this.state;
+        pieceAnimations, strength, aiPlayer} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
     const isUnfinished = validity === PiecesValidity.STARTED || validity === PiecesValidity.IN_PROGRESS;
@@ -878,12 +956,14 @@ class PlayComponent extends React.Component {
               moves={isUnfinished ? moves : undefined}
               analyses={analysisAtTurnStart}
               strength={strength}
+              aiPlayer={aiPlayer}
               undoEnabled={undoEnabled}
               playEnabled={analysis.result != null}
               onUndoClick={this.handleUndo}
-              onPlayClick={this.handleAutoPlay}
+              onPlayClick={this.handlePlayAiMove}
               onExitClick={this.handleExit}
               onChangeStrength={(strength) => this.setState({strength})}
+              onChangeAiPlayer={(aiPlayer) => this.setState({aiPlayer})}
             />
         );
       }

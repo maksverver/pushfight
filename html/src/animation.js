@@ -15,11 +15,12 @@ import {
 //
 // `pieces` is a copy of `oldPieces` with the moves applied.
 //
-// `animations` is an object with three types of keys:
+// `animations` is an object with several types of keys:
 //
 //    integers: animations for pieces at the given field positions (after the move!)
 //    "anchor": animation for the anchor
 //    "pushed": animation for the pushed piece.
+//    "duration": total animation duration (in milliseconds)
 //
 // Each value is an object with "keyframes" and "options" as keys.
 // The "pushed" object additionally has "piece" and "position" fields,
@@ -195,7 +196,10 @@ export function generatePieceAnimations(oldPieces, ...moves) {
     }
     const options = { delay: time, duration: anchorMoveTime, fill: 'backwards' };
     animations.anchor = { keyframes, options };
+    time += anchorMoveTime;
   }
+
+  animations.duration = time;
 
   return [animations, pieces];
 }
