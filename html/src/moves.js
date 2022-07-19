@@ -103,7 +103,6 @@ export function* generatePushes(pieces, player) {
 
 export function isValidPush(pieces, player, i, j) {
   for (const [k, l] of generatePushes(pieces, player)) {
-    console.log(i, j, k, l);
     if (i === k && j === l) return true;
   }
   return false;
@@ -119,17 +118,11 @@ export function validateTurn(oldPieces, player, turn) {
   let i;
   for (i = 0; i < turn.length - 1; ++i) {
     const move = turn[i];
-    if (!isValidMove(pieces, player, ...move)) {
-      console.log('!!', i);
-      return null;
-    }
+    if (!isValidMove(pieces, player, ...move)) return null;
     executeMoves(pieces, move);
   }
   const push = turn[i];
-  if (!isValidPush(pieces, player, ...push)) {
-    console.log('!!push');
-    return null;
-  }
+  if (!isValidPush(pieces, player, ...push)) return null;
   executeMoves(pieces, push);
   return pieces;
 }

@@ -893,33 +893,18 @@ function parseHistoryValue(string) {
   if (validity === PiecesValidity.INVALID) return undefined;
   const turns = [];
   const piecesAtTurnStart = [];
-console.log('##', parts.length);
   for (let i = 1; i < parts.length; ++i) {
-    console.log('##', i);
     const {validity, nextPlayer} = validatePieces(pieces);
-    if (validity === PiecesValidity.INVALID) {
-      console.log('a');
-      return undefined;
-    }
-    if (validity === PiecesValidity.FINISHED) {
-      console.log('b');
-      break;
-    }
+    if (validity === PiecesValidity.INVALID) return undefined;
+    if (validity === PiecesValidity.FINISHED) break;
     const turn = parseTurn(parts[i]);
-    if (turn == null) {
-      console.log('c');
-      return undefined;
-    }
+    if (turn == null) return undefined;
     const oldPieces = pieces;
     const newPieces = validateTurn(pieces, nextPlayer, turn);
-    if (newPieces == null) {
-      console.log('d');
-      break;
-    }
+    if (newPieces == null) break;
     turns.push(turn);
     piecesAtTurnStart.push(oldPieces);
     pieces = newPieces;
-    console.log('## here');
   }
   piecesAtTurnStart.push(pieces);
   return {turns, piecesAtTurnStart};
