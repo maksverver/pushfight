@@ -651,7 +651,7 @@ function UpdateUrlHash({pieces, turns}) {
     // hash fragment. In particular, they should not contain '&', '#' or '='.
     window.history.replaceState(null, '', '#history=' + stateString);
     return () => {
-      window.history.replaceState(null, '', '#' + oldHash);
+      window.history.replaceState(null, '', oldHash || '#');
     };
   }, [pieces, turns]);
   return null;
