@@ -241,7 +241,6 @@ adding to it.
   margin-left: 1em;
   padding: 0.5em 1em;
   width: 400px;
-  min-height: 600px;
   background: rgb(32, 32, 32);
   color: white;
 }
@@ -260,22 +259,24 @@ adding to it.
   font-weight: bold;
 }
 
+.ai,
+.ai-tab {
+  background: rgb(48, 24, 0);
+  color: white;
+}
+
+.ai {
+  padding: 0.5em 1.5em;
+}
+
 .history,
 .history-tab {
   background: rgb(32, 32, 32);
   color: white;
 }
 
-.analysis,
-.analysis-tab {
-  background: rgb(32, 32, 80);
-  color: white;
-}
-
 .history {
-  padding: 8px;
-  min-width: 400px;
-  min-height: 600px;
+  padding: 1em;
 }
 
 .history table thead th {
@@ -331,10 +332,19 @@ adding to it.
   color: #666;
 }
 
+.setup-panel, .ai, .history, .analysis {
+  min-width: 400px;
+  min-height: 400px;
+}
+
+.analysis,
+.analysis-tab {
+  background: rgb(32, 32, 80);
+  color: white;
+}
+
 .analysis {
   padding: 8px;
-  min-width: 400px;
-  min-height: 600px;
 }
 
 .analysis .group .header {

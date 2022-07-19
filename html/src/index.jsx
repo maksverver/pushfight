@@ -459,9 +459,35 @@ function SetUpComponent({initialPieces, onStart}) {
   );
 }
 
-function History({firstPlayer, turns, analyses, moves, strength, aiPlayer,
-    undoEnabled, playEnabled, onUndoClick, onPlayClick, onExitClick, onChangeStrength,
-    onChangeAiPlayer}) {
+function AI({visible, strength, aiPlayer, onChangeStrength, onChangeAiPlayer}) {
+  return (
+    <div className="ai" style={{display: visible ? undefined : 'none'}}>
+      <p>
+        <label>
+          {'AI Strength: '}
+          <input type="range" min={0} max={ai.MAX_STRENGTH} value={strength}
+              onChange={(e) => onChangeStrength(parseInt(e.target.value, 10))}/>
+          {' ' + String(strength) + (strength === 0 ? ' (random)' :
+              strength === ai.MAX_STRENGTH ? ' (perfect)' : '')}
+        </label>
+      </p>
+      <p>
+        <label>
+          {'AI automatically plays: '}
+          <select
+              value={['none', 'red', 'blue'][aiPlayer + 1]}
+              onChange={(e) => onChangeAiPlayer(['red', 'blue'].indexOf(e.target.value))}>
+            <option value="none">Never</option>
+            <option value="red">Red</option>
+            <option value="blue">Blue</option>
+          </select>
+        </label>
+      </p>
+    </div>
+  );
+}
+
+function History({visible, firstPlayer, turns, analyses, moves}) {
   const [showAnalysis, setShowAnalysis] = React.useState(analyses != null);
 
   const turnStrings = turns.map(formatTurn);
@@ -489,7 +515,7 @@ function History({firstPlayer, turns, analyses, moves, strength, aiPlayer,
   }
 
   return (
-    <div className="history">
+    <div className="history" style={{display: visible ? undefined : 'none'}}>
       <table>
         <thead>
           <tr>
@@ -500,7 +526,6 @@ function History({firstPlayer, turns, analyses, moves, strength, aiPlayer,
             <th className={["red", "blue"][1 - firstPlayer]}>
               {["Red", "Blue"][1 - firstPlayer]}
             </th>
-            <td></td>
           </tr>
         </thead>
         <tbody>{rows}</tbody>
@@ -515,38 +540,6 @@ function History({firstPlayer, turns, analyses, moves, strength, aiPlayer,
           Show analysis
         </label>
       </p>
-      <p>
-        <label>
-          {'AI Strength: '}
-          <input type="range" min={0} max={ai.MAX_STRENGTH} value={strength}
-              onChange={(e) => onChangeStrength(parseInt(e.target.value, 10))}/>
-          {' ' + String(strength) + (strength === 0 ? ' (random)' :
-              strength === ai.MAX_STRENGTH ? ' (perfect)' : '')}
-        </label>
-      </p>
-      <p>
-        <label>
-          {'AI automatically plays: '}
-          <select
-              value={['none', 'red', 'blue'][aiPlayer + 1]}
-              onChange={(e) => onChangeAiPlayer(['red', 'blue'].indexOf(e.target.value))}>
-            <option value="none">Never</option>
-            <option value="red">Red</option>
-            <option value="blue">Blue</option>
-          </select>
-        </label>
-      </p>
-      <div className="buttons">
-        <button disabled={!undoEnabled} onClick={onUndoClick}>
-          Undo turn
-        </button>
-        <button onClick={onExitClick}>
-          Return to setup
-        </button>
-        <button disabled={!playEnabled} onClick={onPlayClick}>
-          Play AI Move
-        </button>
-      </div>
     </div>
   );
 }
@@ -625,7 +618,7 @@ function SuccessorGroup({status, turns, expanded, onExpand, onSelectTurn}) {
   );
 }
 
-function Analysis({validity, analysis, onSelectTurn, onRetryAnalysisClick}) {
+function Analysis({visible, validity, analysis, onSelectTurn, onRetryAnalysisClick}) {
   const [expandedStatus, setExpandedStatus] = React.useState(null);
 
   // Collapse expanded status when analysis changes, because it's a bit weird
@@ -636,7 +629,7 @@ function Analysis({validity, analysis, onSelectTurn, onRetryAnalysisClick}) {
     setExpandedStatus((currentStatus) => status === currentStatus ? null : status);
 
   return (
-    <div className="analysis">
+    <div className="analysis" style={{display: visible ? undefined : 'none'}}>
     {
       validity === PiecesValidity.INVALID ?
           <p>Position is invalid!</p> :
@@ -666,18 +659,23 @@ function Analysis({validity, analysis, onSelectTurn, onRetryAnalysisClick}) {
 }
 
 // Side panel that contains the move history and position analysis tabs.
-function PlayPanel({renderTab}) {
-  const [selectedTab, setSelectedTab] = React.useState('history');
+function PlayPanel({renderTab, children}) {
+  const [selectedTab, setSelectedTab] = React.useState('ai');
 
   return (
     <div className="tab-panel side-panel">
-      <div className="tabs">
-        <div className="tab clickable history-tab"
-            onClick={() => setSelectedTab('history')}>Moves</div>
-        <div className="tab clickable analysis-tab"
-            onClick={() => setSelectedTab('analysis')}>Analysis</div>
+      <div>
+        <div className="tabs">
+          <div className="tab clickable ai-tab"
+              onClick={() => setSelectedTab('ai')}>AI</div>
+          <div className="tab clickable history-tab"
+              onClick={() => setSelectedTab('history')}>Move history</div>
+          <div className="tab clickable analysis-tab"
+              onClick={() => setSelectedTab('analysis')}>Analysis</div>
+        </div>
+        {renderTab(selectedTab)}
       </div>
-      {renderTab(selectedTab)}
+      {children}
     </div>
   );
 }
@@ -947,51 +945,60 @@ class PlayComponent extends React.Component {
 
     // Note: this is an arrow function so we can use `this` inside to refer
     // to the PlayComponent instance.
-    const renderTab = (tab) => {
-      if (tab === 'history') {
-        return (
-          <History
-              firstPlayer={firstPlayer}
-              turns={turns}
-              moves={isUnfinished ? moves : undefined}
-              analyses={analysisAtTurnStart}
-              strength={strength}
-              aiPlayer={aiPlayer}
-              undoEnabled={undoEnabled}
-              playEnabled={analysis.result != null}
-              onUndoClick={this.handleUndo}
-              onPlayClick={this.handlePlayAiMove}
-              onExitClick={this.handleExit}
-              onChangeStrength={(strength) => this.setState({strength})}
-              onChangeAiPlayer={(aiPlayer) => this.setState({aiPlayer})}
-            />
-        );
-      }
-      if (tab === 'analysis') {
-        return (
-          <Analysis
-              validity={validity}
-              analysis={analysis}
-              onSelectTurn={this.playFullTurn}
-              onRetryAnalysisClick={this.handleRetryAnalysis}
-          />
-        );
-      }
-    }
+    const renderTab = (tab) => (
+      // Note: components are made invisible rather than removed so that they
+      // don't lose their state when the user switches between tabs.
+      <React.Fragment>
+        <AI
+            visible={tab === 'ai'}
+            strength={strength}
+            aiPlayer={aiPlayer}
+            onChangeStrength={(strength) => this.setState({strength})}
+            onChangeAiPlayer={(aiPlayer) => this.setState({aiPlayer})}
+        />
+        <History
+          visible={tab === 'history'}
+          firstPlayer={firstPlayer}
+          turns={turns}
+          moves={isUnfinished ? moves : undefined}
+          analyses={analysisAtTurnStart}
+        />
+        <Analysis
+          visible={tab === 'analysis'}
+          validity={validity}
+          analysis={analysis}
+          onSelectTurn={this.playFullTurn}
+          onRetryAnalysisClick={this.handleRetryAnalysis}
+        />
+      </React.Fragment>
+    );
 
     return (
       <React.Fragment>
         <StatusBar text={statusMessage} moves={moves} index={index} />
         <div className="board-holder">
           <PlayBoard
-            pieces={pieces}
-            nextPlayer={nextPlayer}
-            moves={moves}
-            push={null}
-            onMove={this.handleMove}
-            onPush={this.handlePush}
-            pieceAnimations={pieceAnimations}/>
-          <PlayPanel renderTab={renderTab}/>
+              pieces={pieces}
+              nextPlayer={nextPlayer}
+              moves={moves}
+              push={null}
+              onMove={this.handleMove}
+              onPush={this.handlePush}
+              pieceAnimations={pieceAnimations}/>
+          <PlayPanel
+              renderTab={renderTab}>
+            <div className="buttons">
+              <button disabled={!undoEnabled} onClick={this.handleUndo}>
+                Undo turn
+              </button>
+              <button disabled={analysis.result == null} onClick={this.handlePlayAiMove}>
+                Play AI Move
+              </button>
+              <button onClick={this.handleExit}>
+                Return to setup
+              </button>
+            </div>
+          </PlayPanel>
         </div>
         <UpdateUrlHash pieces={piecesAtTurnStart[0]} turns={turns}/>
       </React.Fragment>
