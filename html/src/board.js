@@ -76,8 +76,8 @@ export const EMPTY_PIECES = Object.freeze([
 
 export const INITIAL_PIECES = Object.freeze([
           0, 2, 6, 0, 0,
-    0, 0, 0, 1, 5, 6, 0, 0,
-    0, 0, 2, 1, 5, 0, 0, 0,
+    0, 0, 0, 1, 6, 5, 0, 0,
+    0, 0, 1, 2, 5, 0, 0, 0,
        0, 0, 2, 6, 0,
 ]);
 
