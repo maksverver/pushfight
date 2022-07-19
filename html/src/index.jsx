@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from 'react-dom/client';
 
+import * as ai from './ai.js';
 import {PositionAnalysis} from './analysis.js';
 import {generatePieceAnimations} from './animation.js';
 import {totalPerms, permAtIndex} from './perms.js';
@@ -432,8 +433,8 @@ function SetUpComponent({initialPieces, onStart}) {
   );
 }
 
-function History({firstPlayer, turns, analyses, moves, undoEnabled, playEnabled,
-    onUndoClick, onPlayClick, onExitClick}) {
+function History({firstPlayer, turns, analyses, moves, strength,
+    undoEnabled, playEnabled, onUndoClick, onPlayClick, onExitClick, onChangeStrength}) {
   const [showAnalysis, setShowAnalysis] = React.useState(analyses != null);
 
   const turnStrings = turns.map(formatTurn);
@@ -487,17 +488,24 @@ function History({firstPlayer, turns, analyses, moves, undoEnabled, playEnabled,
           Show analysis
         </label>
       </p>
+      <p>
+        <label>
+          {'AI Strength: '}
+          <input type="range" min={0} max={ai.MAX_STRENGTH} value={strength}
+              onChange={(e) => onChangeStrength(parseInt(e.target.value, 10))}/>
+          {' ' + String(strength) + (strength === 0 ? ' (random)' :
+              strength === ai.MAX_STRENGTH ? ' (perfect)' : '')}
+        </label>
+      </p>
       <div className="buttons">
-        <button title="Undos the last turn"
-            disabled={!undoEnabled} onClick={onUndoClick}>
+        <button disabled={!undoEnabled} onClick={onUndoClick}>
           Undo turn
-        </button>
-        <button title="Automatically plays an optimal move"
-            disabled={!playEnabled} onClick={onPlayClick}>
-          Play best
         </button>
         <button onClick={onExitClick}>
           Return to setup
+        </button>
+        <button disabled={!playEnabled} onClick={onPlayClick}>
+          Play AI Move
         </button>
       </div>
     </div>
@@ -696,6 +704,9 @@ class PlayComponent extends React.Component {
       // with two keys: `keyframes` and `options`, which are pased to
       // animate().
       pieceAnimations: {},
+
+      // AI strength.
+      strength: 5,
     };
   }
 
@@ -765,7 +776,7 @@ class PlayComponent extends React.Component {
   }
 
   handleAutoPlay() {
-    const {turns, analysisAtTurnStart} = this.state;
+    const {turns, analysisAtTurnStart, strength} = this.state;
     const analysis = analysisAtTurnStart[turns.length];
     if (analysis == null || analysis.isLoading()) {
       // This shouldn't be possible, since the button is supposed
@@ -779,9 +790,7 @@ class PlayComponent extends React.Component {
       return;
     }
     // Randomly pick one of the best moves to play.
-    const bestMoves = successors[0].moves;
-    const randomTurn = parseTurn(bestMoves[Math.floor(Math.random() * bestMoves.length)]);
-    this.playFullTurn(randomTurn);
+    this.playFullTurn(parseTurn(ai.selectMove(strength, successors)));
   }
 
   handleUndo() {
@@ -815,7 +824,8 @@ class PlayComponent extends React.Component {
   }
 
   render() {
-    const {pieces, turns, moves, analysisAtTurnStart, piecesAtTurnStart, pieceAnimations} = this.state;
+    const {pieces, turns, moves, analysisAtTurnStart, piecesAtTurnStart,
+        pieceAnimations, strength} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
     const isUnfinished = validity === PiecesValidity.STARTED || validity === PiecesValidity.IN_PROGRESS;
@@ -841,11 +851,13 @@ class PlayComponent extends React.Component {
               turns={turns}
               moves={isUnfinished ? moves : undefined}
               analyses={analysisAtTurnStart}
+              strength={strength}
               undoEnabled={undoEnabled}
               playEnabled={analysis.result != null}
               onUndoClick={this.handleUndo}
               onPlayClick={this.handleAutoPlay}
               onExitClick={this.handleExit}
+              onChangeStrength={(strength) => this.setState({strength})}
             />
         );
       }

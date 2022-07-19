@@ -98,3 +98,18 @@ export class PositionAnalysis {
     return !this.isLoading();
   }
 }
+
+// Parses a status string into a sign and magnitude.
+//
+// Examples:
+//
+//   parseStatus('W7') => [ 1, 7]
+//   parseStatus('L0') => [-1, 0]
+//   parseStatus('T')  => [ 0, 0]
+//
+export function parseStatus(string) {
+  if (string[0] === 'W') return [+1, parseInt(string.substring(1), 10)];
+  if (string[0] === 'L') return [-1, parseInt(string.substring(1), 10)];
+  if (string === 'T') return [0, 0];
+  return undefined;
+}
