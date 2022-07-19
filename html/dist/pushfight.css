@@ -320,6 +320,16 @@ adding to it.
   background: rgb(224, 128, 0);
 }
 
+.history .good-move {
+  font-weight: bold;
+  color: orange;
+}
+
+.history .bad-move {
+  font-weight: bold;
+  color: red;
+}
+
 .side-panel button {
   background: #333;
   color: white;

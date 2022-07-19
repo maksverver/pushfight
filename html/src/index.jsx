@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from 'react-dom/client';
 
 import * as ai from './ai.js';
-import {PositionAnalysis} from './analysis.js';
+import {PositionAnalysis, parseStatus} from './analysis.js';
 import {generatePieceAnimations} from './animation.js';
 import {totalPerms, permAtIndex} from './perms.js';
 import {getRandomElement, shuffle} from './random.js';
@@ -495,21 +495,21 @@ function History({visible, firstPlayer, turns, analyses, moves}) {
     turnStrings.push(formatTurn(moves) + '...');
   }
 
+  const renderMove = (i) =>
+    <Move
+      label={turnStrings[i]}
+      analysis={showAnalysis ? analyses[i] : null}
+      prevAnalysis={showAnalysis && i > 0 ? analyses[i - 1] : null}
+      nextAnalysis={showAnalysis && i + 1 < analyses.length ? analyses[i + 1] : null}
+    />
+
   const rows = [];
   for (let row = 0; 2*row < turnStrings.length; ++row) {
-
     rows.push(
       <tr key={row}>
         <th>{row + 1}.</th>
-        <td>
-          <Move label={turnStrings[2*row]}
-              analysis={showAnalysis ? analyses[2*row] : null}/>
-        </td>
-        <td>
-          {2*row + 1 < turnStrings.length &&
-            <Move label={turnStrings[2*row + 1]}
-                analysis={showAnalysis ? analyses[2*row + 1] : null}/>}
-        </td>
+        <td>{renderMove(2*row)}</td>
+        <td>{2*row + 1 < turnStrings.length && renderMove(2*row + 1)}</td>
       </tr>
     );
   }
@@ -545,11 +545,25 @@ function History({visible, firstPlayer, turns, analyses, moves}) {
 }
 
 // Renders a move in the history panel (optionally with analysis).
-function Move({label, analysis}) {
+function Move({label, analysis, prevAnalysis, nextAnalysis}) {
+  // A bad move is one that turns a won/tied position into a loss.
+  // (We currently don't consider turning a win into a tie a bad move, because
+  // some of these are extremely obscure; e.g. missing a win-in-25 would not be
+  // a bad move.)
+  let badMove =
+      analysis?.result?.status && parseStatus(analysis.result.status)[0] >= 0 &&
+      nextAnalysis?.result?.status && parseStatus(nextAnalysis.result.status)[0] > 0;
+  // A good move is one that preserves a win after the opponent made a bad move.
+  // i.e., it is capitalizing on the opponent's mistake.
+  let goodMove =
+      prevAnalysis?.result?.status && parseStatus(prevAnalysis.result.status)[0] >= 0 &&
+      nextAnalysis?.result?.status && parseStatus(nextAnalysis.result.status)[0] < 0;
   return (
     <div>
       <AnalysisChip analysis={analysis}/>
       {label}
+      {goodMove && <span className="good-move" title="Good move">!</span>}
+      {badMove && <span className="bad-move" title="Bad move">?</span>}
     </div>
   );
 }
