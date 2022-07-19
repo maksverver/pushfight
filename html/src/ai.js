@@ -1,6 +1,7 @@
 // Implements AI game play with a simulated depth-limited alpha-beta search.
 
 import {parseStatus} from './analysis.js';
+import {getRandomElement} from './random.js';
 
 // Strength settings vary from 0 (completely random) to 15 (perfect play).
 export const MAX_STRENGTH = 15;
@@ -72,6 +73,5 @@ function selectCandidates(strength, successors) {
 export function selectMove(strength, successors) {
   if (successors.length === 0) return undefined;
   const candidates = selectCandidates(strength, successors);
-  const randomMove = candidates[Math.floor(Math.random() * candidates.length)];
-  return randomMove;
+  return getRandomElement(candidates);
 }

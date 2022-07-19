@@ -5,10 +5,11 @@ import * as ai from './ai.js';
 import {PositionAnalysis} from './analysis.js';
 import {generatePieceAnimations} from './animation.js';
 import {totalPerms, permAtIndex} from './perms.js';
+import {getRandomElement, shuffle} from './random.js';
 import {
   H, W, FIELD_COUNT, FIELD_INDEX, FIELD_ROW, FIELD_COL,
   PieceType, getPieceType, getPlayerColor, replacePiece,
-  INITIAL_PIECES, validatePieces, PiecesValidity,
+  EMPTY_PIECES, INITIAL_PIECES, validatePieces, PiecesValidity,
   RED_PLAYER, BLUE_PLAYER, NO_PIECE,
   RED_MOVER, RED_PUSHER, RED_ANCHOR,
   BLUE_MOVER, BLUE_PUSHER, BLUE_ANCHOR,
@@ -82,6 +83,21 @@ class Board extends React.Component {
   }
 }
 
+function generateRandomStartingPosition() {
+  // For a starting position, we'll place four pieces against the starting
+  // line, and a final piece in one of the two middle rows in the second column.
+  const pieces = [...EMPTY_PIECES];  // copy
+  const redFields = [1, 8, 16, 23].concat(getRandomElement([7, 15]));
+  const blueFields = [2, 9, 17, 24].concat(getRandomElement([10, 18]));
+  shuffle(redFields);
+  shuffle(blueFields);
+  for (let i = 0; i < 5; ++i) {
+    pieces[redFields[i]] = i < 2 ? RED_MOVER : RED_PUSHER;
+    pieces[blueFields[i]] = i < 2 ? BLUE_MOVER : BLUE_PUSHER;
+  }
+  return pieces;
+}
+
 // Version of the board used during setup.
 function SetupBoard({pieces, onPiecesChange, onStart}) {
   const [selectedFieldIndex, setSelectedFieldIndex] = React.useState(-1);
@@ -99,6 +115,14 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
 
   function handleInvertColors() {
     onPiecesChange(invertColors(pieces));
+  }
+
+  function handleClear() {
+    onPiecesChange(EMPTY_PIECES);
+  }
+
+  function handleRandomStart() {
+    onPiecesChange(generateRandomStartingPosition());
   }
 
   function handleRandomize() {
@@ -141,9 +165,11 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
         <h4>Permutation string</h4>
         <code>{formatPieces(pieces)}</code>
         <p className="buttons">
-          <button onClick={handleChangePermutation}>Enter permutation</button>
+          <button onClick={handleClear}>Clear board</button>
+          <button onClick={handleRandomStart}>Random starting position</button>
+          <button onClick={handleRandomize}>Random position</button>
           <button onClick={handleInvertColors}>Invert colors</button>
-          <button onClick={handleRandomize}>Randomize</button>
+          <button onClick={handleChangePermutation}>Enter permutation</button>
           <button disabled={onStart == null} onClick={onStart}>Start game</button>
         </p>
       </div>
