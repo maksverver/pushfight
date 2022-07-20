@@ -716,6 +716,17 @@ function formatState(pieces, turns) {
   return string;
 }
 
+function updateRedoTurns(redoTurns, turn) {
+  if (redoTurns.length === 0) return redoTurns;
+  if (formatTurn(redoTurns[0]) === formatTurn(turn)) {
+    // Next turn matches the first in redoTurns. Keep the rest.
+    return redoTurns.slice(1);
+  } else {
+    // Next turn doesn't match. Clear redoTurns.
+    return [];
+  }
+}
+
 class PlayComponent extends React.Component {
 
   constructor(props) {
@@ -725,6 +736,7 @@ class PlayComponent extends React.Component {
     this.handleMove = this.handleMove.bind(this);
     this.handlePush = this.handlePush.bind(this);
     this.handleUndo = this.handleUndo.bind(this);
+    this.handleRedo = this.handleRedo.bind(this);
     this.handleRetryAnalysis = this.handleRetryAnalysis.bind(this);
     this.handlePlayAiMove = this.handlePlayAiMove.bind(this);
     this.handleExit = this.handleExit.bind(this);
@@ -750,6 +762,9 @@ class PlayComponent extends React.Component {
       // than `turns`. Used to implement analysis/auto play.
       analysisAtTurnStart: props.initialPiecesAtTurnStart.map(pieces =>
           new PositionAnalysis(pieces, this.forceUpdate)),
+
+      // List of turns available for redo. These are populated by undoTurn().
+      redoTurns: [],
 
       // Animations to apply to pieces.
       // Keys are destination field indices, values are lists of objects
@@ -846,17 +861,19 @@ class PlayComponent extends React.Component {
   }
 
   handlePush(src, dst) {
-    this.setState(({pieces, turns, moves, piecesAtTurnStart, analysisAtTurnStart}) => {
+    this.setState(({pieces, turns, moves, piecesAtTurnStart, analysisAtTurnStart, redoTurns}) => {
       const push = Object.freeze([src, dst]);
+      const turn = [...moves, push];
       const [pieceAnimations, newPieces] = generatePieceAnimations(pieces, push);
       return {
         pieces: Object.freeze(newPieces),
-        turns: [...turns, [...moves, push]],
+        turns: [...turns, turn],
         moves: [],
         piecesAtTurnStart: [...piecesAtTurnStart, newPieces],
         analysisAtTurnStart: [
             ...analysisAtTurnStart,
             new PositionAnalysis(newPieces, this.forceUpdate)],
+        redoTurns: updateRedoTurns(redoTurns, turn),
         pieceAnimations,
         preventAutoplay: false,
       };
@@ -873,7 +890,7 @@ class PlayComponent extends React.Component {
 
   // Plays the given turn, overriding any partial moves played so far.
   playFullTurn(turn) {
-    this.setState(({turns, piecesAtTurnStart, analysisAtTurnStart}) => {
+    this.setState(({turns, piecesAtTurnStart, analysisAtTurnStart, redoTurns}) => {
       const oldPieces = piecesAtTurnStart[turns.length];
       const [pieceAnimations, newPieces] = generatePieceAnimations(oldPieces, ...turn);
       return {
@@ -884,6 +901,7 @@ class PlayComponent extends React.Component {
         analysisAtTurnStart: [
             ...analysisAtTurnStart,
             new PositionAnalysis(newPieces, this.forceUpdate)],
+        redoTurns: updateRedoTurns(redoTurns, turn),
         pieceAnimations,
         preventAutoplay: false,
       };
@@ -909,7 +927,7 @@ class PlayComponent extends React.Component {
   }
 
   handleUndo() {
-    this.setState(({moves, turns, piecesAtTurnStart, analysisAtTurnStart}) => {
+    this.setState(({moves, turns, piecesAtTurnStart, analysisAtTurnStart, redoTurns}) => {
       if (moves.length > 0) {
         // Undo only the moves in the current turn.
         return {
@@ -927,9 +945,16 @@ class PlayComponent extends React.Component {
           analysisAtTurnStart: analysisAtTurnStart.slice(0, turns.length),
           pieceAnimations: {},
           preventAutoplay: true,
+          redoTurns: [turns[turns.length - 1], ...redoTurns],
         };
       }
     });
+  }
+
+  handleRedo() {
+    if (this.state.redoTurns.length > 0) {
+      this.playFullTurn(this.state.redoTurns[0]);
+    }
   }
 
   handleExit() {
@@ -940,7 +965,7 @@ class PlayComponent extends React.Component {
   }
 
   render() {
-    const {pieces, turns, moves, analysisAtTurnStart, piecesAtTurnStart,
+    const {pieces, turns, moves, redoTurns, analysisAtTurnStart, piecesAtTurnStart,
         pieceAnimations, strength, aiPlayer} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
@@ -954,6 +979,7 @@ class PlayComponent extends React.Component {
 
     // Can undo if there is a (partial) turn to be undo.
     const undoEnabled = turns.length > 0 || moves.length > 0;
+    const redoEnabled = redoTurns.length > 0;
 
     const analysis = analysisAtTurnStart[turns.length];
 
@@ -1004,6 +1030,9 @@ class PlayComponent extends React.Component {
             <div className="buttons">
               <button disabled={!undoEnabled} onClick={this.handleUndo}>
                 Undo turn
+              </button>
+              <button disabled={!redoEnabled} onClick={this.handleRedo}>
+                Redo turn
               </button>
               <button disabled={analysis.result == null} onClick={this.handlePlayAiMove}>
                 Play AI Move
