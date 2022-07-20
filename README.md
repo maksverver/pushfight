@@ -436,9 +436,22 @@ need to know exactly how many phases there are, since the number of phases
 corresponds with the maximum number of turns leading to a win.
 
 
-## Results
+## Process and results
 
-### Summary
+
+## Solvers used
+
+  - Phase -1: [solve-lost.cc](solve-lost.cc)
+  - Phase 0: [solve-r0.cc](solve-r0.cc)
+  - Phase 1: [solve-r1.cc](solve-r1.cc)
+  - Phase 2: [backpropagate-losses.cc](backpropagate-losses.cc)
+  - Phase 3—8: [solve-rN.cc](solve-rN.cc) (odd numbered phases)
+    and [backpropagate2.cc](backpropagate2.cc) (even numbered phases)
+  - Phase 10—58: [solve2.cc](solve2.cc) (solves two consecutive phases at a time)
+  - Phase 60—98: [solve3.cc](solve3.cc)
+
+
+## Summary of results by phase
 
 The table below shows how many positions were classified during each phase of the computation.
 
@@ -500,6 +513,9 @@ The table below shows how many positions were classified during each phase of th
 |    96 |  16,442,465,774 | 15,463,956,176 | 369,660,744,050 |          1,938 |             170 |
 |    98 |  16,442,465,774 | 15,463,956,176 | 369,660,744,050 |              0 |               0 |
 
+
+## Description of initial phases
+
 ### Immediately losing positions (phase -1)
 
 If a player cannot end their turn with a push, he or she will lose the game.
@@ -525,6 +541,7 @@ in a real game. The red player would never let their pieces get fenced in like
 this, and even if he would, the blue player would be able to win earlier by
 pushing a piece off the board, instead of waiting for red to lose on his turn.
 
+
 ### Immediately winning positions (phase 0)
 
 The results from phase 0 ([r0-bitcount.txt](metadata/r0-bitcount.txt)) show that
@@ -535,6 +552,7 @@ only about a sixth of the positions remain to be processed in phase 1.
 Most of these positions are really trivial, of course. Example:
 
 ![Immediately won position 1](images/immediate-win-1.gif)
+
 
 ### Loss in 1 (phase 1)
 
@@ -553,6 +571,7 @@ Most of these positions are still very simple. For example:
 
 Here red (to move) can save the piece at *a1* or the piece at *f1*, but
 not both, so blue will be able to win in the next turn.
+
 
 ### Win in 2 (phase 2)
 
