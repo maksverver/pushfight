@@ -800,7 +800,7 @@ class PlayComponent extends React.Component {
       }
     }
     // Delay before auto-playing.
-    const aiDelay = 1000;  // milliseconds
+    const aiDelay = 500;  // milliseconds
     // Schedule an attempt to play as the AI.
     if (this.aiTimeoutId != null) {
       clearTimeout(this.aiTimeoutId);
