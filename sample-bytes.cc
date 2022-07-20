@@ -11,6 +11,11 @@
 // This can be used with merged.bin or minimized.bin to find examples of
 // positions that are solvable in a certain amount of moves. For example, the
 // offsets of byte 4 represent positions that are won-in-2.
+//
+// See also:
+//
+//   - results/merged-samples.txt
+//   - results/minimized-samples.txt
 
 #include <array>
 #include <algorithm>
