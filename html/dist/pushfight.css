@@ -344,7 +344,6 @@ adding to it.
 
 .setup-panel, .ai, .history, .analysis {
   min-width: 400px;
-  min-height: 400px;
 }
 
 .analysis,
