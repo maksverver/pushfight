@@ -99,7 +99,7 @@ consists of only 26 squares, with 10 total pieces (5 for each player). Although
 it's possible to push a piece off the board, this immediately ends the game,
 so in any intermediate position all 10 pieces will be present.
 
-If we ignore the anchor for a moment, that means all positions can be 
+If we ignore the anchor for a moment, that means all positions can be
 represented as permutations of a 26-character string that consists of
 16 `.` (empty spaces), 2 `o`s, 3 `O`s, 2 `x`s, and 3 `X`s. The total number
 of permutations is:
@@ -209,7 +209,7 @@ For details, see the functions `MinIndexOf()` and `PermAtMinIndex()` in
 
 To solve the game, we need, at a minimum, to decide for each position if it's
 winning, losing, or tying for the next player. Ideally, we would also like to
-record either a winning move or the number of turns left until a win/loss 
+record either a winning move or the number of turns left until a win/loss
 occurs, so we can enumerate the different options.
 
 Note that a position is tying if neither player can force a win. In that case,
@@ -294,7 +294,7 @@ undecided positions (by a factor of 20 or so), while the number of predecessors
 is roughly the same as the number of successors. That means backpropagating
 losses can be up to 20 times faster.
 
-Does this mean that the calculation of even phases (where we find wins) is 
+Does this mean that the calculation of even phases (where we find wins) is
 much faster than odd phases? No, it turns out the approach implemented by
 solve-rN is perfectly suitable for odd phases. The reason is that it's much
 easier to prove that a position is not losing (finding a single tied successor
