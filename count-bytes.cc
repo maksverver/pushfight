@@ -1,6 +1,6 @@
-// Simple too to count the frequency of bytes in a file.
+// Simple tool to count the frequency of bytes in a file.
 //
-// Prints lines of pairs: byte, frequence, separated by a tab.
+// Prints lines of pairs: byte, frequency, separated by a tab.
 //
 // Output is sorted by byte values. If you want something else, sort with
 // e.g. `sort -n -k 2 -r` to sort by frequency, descending.
