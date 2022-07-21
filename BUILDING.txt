@@ -1,0 +1,33 @@
+DEPENDENCIES
+
+  - A C++ compiler (C++20 or better)
+
+For the network-enabled solvers:
+
+  - zlib (zlib1g-dev)
+  - libcrypto (libssl-dev)
+
+
+For the web app:
+
+  - npm
+  - see html/package.json for further dependencies
+
+
+BUILDING
+
+To build and test all the binaries:
+
+% make -j all test
+
+To build Windows binaries with MinGW:
+
+% make -f Makefile.mingw -j all test
+
+To build the web app, see the instructions in html/README.txt.
+
+
+RUNNING
+
+See the usage instructions of each tool.
+To run the web app, see the instructions in html/README.txt.
