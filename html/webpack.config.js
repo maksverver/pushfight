@@ -22,5 +22,11 @@ module.exports = {
   },
   devServer: {
     static: path.resolve(__dirname, './dist'),
+    proxy: {
+      '/lookup/': {
+        pathRewrite: {'^/lookup': ''},
+        target: 'http://localhost:8003/',
+      }
+    },
   },
 };

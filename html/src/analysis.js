@@ -7,7 +7,7 @@ import { validatePieces, PiecesValidity, formatPieces } from './board.js';
 // For development: make the RPC to analyze positions intentionally slow and unreliable.
 const unreliableAnalysis = false;
 
-const LOOKUP_URL = window.location.hostname === 'localhost' ? 'http://localhost:8003/' : 'lookup/';
+const LOOKUP_URL = 'lookup/';
 
 // Fetches the position analysis using LOOKUP_URL. Don't call this directly;
 // use PositionAnalysis instead.
