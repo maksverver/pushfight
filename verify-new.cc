@@ -101,7 +101,6 @@ int main(int argc, char *argv[]) {
   // Evaluate 1/sample_ratio changed positions (at random).
   std::uniform_int_distribution<int64_t> dist(0, sample_ratio);
 
-  InitializePerms();
   int64_t index = 0;
   Perm perm = first_perm;
   int64_t changes[3] = {0, 0, 0};

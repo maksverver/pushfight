@@ -28,7 +28,6 @@ void Report(int64_t reachable, int64_t total, std::ostream &os) {
 }
 
 int main() {
-  InitializePerms();
   Perm perm = first_perm;
   int64_t index = 0;
   int64_t reachable_count = 0;

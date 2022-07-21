@@ -113,8 +113,6 @@ void PrintUsage() {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  InitializePerms();
-
   std::string arg_compact;
   std::string arg_coords;
   std::string arg_succ;

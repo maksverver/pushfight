@@ -77,7 +77,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  InitializePerms();
   int phase = ParseInt(arg_phase.c_str());
   if (phase < 2) {
     std::cerr << "Invalid phase. Must be 2 or higher.\n";

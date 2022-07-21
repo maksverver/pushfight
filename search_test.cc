@@ -21,7 +21,6 @@ std::mt19937 rng(dev());
 }  // namespace
 
 int main() {
-  InitializePerms();
   const int num_cases = 25;
   int64_t num_successors = 0;
   int64_t num_predecessors = 0;

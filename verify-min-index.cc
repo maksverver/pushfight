@@ -71,8 +71,6 @@ static void CountReachableThread(std::atomic<int> *next_chunk) {
 }
 
 int main() {
-  InitializePerms();
-
   std::atomic<int> next_chunk = 0;
   std::vector<std::thread> threads;
   threads.reserve(num_threads);

@@ -12,7 +12,6 @@
 #include <iostream>
 
 int main() {
-  InitializePerms();
   Perm perm = first_perm;
   int64_t num_found = 0;
   int64_t index = 0;

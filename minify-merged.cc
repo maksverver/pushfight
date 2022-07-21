@@ -57,8 +57,6 @@ void HandlePerm(
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  InitializePerms();
-
   if (argc != 2) {
     std::cerr << "Usage: minify-merged <minimized.bin>\n"
         "Merged output is read from standard input." << std::endl;

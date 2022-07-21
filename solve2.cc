@@ -336,8 +336,6 @@ void PrintUsage() {
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  InitializePerms();
-
   std::string arg_phase;
   std::string arg_start;
   std::string arg_end;

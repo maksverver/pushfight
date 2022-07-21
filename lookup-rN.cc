@@ -25,7 +25,6 @@ int main(int argc, char *argv[]) {
   }
 
   RnAccessor acc(filename);
-  InitializePerms();
   Perm perm = PermAtIndex(index);
 
   std::cout << "Stored outcome: " << OutcomeToString(acc[index]) << std::endl;

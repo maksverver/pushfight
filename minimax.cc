@@ -38,7 +38,6 @@ int main(int argc, char *argv[]) {
 
   int64_t i = ParseInt64(argv[1]);
 
-  InitializePerms();
   Perm perm = PermAtIndex(i);
 
   // Note: this prints states which are lost due to the player being unable to

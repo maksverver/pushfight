@@ -108,7 +108,6 @@ void VerifyFile(const char *filename) {
 
 // Tool to verify the integrity of an r0 chunk.
 int main(int argc, char *argv[]) {
-  InitializePerms();
   if (argc < 1) {
     std::cout << "Usage: verify-r1 [file]..." << std::endl;
     exit(1);

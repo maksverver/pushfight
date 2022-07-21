@@ -66,8 +66,6 @@ int main(int argc, char *argv[]) {
   const char *filename = argv[1];
   const char *perm_string = argv[2];
 
-  InitializePerms();
-
   MinimizedAccessor acc(filename);
 
   std::string error;

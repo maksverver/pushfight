@@ -86,7 +86,6 @@ int main(int argc, char *argv[]) {
   std::cout << "Calculating " << end_chunk - start_chunk << " R0 chunks from " << start_chunk << " to "
       << end_chunk << " (exclusive) using " << num_threads << " threads." << std::endl;
 
-  InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
     std::string filename = ChunkFileName(0, "output", chunk);
     if (std::filesystem::exists(filename)) {

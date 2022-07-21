@@ -167,7 +167,6 @@ int main(int argc, char *argv[]) {
   std::cout << "Backpropagating losses in " << end_chunk - start_chunk << " chunks "
       << "from " << start_chunk << " to " << end_chunk << " (exclusive)." << std::endl;
 
-  InitializePerms();
   FOR(chunk, start_chunk, end_chunk) {
     if (output_acc->IsChunkComplete(chunk)) {
       std::cerr << "Chunk " << chunk << " already done. Skipping..." << std::endl;

@@ -68,7 +68,6 @@ int main(int argc, char *argv[]) {
   int64_t num_probes = argc > 2 ? ParseInt64(argv[2]) : default_num_probes;
 
   RnAccessor acc(filename);
-  InitializePerms();
   int64_t index = 0;
   Perm perm = first_perm;
   int64_t count[3] = {0, 0, 0};

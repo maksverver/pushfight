@@ -20,8 +20,6 @@ std::mt19937 rng(dev());
 }  // namespace
 
 int main() {
-  InitializePerms();
-
   assert(IsInProgress(first_perm));
   assert(IsInProgress(last_perm));
 

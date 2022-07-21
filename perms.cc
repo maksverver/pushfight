@@ -153,8 +153,9 @@ done:
   return perm;
 }
 
-}  // namespace
-
+// Initializes lookup tables. This must be called before any of the other
+// functions. Ideally, it's only called once, but it's possible to call it
+// multiple times.
 void InitializePerms() {
   // Precalculate factorials up to 20.
   fac[0] = fac[1] = 1;
@@ -256,7 +257,10 @@ void InitializePerms() {
   }
 }
 
-#include <iostream>
+// Causes InitializePerms() to be called once at startup.
+const bool initialized  = (InitializePerms(), true);
+
+}  // namespace
 
 PermType ValidatePerm(const Perm &perm) {
   std::array<int, 6> f = {};

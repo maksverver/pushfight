@@ -41,11 +41,6 @@ constexpr Perm first_perm = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
 // Last permutation (of IN_PROGRESS permutations).
 constexpr Perm last_perm = {5, 4, 4, 3, 3, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-// Initializes lookup tables. This must be called before any of the other
-// functions. Ideally, it's only called once, but it's possible to call it
-// multiple times.
-void InitializePerms();
-
 enum class PermType {
   // The permutation does not represent a valid game configuration.
   INVALID = 0,
