@@ -109,6 +109,9 @@ print-r1: $(OBJDIR)/print-r1.o
 potential-new-losses: $(OBJDIR)/potential-new-losses.o $(COMMON_OBJS) $(SOLVER_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(CLIENT_LDLIBS)
 
+pushfight-standalone-server: $(OBJDIR)/pushfight-standalone-server.o $(COMMON_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 sample-bytes: $(OBJDIR)/sample-bytes.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
