@@ -187,6 +187,7 @@ std::string ConvertSuccessors(
   return oss.str();
 }
 
+/*
 // Parses query parameters formatted as `key=value` separated by ampersands ('&'),
 // without URL-decoding keys/values.
 //
@@ -210,6 +211,7 @@ std::map<std::string, std::string> ParseQueryParameters(const std::string &query
   }
   return map;
 }
+*/
 
 void SendData(int s, const char *data, size_t len) {
   while (len > 0) {

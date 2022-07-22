@@ -9,11 +9,13 @@
 
 namespace {
 
+/*
 int Count(std::string_view s, char target) {
   int n = 0;
   for (char ch : s) n += ch == target;
   return n;
 }
+*/
 
 bool AllDigits(std::string_view s) {
   for (char ch : s) {
