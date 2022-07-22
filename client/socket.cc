@@ -16,7 +16,6 @@ static int wsa_startup_return_value = CallWsaStartup();
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -27,6 +26,7 @@ static int wsa_startup_return_value = CallWsaStartup();
 #include <iostream>
 #include <optional>
 #include <string>
+#include <unistd.h>
 
 namespace {
 

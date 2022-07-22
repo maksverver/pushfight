@@ -4,8 +4,6 @@
 #include <cstdlib>
 #include <optional>
 
-#include <unistd.h>
-
 #include "../bytes.h"
 
 class Socket {
