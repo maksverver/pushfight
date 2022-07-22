@@ -38,6 +38,7 @@
 /solve-rN
 /solve-lost
 /ternary_test
+/test-client
 /verify-input-chunks
 /verify-min-index
 /verify-new

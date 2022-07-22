@@ -4,21 +4,22 @@
 # Logic for automatic dependency generation below has been borrowed from:
 # http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
 
-$(OBJDIR)/%.o : %.c $(DEPDIR)/%.d | $(DEPDIR)/ $(OBJDIR)/
+$(OBJDIR)/%.o : $(SRCDIR)/%.c $(DEPDIR)/%.d | $(DEPDIR)/ $(OBJDIR)/
 	$(CC) -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d $(CFLAGS) -c -o $@ $<
 
-$(OBJDIR)/%.o : %.cc $(DEPDIR)/%.d | $(DEPDIR)/ $(OBJDIR)/
+$(OBJDIR)/%.o : $(SRCDIR)/%.cc $(DEPDIR)/%.d | $(DEPDIR)/ $(OBJDIR)/
 	$(CXX) -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d  $(CXXFLAGS) -c -o $@ $<
- 
-$(OBJDIR)/client/%.o : client/%.cc $(DEPDIR)/client/%.d | $(DEPDIR)/client/ $(OBJDIR)/client/
+
+$(OBJDIR)/client/%.o : $(SRCDIR)/client/%.cc $(DEPDIR)/client/%.d | $(DEPDIR)/client/ $(OBJDIR)/client/
+$(OBJDIR)/client/%.o : $(SRCDIR)/client/%.cc $(DEPDIR)/client/%.d | $(DEPDIR)/client/ $(OBJDIR)/client/
 	$(CXX) -MT $@ -MMD -MP -MF $(DEPDIR)/client/$*.d $(CXXFLAGS) -c -o $@ $<
- 
+
 deps/: ; mkdir -p $@
 deps/client/: ; mkdir -p $@
 objs/: ; mkdir -p $@
 objs/client/: ; mkdir -p $@
 
-DEPFILES := $(C_SRCS:%.c=$(DEPDIR)/%.d) $(CXX_SRCS:%.cc=$(DEPDIR)/%.d)
+DEPFILES := $(C_SRCS:$(SRCDIR)/%.c=$(DEPDIR)/%.d) $(CXX_SRCS:$(SRCDIR)/%.cc=$(DEPDIR)/%.d)
 
 $(DEPFILES):
 
@@ -151,7 +152,7 @@ verify-r1: $(OBJDIR)/verify-r1.o $(COMMON_OBJS)
 verify-rN: $(OBJDIR)/verify-rN.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-client/test-client: $(OBJDIR)/client/test-client.o $(COMMON_OBJS) $(CLIENT_OBJS)
+test-client: $(OBJDIR)/client/test-client.o $(COMMON_OBJS) $(CLIENT_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(CLIENT_LDLIBS)
 
 # EOF

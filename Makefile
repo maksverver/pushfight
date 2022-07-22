@@ -11,8 +11,10 @@ test: $(TESTS)
 	./ternary_test
 
 clean:
-	rm -f $(BINARIES) $(TESTS)
 	rm -f -R $(DEPDIR) $(OBJDIR)
+
+distclean: clean
+	rm -f $(ALL_BINARIES) $(TESTS)
 
 .PHONY: all test clean
 

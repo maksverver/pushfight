@@ -15,13 +15,17 @@ LD = x86_64-w64-mingw32-c++
 CXXFLAGS += -static
 LDLIBS += -lws2_32
 
-all: $(BINARIES) $(TESTS)
+most: $(BINARIES)
+
+all: $(ALL_BINARIES)
 
 clean:
-	rm -f $(addsuffix .exe,$(BINARIES) $(TESTS))
-	rm -f -R deps obj
+	rm -f -R $(DEPDIR) $(OBJDIR)
 
-dist: all
+distclean: clean
+	rm -f $(addsuffix .exe,$(ALL_BINARIES) $(TESTS))
+
+dist: most
 	zip pushfight-windows-$$(date +%Y-%m-%d)-$$(git rev-parse --short HEAD).zip *.exe *.py *.sh client/*.exe input/README.txt output/README.txt metadata/*.sha256sum
 
 include Makefile.rules
