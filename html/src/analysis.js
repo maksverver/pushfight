@@ -7,13 +7,11 @@ import { validatePieces, PiecesValidity, formatPieces } from './board.js';
 // For development: make the RPC to analyze positions intentionally slow and unreliable.
 const unreliableAnalysis = false;
 
-const LOOKUP_URL = 'lookup/';
-
 // Fetches the position analysis using LOOKUP_URL. Don't call this directly;
 // use PositionAnalysis instead.
 async function fetchPositionAnalysis(pieces) {
   async function fetchImpl(pieces) {
-    const url = LOOKUP_URL + '?perm=' + encodeURIComponent(formatPieces(pieces, true));
+    const url = 'lookup/perms/' + encodeURIComponent(formatPieces(pieces, true));
     const response = await fetch(url);
     if (response.status !== 200) {
       const error = await response.text();

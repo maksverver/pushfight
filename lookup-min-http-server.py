@@ -18,7 +18,7 @@ LOOKUP_MIN_PATH = './lookup-min'
 
 MINIMIZED_BIN_PATH = 'input/minimized.bin'
 
-PERM_PATTERN = re.compile('^[.oOxXY]{26}$')
+PERM_PATH = re.compile('^/perms/([.oOxXY]{26})$')
 
 
 # Converts the output from lookup-min into a JSON object.
@@ -75,9 +75,9 @@ class HttpServer(http.server.ThreadingHTTPServer):
 
 # Handles a request to analyze a position.
 #
-# Request URL must be of the form: '/?perm=.OX.....oxX....Oox.....OX', where
-# perm is a 26-letter permutation that denotes a started or in-progress
-# position.
+# Request URL must be of the form: '/perms/.OX.....oxX....Oox.....OX',
+# where the second component is a 26-letter permutation string that denotes a
+# started or in-progress position.
 #
 # On error, the response status is 400 (client error) or 500 (server error),
 # and the body contains an error mesage.
@@ -88,19 +88,12 @@ class HttpServer(http.server.ThreadingHTTPServer):
 class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
   def do_GET(self):
     request_url = urllib.parse.urlparse(self.path, scheme='http')
-    if request_url.path != '/':
+
+    m = PERM_PATH.match(request_url.path)
+    if not m:
       self.send_error(404, 'Resource not found.')
       return
-
-    params = urllib.parse.parse_qs(request_url.query)
-    if 'perm' not in params:
-      self.send_client_error('Missing query parameter "perm".')
-      return
-
-    perm = params['perm'][0]
-    if not PERM_PATTERN.match(perm):
-      self.send_client_error('Invalid permutation string.')
-      return
+    perm = m.group(1)
 
     # Execute lookup-min, which does the actual work of calculating
     # successors and their statuses.
