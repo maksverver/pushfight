@@ -658,6 +658,8 @@ function Analysis({visible, validity, analysis, onSelectTurn, onRetryAnalysisCli
             <p>Analysis failed: {analysis.error.message || String(analysis.error)}</p>
             <p className="buttons"><button onClick={onRetryAnalysisClick}>Retry analysis</button></p>
           </React.Fragment> :
+      analysis.result.successors.length === 0 ?
+          <p>No moves available!</p> :
       analysis.result.successors.map(({status, moves}) =>
           <SuccessorGroup
               key={status}
