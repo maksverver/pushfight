@@ -8,6 +8,7 @@
 // entirely. The server is intended for local use only.
 
 #include "bytes.h"
+#include "flags.h"
 #include "minimized-accessor.h"
 #include "position-value.h"
 
@@ -48,13 +49,19 @@ static int wsa_startup_return_value = CallWsaStartup();
 
 namespace {
 
-// TODO: make these configurable
-std::string minimized_path = "input/minimized.bin";
-std::string hostname = "localhost";
-std::string portname = "8080";
-std::string serve_dir = "html/dist";
-std::string index_file = "index.html";
-std::string lookup_path = "/lookup/";
+const char *default_minimized_path = "input/minimized.bin";
+const char *default_hostname = "localhost";
+const char *default_portname = "8080";
+const char *default_serve_dir = "html/dist";
+const char *default_index_file = "index.html";
+
+std::string minimized_path = default_minimized_path;
+std::string hostname = default_hostname;
+std::string portname = default_portname;
+std::string serve_dir = default_serve_dir;
+std::string index_file = default_index_file;
+
+const std::string lookup_path = "/lookup/";
 
 std::optional<MinimizedAccessor> acc;
 
@@ -103,11 +110,11 @@ int CreateListeningSocket(const char *hostname, const char *portname, int backlo
       perror("socket()");
     } else {
       int one = 1;
-      if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&one), sizeof(one) == -1) != 0) {
+      if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&one), sizeof(one)) == -1) {
         perror("setsockopt()");
       } else if(bind(s, p->ai_addr, p->ai_addrlen) == -1) {
         perror("bind()");
-      } else if (listen(s, backlog) < 0) {
+      } else if (listen(s, backlog) == -1) {
         perror("listen()");
         exit(EXIT_FAILURE);
       } else {
@@ -423,21 +430,63 @@ void HandleRequest(int s) {
   close(s);
 }
 
+void PrintUsage() {
+  std::cout << "pushfight-standalone-server" << "\n\n"
+    << "Options:\n\n"
+    << " --minimized=<path to minimized.bin> (default: " << default_minimized_path << ")\n"
+    << " --host=<hostname to bind to> (default: " << default_hostname << ")\n"
+    << " --port=<port to listen on> (default: " << default_portname << ")\n"
+    << " --static=<directory with static content> (default: " << default_serve_dir << ")\n"
+    << " --index=<directory index file> (default: " << default_index_file << ")\n"
+    << std::endl;
+}
+
 }  // namespace
 
-int main() {
-  #ifdef _WIN32
-    assert(wsa_startup_return_value == 0);
-  #endif
+int main(int argc, char *argv[]) {
+#ifdef _WIN32
+  assert(wsa_startup_return_value == 0);
+#endif
 
-  acc.emplace(minimized_path.c_str());
+  std::map<std::string, Flag> flags = {
+    {"minimized", Flag::optional(minimized_path)},
+    {"host", Flag::optional(hostname)},
+    {"port", Flag::optional(portname)},
+    {"static", Flag::optional(serve_dir)},
+    {"index", Flag::optional(index_file)},
+  };
 
-  int server_socket = CreateListeningSocket(hostname.c_str(), portname.c_str());
-  if (server_socket == -1) {
+  if (!ParseFlags(argc, argv, flags)) {
+    std::cout << "\n";
+    PrintUsage();
     return 1;
   }
 
-  std::cout << "Push Fight serving on http://" << hostname << ":" << portname << "/" << std::endl;
+  std::cout << "Serving static content from directory: " << serve_dir << std::endl;
+  if (!std::filesystem::is_directory(serve_dir)) {
+    std::cerr << serve_dir << " is not a directory!" << std::endl;
+    return 1;
+  }
+
+  std::cout << "Using index file: " << index_file << std::endl;
+  if (const auto index_path = std::filesystem::path(serve_dir) / index_file;
+      !std::filesystem::is_regular_file(index_path)) {
+    std::cerr << index_path << " is not a regular file!" << std::endl;
+    return 1;
+  }
+
+  std::cout << "Using minimized position data from: " << minimized_path << std::endl;
+  acc.emplace(minimized_path.c_str());
+
+  std::cout << "Creating a TCP socket to listen on host " << hostname << " port " << portname << "..." << std::endl;
+  int server_socket = CreateListeningSocket(hostname.c_str(), portname.c_str());
+  if (server_socket == -1) {
+    // Error message has already been printed.
+    return 1;
+  }
+
+  std::cout << "\nPush Fight standalone server now serving on "
+      << "http://" << hostname << ":" << portname << "/" << std::endl;
 
   while(true) {
     struct sockaddr_storage client_addr;
