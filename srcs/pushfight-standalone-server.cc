@@ -151,21 +151,21 @@ void MakeLowercase(std::string &s) {
 // This converts the successors to a JSON object in the same format as
 // lookup-min-http-server.py, which is understood by analysis.js.
 std::string ConvertSuccessors(
-    const std::vector<std::pair<Value, std::pair<Moves, State>>> &successors) {
+    const std::vector<EvaluatedSuccessor> &successors) {
   std::ostringstream oss;
 
   // Calculate overall status. Since successors are guaranteed to be sorted from
   // best to worst, the best status comes first. Special case: if there are no
   // successors, the position is lost-in-0.
-  Value status = successors.empty() ? Value::LossIn(0) : successors.front().first;
+  Value status = successors.empty() ? Value::LossIn(0) : successors.front().value;
 
   // Group successors by status. Again, the successors are already sorted.
   std::vector<std::pair<Value, std::vector<Moves>>> grouped_moves;
-  for (const std::pair<Value, std::pair<Moves, State>> &successor : successors) {
-    if (grouped_moves.empty() || grouped_moves.back().first != successor.first) {
-      grouped_moves.push_back({successor.first, {}});
+  for (const EvaluatedSuccessor &successor : successors) {
+    if (grouped_moves.empty() || grouped_moves.back().first != successor.value) {
+      grouped_moves.push_back({successor.value, {}});
     }
-    grouped_moves.back().second.push_back(successor.second.first);
+    grouped_moves.back().second.push_back(successor.moves);
   }
 
   // Convert to a JSON string.

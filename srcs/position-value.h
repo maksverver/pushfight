@@ -22,12 +22,32 @@ struct Value {
     return byte >> 1;
   }
 
+  // Converts a value from a successor to the value for its predecessor.
+  //
+  // Examples:
+  //
+  //    Tie().ToPredecessor() == Tie()
+  //    WinIn(1).ToPredecessor() == LossIn(1)
+  //    LossIn(2).ToPredecessor() == WinIn(3)
+  //
+  Value ToPredecessor() {
+    return Value(byte == 0 ? 0 : byte + 1);
+  }
+
+  // The inverse of ToPredecessor().
+  //
+  // Careful! Although it's always true that:
+  // Value(byte).ToPredecessor().ToSuccessor() == Value(byte)
+  // it is not guaranteed that:
+  // Value(byte).ToSuccessor().ToPredecessor() == Value(byte)
+  // since ToSuccessor() would lossily map loss-in-0 to Tie.
+  Value ToSuccessor(bool *lossy) {
+    if (lossy) *lossy = (byte == 1);
+    return Value(byte == 0 ? 0 : byte - 1);
+  }
+
   uint8_t byte;
 };
-
-inline Value operator-(const Value &v) {
-  return Value(v.byte == 0 ? 0 : v.byte + 1);
-}
 
 inline bool operator==(const Value &a, const Value &b) {
   return a.byte == b.byte;

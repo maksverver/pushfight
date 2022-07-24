@@ -4,10 +4,23 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "accessors.h"
 #include "perms.h"
 #include "position-value.h"
+
+struct EvaluatedSuccessor {
+  Moves moves;
+  State state;
+  int64_t min_index;
+  bool rotated;
+  Value value;
+};
+
+inline bool operator<(const EvaluatedSuccessor &a, const EvaluatedSuccessor &b) {
+  return a.value < b.value;
+}
 
 // Accessor used to look up the result of positions in minized.bin.
 class MinimizedAccessor {
@@ -15,8 +28,6 @@ public:
   explicit MinimizedAccessor(const char *filename)
       : acc(filename) {}
 
-  // List of distinct successors; sorted by decreasing value, with one set of moves per result.
-  using successors_t = std::vector<std::pair<Value, std::pair<Moves, State>>>;
 
   // Looks up the status of the successors of the given permutation string.
   //
@@ -25,12 +36,16 @@ public:
   // permutation string was invalid or represented a finished position, an empty
   // optional is returned instead. In that case, if `error` is not null, an error
   // message will be written to *error.
-  std::optional<successors_t> LookupSuccessors(std::string_view perm_string, std::string *error);
+  std::optional<std::vector<EvaluatedSuccessor>>
+  LookupSuccessors(std::string_view perm_string, std::string *error);
 
   // Similar to LookupSuccessor above, but starts from a parsed permutation.
-  std::optional<successors_t> LookupSuccessors(const Perm &perm, std::string *error);
+  std::optional<std::vector<EvaluatedSuccessor>>
+  LookupSuccessors(const Perm &perm, std::string *error);
 
 private:
+  std::vector<uint8_t> ReadBytes(const std::vector<int64_t> &offset);
+
   MappedFile<uint8_t, min_index_size> acc;
 };
 

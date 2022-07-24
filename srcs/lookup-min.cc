@@ -76,14 +76,9 @@ int main(int argc, char *argv[]) {
   }
 
   for (const auto &elem : *result) {
-    const Value &value = elem.first;
-    const Moves &moves = elem.second.first;
-    const State &state = elem.second.second;
-    std::cout << value << ' ' << moves;
-    if (state.outcome == TIE) {
-      bool rotated = false;
-      int64_t min_index = MinIndexOf(state.perm, &rotated);
-      std::cout << ' ' << "+-"[rotated] << min_index;
+    std::cout << elem.value << ' ' << elem.moves;
+    if (elem.state.outcome == TIE) {
+      std::cout << ' ' << "+-"[elem.rotated] << elem.min_index;
     }
     std::cout << '\n';
   }
