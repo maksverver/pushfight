@@ -98,3 +98,32 @@ Zero bits:  175671731
 One bits:   364868269
 Total bits: 540540000
 Fraction of ones: 0.675007
+
+
+Compressed file formats
+-----------------------
+
+lookup-min and pushfight-standalone-server can use minimized.bin.xz directly,
+without having to unzip it! This is quite a bit slower than accessing the
+bytes in the uncompressed file, but it's good enough for local use.
+
+minimized.bin.xz is generated as follows:
+
+xz --block-size=65536 --check=crc32 -0 --extreme --keep input/minimized.bin
+
+Options used:
+
+  --block-size=65536 splits input into 64 KiB blocks (this is what enables
+    efficient random access)
+
+  -0 selects a smaller dictionary size (256 KiB) which reduces decoder memory
+     use. A small dictionary should be sufficient since our blocks are only
+     64 KiB in size.
+
+  -e selects extreme compression, to maximize compression rate (otherwise, -0
+     would be very fast but not compress very well)
+
+  --check=crc32 changes the CRC64 to CRC32 which saves 4 bytes per block
+      and should be sufficient to detect errors considering each block is
+      very small.
+  --keep prevents the input file from being deleted

@@ -83,8 +83,8 @@ integrate-wins2: $(OBJDIR)/integrate-wins2.o $(COMMON_OBJS)
 integrate-two: $(OBJDIR)/integrate-two.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-lookup-min: $(OBJDIR)/lookup-min.o $(COMMON_OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+lookup-min: $(OBJDIR)/lookup-min.o $(COMMON_OBJS) $(LOOKUP_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(LOOKUP_LDLIBS)
 
 lookup-rN: $(OBJDIR)/lookup-rN.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
@@ -110,8 +110,8 @@ print-r1: $(OBJDIR)/print-r1.o
 potential-new-losses: $(OBJDIR)/potential-new-losses.o $(COMMON_OBJS) $(SOLVER_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(CLIENT_LDLIBS)
 
-pushfight-standalone-server: $(OBJDIR)/pushfight-standalone-server.o $(COMMON_OBJS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+pushfight-standalone-server: $(OBJDIR)/pushfight-standalone-server.o $(COMMON_OBJS) $(LOOKUP_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(LOOKUP_LDLIBS)
 
 sample-bytes: $(OBJDIR)/sample-bytes.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
