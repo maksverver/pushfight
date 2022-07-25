@@ -1,7 +1,178 @@
 # Solving Push Fight
 
-This repository contains code used to solve Push Fight, an abstract board game for
-two players designed by Brett Picotte, available from https://pushfightgame.com/
+Push Fight is solved completely! With the help of [these volunteers](CREDITS.txt)
+I was able to calculate the best move for any valid position of the game.
+
+Push Fight is a an abstract board game for two players designed by
+Brett Picotte. A summary of the rules is provided further down.
+For more information about the game, or if you want to buy a physical copy
+to play with, visit https://pushfightgame.com/
+
+## Results of the project
+
+The project has two main results: a data file that classifies all possible
+positions, and a website that allows any position to be evaluated. As a bonus,
+the website also allows playing against an AI that can play either perfectly
+(and thus will never lose) or with a variable playing strength.
+
+Combined, these allow exploring arbitrary positions and discovering wins and
+losses requiring superhuman insight. For example, the position below
+(permutation index 316452211876) is won by Red in no less than 49 turns
+(or 97 total turns) with optimal play:
+
+![Win in 49 (starting position)](images/win-in-49.png)
+![Win in 49 (animated)](images/win-in-49-moves.gif)
+
+### Data files
+
+The main goal of the project was to calculate, for every valid position, whether
+it was winning, losing or tied, and if so, in how many moves. This also allows
+optimal moves to be recovered (by evaluating the status of successors).
+
+The data files are available here: https://styx.verver.ch/~maks/pushfight/
+
+There are two files of interest:
+
+  * **merged.bin** is a 401 GB file that contains one byte per position, indicating the status of that position (how positions correspond with byte offsets is described below.)
+  * **minimized.bin** is an 86 GB file that contains the same data, excluding unreachable positions and eliminating positions that are equivalent by rotation.
+
+In theory, each of these files can be generated from the other. In practice, I
+only created a tool ([minify-merged](srcs/minify-merged.cc)) to convert *merged.bin*
+to *minimized.bin*.
+
+### The Push Fight Analyzer web app
+
+I created a little web app to analyze arbitrary positions, which allows
+people to experiment with the game without downloading any data files.
+
+The Push Fight Analyzer app is available here: https://styx.verver.ch/pushfight/
+
+![Push Fight Analyzer screenshot](images/website-screenshot.png)
+
+The main features are:
+
+  * **Setup**: configure an arbitrary starting position, or import from a
+    known permutation index (described below) or permutation string.
+  * **AI tab**: let AI control one of the players to practice.
+    The AI's playing strength is variable. At maximum strength, the AI plays
+    perfectly, which means it can never lose and will exploit even the smallest
+    mistake on the player's part!
+  * **Move history tab**: shows the moves played in the game so far, optionally
+    annotated with the valuation at the beginning of the turn. This makes it easy
+    to see when a player makes a mistake. It's also fun to analyze past matches
+    this way!
+  * **Analysis tab**: shows all possible successor states, grouped by outcome.
+    This allows you e.g. to see which moves are optimal in a particular
+    position.
+
+Tip: you can copy/paste the URL of a game in progress to store the game
+state including the move history. This allows you to store a game for later
+(e.g. by bookmarking it) or to share it with others.
+
+The website can also be run locally, as a standalone app (see [pushfight-standalone-server.cc](srcs/pushfight-standalone-server.cc)).
+I'll make a binary release of this later.
+
+
+### Git repository contents
+
+The Git repository contains most of the code used to solve the game.
+This could be used to reproduce or validate the output files.
+An overview:
+
+  - [README.md](README.md) (this file) contains a description of the game, some
+    interesting properties, and information about the process of solving the game
+    completely.
+  - The [server/](server/) directory contains the server implementation that was
+    used to solve several phases as part of a distributed computing project (see
+    [this topic](https://gathering.tweakers.net/forum/list_messages/2129552) on
+    the Tweakers.net forum). This server is no longer online.
+  - The [metadata/](metadata/) directory contains data from the intermediate
+    files, such as checksums and position counts.
+  - The [results/](results/) directory contains some interesting facts about the
+    games discovered by solving the game, such as counts of how many positions are
+    won-in-1 etc. (these can be inferred from
+    [merged-bytecounts.txt](results/merged-bytecounts.txt) and
+    [minimized-bytecounts.txt](results/minimized-bytecounts.txt), and sample game
+    ids of each ([merged-samples.txt](results/merged-samples.txt) and
+    ([minimized-samples.txt](results/minimized-samples.txt)).
+  - The [html/](html/) directory contains the Push Fight Analyzer web app
+    implementation. Contrary to what the directory name suggests, this not plain
+    html, but written in React with NPM and Webpack.
+    See the [README](html/README.txt) for details.
+
+
+### Interesting observations
+
+Throughout the project I made several interesting observations. I'll provide
+a summary below for people who like that sort of thing.
+
+  1. The project started when I realized it's possible to map board positions to
+     a compact range of integers, creating a bijection between positions and
+     numbers between 0 and *N*, where *N* is reasonably small.
+     Without this realization, the project would have been infeasible.
+     Storing data in a conventional key-value store would be a nonstarter:
+     even using just 50 bytes per key-value pair would require about 20 terabytes
+     of storage, which I don't have.
+
+     Throughout the project I made extensive use of this bijection, which makes
+     it unnecessary to store keys explicitly and allows storing just an array
+     of values where the indices correspond with positions. So I ended up using
+     bitmaps (1 bit per position, or about 50 GB for the entire game) and
+     ternary data files (with 3 possible values, tie, loss or win, or 1.6 bits
+     per position, or 80 GB for the entire game), and even the final output
+     is a flat array with 1 byte per position (though I only need 7 bits).
+
+  2. It's possible to eliminate rotations and unreachable positions without
+     giving up the compact index!
+     I knew from the start that there was some redunant work being done because
+     some positions are either unreachable (and therefore we don't care about
+     their valuation) or they are equivalent to a rotated position (and we
+     only need to store one of them), but I didn't try to remove this redundancy
+     because I thought it would destroy the bijection between game positions
+     and permutation indexes. Later I found a bijection that excludes those
+     redundant positions; these are called minimized indexes (described
+     down below) and reduce the total number of values from around 401 billion
+     to around 86 billion. If I had discovered this sooner I might have used
+     minimized indices for everything. It would have reduced the size of
+     intermediate files considerably, though on the other hand minimized
+     indices are more expensive to compute, so this could have come at the cost
+     of increased CPU usage.
+
+  3. We can calculate the predecessors of a position almost as easily as the
+     successors (and positions have roughly the same number of successors as
+     predecessors)!
+     I hadn't initially realized this was practical, but when I did, it led to
+     the invention of the loss-backpropagating solvers (described further down),
+     which ran much faster than the equivalent forward-searching solver (which
+     works for both wins and losses). Without this discovery, solving the game
+     would have been possible but would have used much more CPU time.
+
+  4. You can calculate two phases at once! Initially, I conceived of the solver
+     as a fixed point iterator: you make one pass over all undecided positions,
+     and classify them based on the valuation of their successors. Then you
+     repeat until you've reached a fixed point (i.e., no new positions are
+     classified). It soon became clear that this algorithm effectively
+     alternates between discovering losses and discovering wins. After all,
+     you can only discover a win if some of the successors are classified as
+     losses, and discover a loss if all of the successors are classified as
+     wins. So in each run of the algorithm (which I call a *phase*) you discover
+     new losses, or new wins, but not both.
+
+     This was useful during the distributed computation part of the project.
+     Initially, I had participants download an entire input file, and then run
+     the fixed-point iteration algorithm *or* to backpropagation algorithm to
+     discover new losses or wins. Each participant would only compute the
+     results for a subarray of the file (a so-called *chunk* of work). Between
+     phases, I had to integrate the results and send a new data file to all
+     participants. But I noticed that loss backpropagation doesn't depend on
+     the previous phase's output at all, so it's possible to combine the two
+     phases, so that each participant calculates both wins and losses in a
+     single pass. That's why later phases were solved two-at-a-time. This was
+     beneficial to me because every phase required some manual work on my part,
+     so doing two phases at once effectively halved the administrative burden
+     for me.
+
+     The *solve2* and *solve3* solvers both solve two phases at a time.
 
 
 ## Rules of the Game
@@ -16,7 +187,7 @@ Each player controls five pieces: two round pieces and three square ones. The ga
 starts with the first player (in my version, red) placing their pieces anywhere on
 the left half of the board (columns *a* through *d*), then the second player placing
 their pieces on the right half of the board (columns *e* through *h*), and then the
-first player moves first.
+red player plays the first turn.
 
 Below are two possible starting positions:
 
@@ -30,8 +201,8 @@ consists of taking a piece of the player's color (either a square or a round one
 and moving it to any free square that is reachable through a sequence of horizontal
 and vertical moves. Finally, a push involves taking a square piece of the player's
 color and moving it exactly 1 space up, down, left or right, pushing pieces that are
-in the way in the same direction. At least 1 piece other piece must be pushed, though it
-doesn't matter if that piece belongs to the player or his or her opponent.
+in the way in the same direction. At least 1 other piece must be pushed, though it
+doesn't matter what color or shape the pushed pieces are.
 
 Below is an example of the first turn for the red player, starting from the second
 starting positon above. (The image below is an animated GIF. You may have to click the
@@ -47,7 +218,7 @@ piece off the board, wins.
 There is one final rule. After a player has performed their push move, a special piece
 called an *anchor* is placed on the pushing piece. The opponent may not push that piece
 during the next turn. This prevents obvious stalemates with players pushing the same
-row of pieces back and forth.
+row of pieces back and forth, and also adds some tactical opportunities to the game.
 
 
 ## Notation of positions and moves
@@ -83,7 +254,9 @@ and put all characters on a single line:
 
 `.OX.....oxY....Oox.....OX.`
 
-Now, we've reduced the board to a single 26-character string.
+Now, we've reduced the board to a single 26-character string. This is what I
+call a permutation string, and this format is accepted by most tools, including
+the web app.
 
 For moves, we can use a chess-like notation. For example, `c2-d2` represents a
 push to the right, and `d1-a2,d3-c3,c2-d2` represents two moves followed by a
@@ -109,7 +282,7 @@ $26! / 16! / 3! / 2! / 3! / 2! = 133,855,722,000$
 where x! represents the [factorial](https://en.wikipedia.org/wiki/Factorial)
 of x. However, this doesn't account for the placing of the anchor, which can
 be on any of the 6 square pieces or not in play at all. Seemingly, this would
-multiple the number of positions by 7. However, if we're willing to treat the
+multiply the number of positions by 7. However, if we're willing to treat the
 first turn specially and we only want to be able to represent positions from
 turn 2 and on, we can assume the anchor is in place.
 
@@ -130,7 +303,8 @@ This means every board position has an associated permutation index between
 0 and 401,567,166,000 (exclusive). It turns out that, with some precomputation,
 it's possible to efficiently convert between board positions and permutation
 indices. Efficiently here means O(N) where N is the number of squares on the
-board. See the logic in [perms.h](perms.h) and [perms.cc](perms.cc) for details.
+board. See the logic in [perms.h](srcs/perms.h) and
+[perms.cc](srcs/perms.cc) for details.
 
 
 ### Unreachable permutations
@@ -167,7 +341,7 @@ that out of 401,567,166,000 total permutations, 172,416,263,040 (42.94%) are
 reachable and 229,150,902,960 (57.06%) are unreachable.
 
 This was also confirmed by a brute-force search (see
-[count-unreachable.cc](count-unreachable.cc) and the output in
+[count-unreachable.cc](srcs/count-unreachable.cc) and the output in
 [count-unreachable-output.txt](results/count-unreachable-output.txt)).
 
 #### Permutations without reachable predecessors
@@ -203,7 +377,7 @@ Just like it's possible to map permutations to compact indices from 0 to
 indexes between 0 and ~86 billion (ignoring rotation).
 
 For details, see the functions `MinIndexOf()` and `PermAtMinIndex()` in
-[perms.h](perms.h) and [perms.cc](perms.cc).
+[perms.h](srcs/perms.h) and [perms.cc](srcs/perms.cc).
 
 ## Solving the game
 
@@ -249,7 +423,7 @@ This leads to the following algorithm to solve the game:
    rest undetermined.
  * Phase 2..N: repeat the logic from phase 1 until no more changes occur.
 
-The logic for phases 2 and up is implemented in [solve-rN.cc](solve-rN.cc).
+The logic for phases 2 and up is implemented in [solve-rN.cc](srcs/solve-rN.cc).
 
 This is a fixed-point iteration algorithm where we classify more and more positions
 until we cannot find any more positions that can be classified by rules 2a and 2b.
@@ -304,8 +478,8 @@ opponent). So although the solve-rN solver has to process more positions, it
 can process them more quickly (in odd phases only!)
 
 The loss backpropagation logic is implemented in two solvers:
-[backpropagate-losses.cc](backpropagate-losses.cc) and
-[backpropgate2.cc](backpropgate2.cc). They differ in the output file format.
+[backpropagate-losses.cc](srcs/backpropagate-losses.cc) and
+[backpropgate2.cc](srcs/backpropgate2.cc). They differ in the output file format.
 backpropagate-losses creates a single 50 GB bitmap with new wins marked as 1.
 This bitmap is shared between input chunks, so it never grows. backpropagate2
 on the other hand writes a list of permutation indices that were newly
@@ -327,7 +501,7 @@ undecided position to find new losses, and then using a backward search from
 each new loss to find new wins. The advantage of this approach is that only
 the even-number input files ever need to be generated.
 
-This method is implemented in [solve2](solve2.cc), which outputs two lists for
+This method is implemented in [solve2](srcs/solve2.cc), which outputs two lists for
 each input chunk: one with the newly discovered losses (corresponding with the
 results of solve-rN) and one with the newly discovered wins (corresponding with
 the results of backpropagate2). Note that that new losses will be discovered
@@ -441,14 +615,14 @@ corresponds with the maximum number of turns leading to a win.
 
 ## Solvers used
 
-  - Phase -1: [solve-lost.cc](solve-lost.cc)
-  - Phase 0: [solve-r0.cc](solve-r0.cc)
-  - Phase 1: [solve-r1.cc](solve-r1.cc)
-  - Phase 2: [backpropagate-losses.cc](backpropagate-losses.cc)
-  - Phase 3—8: [solve-rN.cc](solve-rN.cc) (odd numbered phases)
-    and [backpropagate2.cc](backpropagate2.cc) (even numbered phases)
-  - Phase 10—58: [solve2.cc](solve2.cc) (solves two consecutive phases at a time)
-  - Phase 60—98: [solve3.cc](solve3.cc)
+  - Phase -1: [solve-lost.cc](srcs/solve-lost.cc)
+  - Phase 0: [solve-r0.cc](srcs/solve-r0.cc)
+  - Phase 1: [solve-r1.cc](srcs/solve-r1.cc)
+  - Phase 2: [backpropagate-losses.cc](srcs/backpropagate-losses.cc)
+  - Phase 3—8: [solve-rN.cc](srcs/solve-rN.cc) (odd numbered phases)
+    and [backpropagate2.cc](srcs/backpropagate2.cc) (even numbered phases)
+  - Phase 10—58: [solve2.cc](srcs/solve2.cc) (solves two consecutive phases at a time)
+  - Phase 60—98: [solve3.cc](srcs/solve3.cc) (solves two consecutive phases at a time)
 
 
 ## Summary of results by phase
@@ -632,7 +806,6 @@ can respond with *e4-d2,d4-b2,d1-c1*:
 Blue has trapped red's round piece at *b1*. Note that the move *e4-d2* was
 necessary to protect the piece at *f1*.
 
-
 ### Win in 3 (phase 4)
 
 In phase 4, we discovered 5,170,866,758 positions (14.8% of the remaining
@@ -664,12 +837,13 @@ At first glance, it seems like red is in trouble, with pieces on the edge at
 where it is, and instead move *h2-d2*, *c2-b3*, *b3-c3* to trap blue's round
 piece at *d1*.
 
-## Future work
+### A note on starting positions
 
- * Write about how to find optimal moves before turn 1.
- * List some stats from the final computation
- * Determining the best starting position
- * Finding a compact way to represent the optimal strategy
+I believe every starting position where each player puts four pieces on the
+starting line (i.e., column D for Red, column E for Blue) leads to a tied
+position. That implies that if players start reasonably, all games are
+theoretically tied. However, it's easy to make a mistake during gameplay and
+create an opportunity for the opponent to win!
 
 ## Puzzles
 
