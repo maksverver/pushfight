@@ -50,7 +50,7 @@ static int wsa_startup_return_value = CallWsaStartup();
 
 namespace {
 
-const char *default_minimized_path = "input/minimized.bin";
+const char *default_minimized_path = "minimized.bin";
 const char *default_hostname = "localhost";
 const char *default_portname = "8080";
 const char *default_serve_dir = "html/dist";
