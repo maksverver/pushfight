@@ -59,15 +59,16 @@ lzma_index *CheckLzmaHeadersAndCreateIndex(
 // `coffset` and `csize` give the offset and size of the block in the
 // compressed file.
 //
-// The size of the block may be greater or smaller than `output_size`. If the
-// block size is smaller, the actual number of bytes decoded is written to
-// *output_size. If the block size is greater, only the first *output_size
-// bytes are decoded. In both cases this function returns LMZA_OK (assuming no
-// other error occurred).
-lzma_ret DecompressBlockPrefix(
+// Returns the number of bytes read, or -1 if an error occurred.
+//
+// Note that it's not an error if the uncompressed block size is greater or
+// smaller than output_size. In the first case, only the first output_size bytes
+// are decoded. In the second case, the number of bytes read (as indicated by
+// the return value) is smaller than output_size.
+ssize_t DecompressBlockPrefix(
     const uint8_t *data, lzma_check check,
     int64_t coffset, int64_t csize,
-    uint8_t *output_data, size_t *output_size) {
+    uint8_t *output_data, size_t output_size) {
   // Filter list. This is initialized by lzma_block_header_decode().
   lzma_filter filters[LZMA_FILTERS_MAX + 1];
 
@@ -82,24 +83,33 @@ lzma_ret DecompressBlockPrefix(
   block.filters = filters;
 
   // Decode block header.
+  ssize_t result = -1;
   lzma_ret ret = lzma_block_header_decode(&block, allocator, data + coffset);
   assert(csize >= block.header_size);
-  if (ret == LZMA_OK) {
+  if (ret != LZMA_OK) {
+    std::cerr << "lzma_block_header_decode() failed (" << ret << ")" << std::endl;
+  } else {
     // Block header looks good. Try to decode.
     lzma_stream stream = LZMA_STREAM_INIT;
     stream.allocator = allocator;
     ret = lzma_block_decoder(&stream, &block);
-    if (ret == LZMA_OK) {
+    if (ret != LZMA_OK) {
+      std::cerr << "lzma_block_decoder() failed (" << ret << ")" << std::endl;
+    } else {
       stream.next_in = data + coffset + block.header_size;
       stream.avail_in = csize - block.header_size;
       stream.next_out = output_data;
-      stream.avail_out = *output_size;
+      stream.avail_out = output_size;
       // Actual decoding loop:
       while (ret == LZMA_OK && stream.avail_out > 0) {
         ret = lzma_code(&stream, LZMA_FINISH);
       }
       if (ret == LZMA_STREAM_END) ret = LZMA_OK;
-      *output_size = stream.next_out - output_data;
+      if (ret != LZMA_OK) {
+        std::cerr << "lzma_code() failed (" << ret << ")" << std::endl;
+      } else {
+        result = output_size - stream.avail_out;
+      }
     }
     lzma_end(&stream);
   }
@@ -108,7 +118,7 @@ lzma_ret DecompressBlockPrefix(
     assert(allocator == nullptr);  // otherwise, we should use the custom allocator
     free(filters[i].options);
   }
-  return ret;
+  return result;
 }
 
 }  // namespace
@@ -186,13 +196,11 @@ void XzAccessor::ReadBytes(const int64_t *offsets, uint8_t *bytes, size_t count)
     const int64_t csize   = iter.block.total_size;
     assert(block_data_start <= coffset && coffset <= block_data_end);
     assert(csize <= block_data_end - coffset);
-    lzma_ret ret = DecompressBlockPrefix(
+    ssize_t bytes_read = DecompressBlockPrefix(
         mapped_file.data(), header_flags.check,
         coffset, csize,
-        buffer.data(), &output_size);
-    assert(ret == LZMA_OK);
-    assert(output_size == buffer.size());  // all needed data was decoded
-
+        buffer.data(), buffer.size());
+    assert(bytes_read == buffer.size());
     // Extract the requested bytes.
     while (i < j) {
       bytes[i] = buffer.at(offsets[i] - offset);
