@@ -53,6 +53,7 @@
 #include "board.h"
 #include "macros.h"
 #include "minimized-accessor.h"
+#include "minimized-lookup.h"
 #include "perms.h"
 #include "position-value.h"
 
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
   MinimizedAccessor acc(filename);
 
   std::string error;
-  auto result = acc.LookupSuccessors(perm_string, &error);
+  auto result = LookupSuccessors(acc, perm_string, &error);
   if (!result) {
     std::cerr << error << std::endl;
     return 2;

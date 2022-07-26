@@ -9,6 +9,7 @@
 
 #include "bytes.h"
 #include "flags.h"
+#include "minimized-lookup.h"
 #include "minimized-accessor.h"
 #include "position-value.h"
 
@@ -296,7 +297,7 @@ void HandleHttpRequest(
     // Match path of the form: perms/<permutation string/id>
     if (components.size() == 2 && components[0] == "perms") {
       std::string error;
-      auto successors = acc->LookupSuccessors(components[1], &error);
+      auto successors = LookupSuccessors(*acc, components[1], &error);
       if (!successors) {
         SendResponse(s, 400, "Bad Request", error);
         return;
@@ -475,6 +476,13 @@ int main(int argc, char *argv[]) {
       !std::filesystem::is_regular_file(index_path)) {
     std::cerr << index_path << " is not a regular file!" << std::endl;
     return 1;
+  }
+
+  // Hack: automatically switch to the xz-compressed file if the uncompressed
+  // file does not exist.
+  if (!std::filesystem::exists(minimized_path) &&
+      std::filesystem::exists(minimized_path + ".xz")) {
+    minimized_path += ".xz";
   }
 
   std::cout << "Using minimized position data from: " << minimized_path << std::endl;

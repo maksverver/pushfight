@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 
 namespace {
@@ -112,6 +113,21 @@ lzma_ret DecompressBlockPrefix(
 
 }  // namespace
 
+bool XzAccessor::IsXzFile(const char *filepath) {
+  std::ifstream ifs(filepath, std::ifstream::binary);
+  if (!ifs) return false;
+
+  uint8_t buffer[LZMA_STREAM_HEADER_SIZE] = {};
+  if (!ifs.read(reinterpret_cast<char*>(&buffer), sizeof(buffer))) return false;
+
+  lzma_stream_flags dummy_flags;
+  return lzma_stream_header_decode(&dummy_flags, buffer) == LZMA_OK;
+}
+
+void XzAccessor::IndexDeleter::operator()(lzma_index *index) {
+  lzma_index_end(index, allocator);
+}
+
 XzAccessor::XzAccessor(const char *filepath) :
     mapped_file(filepath),
     index(
@@ -122,28 +138,25 @@ XzAccessor::XzAccessor(const char *filepath) :
     block_data_end(mapped_file.size() - LZMA_STREAM_HEADER_SIZE - footer_flags.backward_size) {
 }
 
-XzAccessor::~XzAccessor() {
-  lzma_index_end(index, allocator);
-}
-
-int64_t XzAccessor::GetUncompressedFileSize() {
+int64_t XzAccessor::GetUncompressedFileSize() const {
   lzma_index_iter iter;
-  lzma_index_iter_init(&iter, index);
+  lzma_index_iter_init(&iter, index.get());
   bool ret = lzma_index_iter_next(&iter, LZMA_INDEX_ITER_STREAM);
   assert(ret == false);  // true means error
   return iter.stream.uncompressed_size;
 }
 
-void XzAccessor::GetBytes(const int64_t *offsets, uint8_t *bytes, size_t count) {
+void XzAccessor::ReadBytes(const int64_t *offsets, uint8_t *bytes, size_t count) const {
   // Check that offsets nonnegative and in nondecreasing order.
   assert(offsets[0] >= 0);
   assert(std::is_sorted(&offsets[0], &offsets[count]));
 
   // Process offsets in order, but lookup bytes in the same block at once.
+  std::vector<uint8_t> buffer;
   size_t i = 0;
   while (i < count) {
     lzma_index_iter iter;
-    lzma_index_iter_init(&iter, index);
+    lzma_index_iter_init(&iter, index.get());
 
     // Currently we assume the .xz file can contain blocks of variable length,
     // so we need to use lzma_index_iter_locate to find the right block. If we

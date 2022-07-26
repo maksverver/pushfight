@@ -1,6 +1,7 @@
 #ifndef POSITION_VALUE_H_INCLUDED
 #define POSITION_VALUE_H_INCLUDED
 
+#include <cassert>
 #include <iostream>
 
 struct Value {
