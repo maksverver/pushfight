@@ -459,7 +459,9 @@ function SetUpComponent({initialPieces, onStart}) {
   );
 }
 
-function AI({visible, strength, aiPlayer, onChangeStrength, onChangeAiPlayer}) {
+function AI({
+    visible, strength, aiPlayer, autoplayBlocked,
+    onChangeStrength, onChangeAiPlayer}) {
   return (
     <div className="ai" style={{display: visible ? undefined : 'none'}}>
       <p>
@@ -483,6 +485,11 @@ function AI({visible, strength, aiPlayer, onChangeStrength, onChangeAiPlayer}) {
           </select>
         </label>
       </p>
+      {autoplayBlocked &&
+        <p className="small-warning">
+          ⚠️ Autoplay blocked by undo. Use “Play AI Move” to override.
+        </p>
+      }
     </div>
   );
 }
@@ -779,10 +786,6 @@ class PlayComponent extends React.Component {
 
       // AI player that plays automatically.
       aiPlayer: -1,
-
-      // When set, AI does not autoplay. This is used to prevent autoplaying
-      // after undo.
-      preventAutoplay: false,
     };
 
     this.lastPieceAnimations = null;
@@ -813,9 +816,12 @@ class PlayComponent extends React.Component {
   }
 
   maybeAutoplayAiMove() {
-    const {turns, moves, analysisAtTurnStart, strength, aiPlayer, preventAutoplay} = this.state;
+    const {turns, moves, analysisAtTurnStart, redoTurns, strength, aiPlayer} = this.state;
 
-    if (preventAutoplay) return;
+    // Block autoplay when the redo stack is nonempty. This allows the user
+    // to undo and redo without the AI clearing the redo stack by making a
+    // different move than before.
+    if (redoTurns.length > 0) return;
 
     const {validity, nextPlayer} = validatePieces(this.state.pieces);
 
@@ -877,7 +883,6 @@ class PlayComponent extends React.Component {
             new PositionAnalysis(newPieces, this.forceUpdate)],
         redoTurns: updateRedoTurns(redoTurns, turn),
         pieceAnimations,
-        preventAutoplay: false,
       };
     });
   }
@@ -905,7 +910,6 @@ class PlayComponent extends React.Component {
             new PositionAnalysis(newPieces, this.forceUpdate)],
         redoTurns: updateRedoTurns(redoTurns, turn),
         pieceAnimations,
-        preventAutoplay: false,
       };
     });
   }
@@ -946,7 +950,6 @@ class PlayComponent extends React.Component {
           piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length),
           analysisAtTurnStart: analysisAtTurnStart.slice(0, turns.length),
           pieceAnimations: {},
-          preventAutoplay: true,
           redoTurns: [turns[turns.length - 1], ...redoTurns],
         };
       }
@@ -983,6 +986,8 @@ class PlayComponent extends React.Component {
     const undoEnabled = turns.length > 0 || moves.length > 0;
     const redoEnabled = redoTurns.length > 0;
 
+    const autoplayBlocked = redoEnabled && aiPlayer >= 0 && aiPlayer === nextPlayer;
+
     const analysis = analysisAtTurnStart[turns.length];
 
     // Note: this is an arrow function so we can use `this` inside to refer
@@ -997,6 +1002,7 @@ class PlayComponent extends React.Component {
             aiPlayer={aiPlayer}
             onChangeStrength={(strength) => this.setState({strength})}
             onChangeAiPlayer={(aiPlayer) => this.setState({aiPlayer})}
+            autoplayBlocked={autoplayBlocked}
         />
         <History
           visible={tab === 'history'}

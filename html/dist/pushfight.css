@@ -269,6 +269,11 @@ adding to it.
   padding: 0.5em 1.5em;
 }
 
+.ai .small-warning {
+  font-size: 10pt;
+  color: #ccc;
+}
+
 .history,
 .history-tab {
   background: rgb(32, 32, 32);
