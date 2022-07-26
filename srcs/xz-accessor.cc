@@ -82,7 +82,7 @@ lzma_ret DecompressBlockPrefix(
   block.filters = filters;
 
   // Decode block header.
-  lzma_ret ret = lzma_block_header_decode(&block, allocator, data + coffset + csize);
+  lzma_ret ret = lzma_block_header_decode(&block, allocator, data + coffset);
   assert(csize >= block.header_size);
   if (ret == LZMA_OK) {
     // Block header looks good. Try to decode.
