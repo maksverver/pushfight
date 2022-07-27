@@ -16,7 +16,7 @@ BIND_ADDR = ('localhost', 8003)
 
 LOOKUP_MIN_PATH = './lookup-min'
 
-MINIMIZED_BIN_PATH = 'input/minimized.bin'
+MINIMIZED_BIN_PATH = 'minimized.bin'
 
 PERM_PATH = re.compile('^/perms/([.oOxXY]{26})$')
 
