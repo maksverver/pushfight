@@ -22,6 +22,8 @@
 /merge-phases
 /minimax
 /minify-merged
+/minimized.bin
+/minimized.bin.xz
 /perms_test
 /potential-new-losses
 /print-ef
