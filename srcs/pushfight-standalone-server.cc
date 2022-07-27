@@ -53,7 +53,7 @@ namespace {
 const char *default_minimized_path = "minimized.bin";
 const char *default_hostname = "localhost";
 const char *default_portname = "8080";
-const char *default_serve_dir = "html/dist";
+const char *default_serve_dir = "static";
 const char *default_index_file = "index.html";
 
 std::string minimized_path = default_minimized_path;
