@@ -3,7 +3,7 @@
 Push Fight is solved completely! With the help of [these volunteers](CREDITS.txt)
 I was able to calculate the best move for any valid position of the game.
 
-Push Fight is a an abstract board game for two players designed by
+Push Fight is an abstract board game for two players designed by
 Brett Picotte. A summary of the rules is provided further down.
 For more information about the game, or if you want to buy a physical copy
 to play with, visit https://pushfightgame.com/

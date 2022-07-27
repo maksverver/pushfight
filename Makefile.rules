@@ -39,6 +39,12 @@ search_test: $(OBJDIR)/search_test.o $(OBJDIR)/search.o $(OBJDIR)/board.o $(OBJD
 ternary_test: $(OBJDIR)/ternary_test.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+test: $(TESTS)
+	./efcodec_test
+	./perms_test
+	./search_test
+	./ternary_test
+
 # Rules to build binaries follow.
 
 backpropagate-losses: $(OBJDIR)/backpropagate-losses.o $(COMMON_OBJS)
