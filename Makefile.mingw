@@ -12,7 +12,7 @@ include Makefile.defs
 CC = x86_64-w64-mingw32-cc
 CXX = x86_64-w64-mingw32-c++
 LD = x86_64-w64-mingw32-c++
-CXXFLAGS += -static
+LDFLAGS += -static
 LDLIBS += -lws2_32
 
 most: $(BINARIES)
