@@ -355,6 +355,7 @@ adding to it.
 .analysis-tab {
   background: rgb(32, 32, 80);
   color: white;
+  max-width: 800px;  /* prevent long error messages from taking up too much space */
 }
 
 .analysis {
