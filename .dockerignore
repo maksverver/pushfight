@@ -1,0 +1,9 @@
+.git
+**/node_modules
+deps
+objs
+archives
+input
+minimized.bin.bak
+output
+*.zip
