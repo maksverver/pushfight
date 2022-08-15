@@ -46,6 +46,7 @@ I created a little web app to analyze arbitrary positions, which allows
 people to experiment with the game without downloading any data files.
 
 The Push Fight Analyzer app is available here: https://styx.verver.ch/pushfight/
+or here: https://pushfight.verver.ch/
 
 ![Push Fight Analyzer screenshot](images/website-screenshot.png)
 
