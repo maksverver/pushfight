@@ -2,6 +2,7 @@
 
 # Simple HTTP server that serves results from lookup-min.
 
+import argparse
 import json
 import http.server
 import os
@@ -11,12 +12,20 @@ import subprocess
 import sys
 import urllib.parse
 
+parser = argparse.ArgumentParser(description='Serve results from lookup-min over HTTP.')
+parser.add_argument('--host', default='localhost', help='Hostname to bind to')
+parser.add_argument('--port', default=8003, type=int, help='Port number to bind to')
+parser.add_argument('--ipv4', default=False, type=bool, action=argparse.BooleanOptionalAction,
+    help='Bind to IPv4 adress instead of IPv6 address')
+parser.add_argument('--lookup', default='./lookup-min', help='Path to lookup-min binary')
+parser.add_argument('--minimized', default='minimized.bin', help='Path to minimized.bin or minimized.bin.xz')
+args = parser.parse_args()
 
-BIND_ADDR = ('localhost', 8003)
+BIND_ADDR = (args.host, args.port)
 
-LOOKUP_MIN_PATH = './lookup-min'
+LOOKUP_MIN_PATH = args.lookup
 
-MINIMIZED_BIN_PATH = 'minimized.bin'
+MINIMIZED_BIN_PATH = args.minimized
 
 PERM_PATH = re.compile('^/perms/([.oOxXY]{26})$')
 
@@ -68,9 +77,7 @@ def ConvertSuccessors(output):
 class HttpServer(http.server.ThreadingHTTPServer):
   allow_reuse_address = True
 
-  # Bind on an IPv6 address. This should also work with IPv4 on dualstack
-  # systems. To listen only on IPv4, change the value to AF_INET.
-  address_family = socket.AF_INET6
+  address_family = socket.AF_INET if args.ipv4 else socket.AF_INET6
 
 
 # Handles a request to analyze a position.
