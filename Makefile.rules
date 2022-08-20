@@ -77,6 +77,9 @@ decode-delta: $(OBJDIR)/decode-delta.o $(COMMON_OBJS)
 encode-delta: $(OBJDIR)/encode-delta.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+expand-minimized: $(OBJDIR)/expand-minimized.o $(COMMON_OBJS) $(LOOKUP_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(LOOKUP_LDLIBS)
+
 fix-r4-bin: $(OBJDIR)/fix-r4-bin.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 

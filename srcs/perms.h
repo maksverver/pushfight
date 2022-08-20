@@ -99,6 +99,9 @@ constexpr int64_t min_index_size = 86208131520;
 // If `rotated` is not null, *rotated is updated to reflect whether the board
 // had to be rotated to calculate the minimized index. This value can be passed
 // to PermAtMindex() to restore the original permutation.
+//
+// The given permutation must be reachable (according to IsReachable() defined
+// in board.h) or the result of this function is undefined.
 int64_t MinIndexOf(const Perm &p, bool *rotated = nullptr);
 
 // Returns the permutation at a given minimized index. The index must be valid

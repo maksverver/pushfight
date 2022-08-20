@@ -22,6 +22,12 @@ class MinimizedAccessor {
 public:
   explicit MinimizedAccessor(const char *filename);
 
+  // Reads a bytes at the given file offset.
+  //
+  // To read multiple bytes, it may be more efficient to use ReadBytes(),
+  // defined below.
+  uint8_t ReadByte(int64_t offset) const;
+
   // Reads the bytes at the given file offsets, which must be given in
   // nondecreasing order (duplicates are allowed).
   //

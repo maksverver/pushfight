@@ -29,6 +29,18 @@ OpenAccessor(const char *filename) {
   exit(1);
 }
 
+struct ReadByteImpl {
+  int64_t offset;
+
+  uint8_t operator()(const MappedMinIndex &acc) {
+    return acc[offset];
+  }
+
+  uint8_t operator()(const XzAccessor &acc) {
+    return acc.ReadByte(offset);
+  }
+};
+
 struct ReadBytesImpl {
   const std::vector<int64_t> &offsets;
 
@@ -50,6 +62,10 @@ struct ReadBytesImpl {
 
 MinimizedAccessor::MinimizedAccessor(const char *filename)
   : acc(OpenAccessor(filename)) {}
+
+uint8_t MinimizedAccessor::ReadByte(int64_t offset) const {
+  return std::visit(ReadByteImpl{offset}, acc);
+}
 
 std::vector<uint8_t> MinimizedAccessor::ReadBytes(const std::vector<int64_t> &offsets) const {
   return std::visit(ReadBytesImpl{offsets}, acc);

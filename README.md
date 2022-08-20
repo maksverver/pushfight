@@ -36,9 +36,9 @@ There are two files of interest:
   * **merged.bin** is a 401 GB file that contains one byte per position, indicating the status of that position (how positions correspond with byte offsets is described below.)
   * **minimized.bin** is an 86 GB file that contains the same data, excluding unreachable positions and eliminating positions that are equivalent by rotation.
 
-In theory, each of these files can be generated from the other. In practice, I
-only created a tool ([minify-merged](srcs/minify-merged.cc)) to convert *merged.bin*
-to *minimized.bin*.
+Each of these files can be generated from the other. ([minify-merged](srcs/minify-merged.cc))
+converts *merged.bin* to *minimized.bin*, and ([expand-minimized](srcs/expand-minimized.cc))
+converts *minimized.bin* back to *merged.bin*.
 
 ### The Push Fight Analyzer web app
 

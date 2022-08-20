@@ -12,6 +12,30 @@
 #include "parse-perm.h"
 #include "search.h"
 
+namespace {
+
+// If the perm is invalid or finished, returns an empty optional and if error
+// is not null, also assigns an error message to *error.
+//
+// Otherwise, this function returns the minimized index (if the permutation is
+// both in-progress and reachable), or -1 (if the permutation is started or
+// or unreachable).
+std::optional<int64_t> CheckPermType(const Perm &perm, std::string *error) {
+  PermType type = ValidatePerm(perm);
+  if (type == PermType::INVALID) {
+    if (error) *error = "Permutation is invalid";
+    return {};
+  }
+  if (type == PermType::FINISHED) {
+    if (error) *error = "Permutation represents a finished position";
+    return {};
+  }
+  assert(type == PermType::STARTED || type == PermType::IN_PROGRESS);
+  return type == PermType::IN_PROGRESS && IsReachable(perm) ? MinIndexOf(perm) : -1;
+}
+
+}  // namespace
+
 std::optional<std::vector<EvaluatedSuccessor>>
 LookupSuccessors(
     const MinimizedAccessor &acc,
@@ -25,19 +49,9 @@ LookupSuccessors(
 std::optional<std::vector<EvaluatedSuccessor>>
 LookupSuccessors(
     const MinimizedAccessor &acc, const Perm &perm, std::string *error) {
-  // Parse permutation argument.
-  PermType type = ValidatePerm(perm);
-  if (type == PermType::INVALID) {
-    if (error) *error = "Permutation is invalid";
-    return {};
-  }
-  if (type == PermType::FINISHED) {
-    if (error) *error = "Permutation represents a finished position";
-  }
-  assert(type == PermType::STARTED || type == PermType::IN_PROGRESS);
-
-  const int64_t init_min_index =
-      type == PermType::IN_PROGRESS && IsReachable(perm) ? MinIndexOf(perm) : -1;
+  std::optional<int64_t> opt_init_min_index = CheckPermType(perm, error);
+  if (!opt_init_min_index) return {};
+  const int64_t init_min_index = *opt_init_min_index;
 
   std::vector<std::pair<Moves, State>> successors = GenerateAllSuccessors(perm);
   Deduplicate(successors);
@@ -124,4 +138,46 @@ LookupSuccessors(
     assert(init_min_index == -1 || stored_value == evaluated_successors.front().value);
   }
   return evaluated_successors;
+}
+
+std::optional<Value>
+LookupValue(const MinimizedAccessor &acc, const Perm &perm, std::string *error) {
+  if (std::optional<int64_t> min_index = CheckPermType(perm, error); !min_index) {
+    return {};
+  } else if (*min_index >= 0) {
+    // Look up value directly! This should be pretty fast.
+    return Value(acc.ReadByte(*min_index));
+  }
+
+  // Value is not stored in the minimized file. Recalculate it from successors.
+  Value best_value = Value::LossIn(0);
+  std::vector<int64_t> min_indices;
+  if (!GenerateSuccessors(perm, [&](const Moves &, const State &state) {
+    if (state.outcome == LOSS) {
+      // Win in 1 is the best value possible, so abort the search.
+      return false;
+    } else if (state.outcome == WIN) {
+      // Currently, GenerateAllSuccessors() does not return losing moves,
+      // so this code never executes.
+      best_value = Value::LossIn(1);
+    } else {
+      assert(state.outcome == TIE);
+      min_indices.push_back(MinIndexOf(state.perm, nullptr));
+    }
+    return true;  // continue
+  })) {
+    // Win-in-1 found.
+    return Value::WinIn(1);
+  }
+
+  if (!min_indices.empty()) {
+    // Sort and deduplicate min-indices, then lookup in accessor.
+    std::sort(min_indices.begin(), min_indices.end());
+    min_indices.erase(std::unique(min_indices.begin(), min_indices.end()), min_indices.end());
+    for (uint8_t byte : acc.ReadBytes(min_indices)) {
+      best_value = std::min(best_value, Value(byte).ToPredecessor());
+    }
+  }
+
+  return best_value;
 }

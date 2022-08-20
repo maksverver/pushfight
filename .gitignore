@@ -13,6 +13,7 @@
 /decode-delta
 /encode-delta
 /efcodec_test
+/expand-minimized
 /fix-r4-bin
 /integrate-two
 /integrate-wins
