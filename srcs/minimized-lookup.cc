@@ -64,7 +64,7 @@ LookupSuccessors(
       assert(o == TIE);
       assert(IsInProgress(p));
       assert(IsReachable(p));
-      min_index = MinIndexOf(elem.second.perm, &rotated);
+      min_index = MinIndexOf(p, &rotated);
       incomplete.push_back(evaluated_successors.size());
     }
 
