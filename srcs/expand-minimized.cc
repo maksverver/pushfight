@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     if (argc > 3) {
-      end_index = ParseInt(argv[3]);
+      end_index = ParseInt64(argv[3]);
       if (end_index < start_index || end_index > total_perms) {
         std::cerr << "Invalid end index: " << argv[3] << std::endl;
         return 1;
