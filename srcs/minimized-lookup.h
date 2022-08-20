@@ -43,11 +43,17 @@ LookupSuccessors(const MinimizedAccessor &acc, const Perm &perm, std::string *er
 //
 // The given permutation does not need to be reachable, but it must be valid and
 // not finished. If it is reachable, the lookup is very quick since it can be
-// found in the minimized accessor directly. If it's not reachable, then the
-// successors are evaluated to calculate the value, similar to
-// LookupSuccessors() defined above, except that this function is often more
-// efficient, since it doesn't have to do lookups in the accessor if a win-in-1
-// is found.
+// found in the minimized accessor directly. Otherwise, this function calls
+// RecalculateValue() to calculate the value from the successors.
 std::optional<Value> LookupValue(const MinimizedAccessor &acc, const Perm &perm, std::string *error);
+
+// Recalculates the value of the given permutation by examining its successors.
+//
+// This is similar to LookupSuccessors(), defined above, except that this
+// function is often more efficient, since it doesn't have to look up any
+// positions in the accessor if a win-in-1 is found.
+//
+// The given permutation must be a valid starting or in-progress permutation.
+Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm);
 
 #endif  // ndef MINIMIZED_LOOKUP_H_INCLUDED

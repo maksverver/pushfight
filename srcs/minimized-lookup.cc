@@ -143,13 +143,18 @@ LookupSuccessors(
 std::optional<Value>
 LookupValue(const MinimizedAccessor &acc, const Perm &perm, std::string *error) {
   if (std::optional<int64_t> min_index = CheckPermType(perm, error); !min_index) {
+    // Invalid argument.
     return {};
   } else if (*min_index >= 0) {
-    // Look up value directly! This should be pretty fast.
+    // Look up value by min-index. This should be pretty fast.
     return Value(acc.ReadByte(*min_index));
+  } else {
+    // Value is not stored in the minimized file. Recalculate it from successors.
+    return RecalculateValue(acc, perm);
   }
+}
 
-  // Value is not stored in the minimized file. Recalculate it from successors.
+Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm) {
   Value best_value = Value::LossIn(0);
   std::vector<int64_t> min_indices;
   if (!GenerateSuccessors(perm, [&](const Moves &, const State &state) {
