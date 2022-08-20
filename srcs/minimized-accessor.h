@@ -32,6 +32,9 @@ public:
   // nondecreasing order (duplicates are allowed).
   //
   // See also XzAccessor::ReadBytes() which has the same interface.
+  void ReadBytes(const int64_t *offsets, uint8_t *bytes, size_t n) const;
+
+  // Convenience method that accepts and returns offsets and bytes in a vector.
   std::vector<uint8_t> ReadBytes(const std::vector<int64_t> &offsets) const;
 
 private:

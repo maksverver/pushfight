@@ -42,19 +42,18 @@ struct ReadByteImpl {
 };
 
 struct ReadBytesImpl {
-  const std::vector<int64_t> &offsets;
+  const int64_t *offsets;
+  uint8_t *bytes;
+  size_t count;
 
-  std::vector<uint8_t> operator()(const MappedMinIndex &acc) {
-    size_t n = offsets.size();
-    std::vector<uint8_t> bytes(n);
-    for (size_t i = 0; i < n; ++i) {
+  void operator()(const MappedMinIndex &acc) {
+    for (size_t i = 0; i < count; ++i) {
       bytes[i] = acc[offsets[i]];
     }
-    return bytes;
   }
 
-  std::vector<uint8_t> operator()(const XzAccessor &acc) {
-    return acc.ReadBytes(offsets);
+  void operator()(const XzAccessor &acc) {
+    return acc.ReadBytes(offsets, bytes, count);
   }
 };
 
@@ -67,6 +66,13 @@ uint8_t MinimizedAccessor::ReadByte(int64_t offset) const {
   return std::visit(ReadByteImpl{offset}, acc);
 }
 
+void MinimizedAccessor::ReadBytes(const int64_t *offsets, uint8_t *bytes, size_t n) const {
+  return std::visit(ReadBytesImpl{offsets, bytes, n}, acc);
+}
+
 std::vector<uint8_t> MinimizedAccessor::ReadBytes(const std::vector<int64_t> &offsets) const {
-  return std::visit(ReadBytesImpl{offsets}, acc);
+  size_t count = offsets.size();
+  std::vector<uint8_t> bytes(count);
+  ReadBytes(offsets.data(), bytes.data(), count);
+  return bytes;
 }
