@@ -324,7 +324,6 @@ int64_t MinIndexOf(const Perm &p, bool *rotated) {
       calc.Add(&p[i + 2], &p[L]);
       calc.Add(&p[0], &p[i - 1]);
       offset += calc.idx;
-
     } else {
       assert(axes[i] == 2);
       offset += min_index_verti_offset_begin[int{p[i - 7]}][int{p[i - 1]}][int{p[i + 1]}][int{p[i + 8]}];
