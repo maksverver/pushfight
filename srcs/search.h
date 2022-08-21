@@ -1,8 +1,9 @@
 #ifndef SEARCH_H_INCLUDED
 #define SEARCH_H_INCLUDED
 
-#include "perms.h"
 #include "board.h"
+#include "perms.h"
+#include "search-impl.h"
 
 #include <functional>
 #include <vector>
@@ -12,12 +13,20 @@
 //
 // Precondition: `perm` must be a permutation that is started or in-progress.
 //
+// Callback is a callable of the form: bool(const Moves&, const State&).
+//
 // When the callback returns false, the search is aborted, and this function
 // returns false too. If the callback returns true every time it is called,
 // then all successors are enumerated and this function returns true.
-bool GenerateSuccessors(
-    const Perm &perm,
-    const std::function<bool(const Moves&, const State&)> &callback);
+template<class Callback>
+bool GenerateSuccessors(const Perm &perm, Callback callback) {
+  Perm mutable_perm = perm;
+  Moves moves = {.size = 0, .moves={}};
+  return
+    impl::GenerateSuccessors(mutable_perm, moves, 0, callback) &&
+    impl::GenerateSuccessors(mutable_perm, moves, 1, callback) &&
+    impl::GenerateSuccessors(mutable_perm, moves, 2, callback);
+}
 
 // Enumerates the predecessors of `perm`.
 //
