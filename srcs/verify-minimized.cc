@@ -25,7 +25,7 @@ namespace {
 // Number of threads to use for calculations. 0 to disable multithreading.
 const int thread_count = std::thread::hardware_concurrency();
 
-// Createa checkpoint after this many iterations.
+// Create a checkpoint after this many iterations.
 const int64_t checkpoint_interval = 100000;
 
 void VerifyThread(
