@@ -7,6 +7,7 @@
 
 #include "accessors.h"
 #include "board.h"
+#include "dedupe.h"
 #include "perms.h"
 #include "position-value.h"
 #include "parse-perm.h"
@@ -176,9 +177,7 @@ Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm) {
   }
 
   if (!min_indices.empty()) {
-    // Sort and deduplicate min-indices, then lookup in accessor.
-    std::sort(min_indices.begin(), min_indices.end());
-    min_indices.erase(std::unique(min_indices.begin(), min_indices.end()), min_indices.end());
+    SortAndDedupe(min_indices);
     for (uint8_t byte : acc.ReadBytes(min_indices)) {
       best_value = std::min(best_value, Value(byte).ToPredecessor());
     }

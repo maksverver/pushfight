@@ -17,6 +17,7 @@
 #include "board.h"
 #include "bytes.h"
 #include "chunks.h"
+#include "dedupe.h"
 #include "efcodec.h"
 #include "flags.h"
 #include "input-generation.h"
@@ -49,12 +50,6 @@ const std::string PhaseDiffFilename(int phase) {
 void PrintUsage() {
   std::cerr << "Usage: potential-new-losses --phase=N\n"
       "Note: writes to standard output!" << std::endl;
-}
-
-template<class T>
-void SortAndDedupe(std::vector<T> &v) {
-  std::sort(v.begin(), v.end());
-  v.erase(std::unique(v.begin(), v.end()), v.end());
 }
 
 }  // namespace

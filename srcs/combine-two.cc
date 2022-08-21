@@ -13,6 +13,7 @@
 
 #include "bytes.h"
 #include "chunks.h"
+#include "dedupe.h"
 #include "efcodec.h"
 #include "macros.h"
 
@@ -65,8 +66,7 @@ int main(int argc, char *argv[]) {
         assert(std::is_sorted(src.begin(), src.end()));
         assert(std::unique(src.begin(), src.end()) == src.end());
       } else {
-        std::sort(src.begin(), src.end());
-        src.erase(std::unique(src.begin(), src.end()), src.end());
+        SortAndDedupe(src);
       }
       std::vector<int64_t> ints;
       ints.reserve(src.size());

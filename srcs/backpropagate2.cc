@@ -18,6 +18,7 @@
 #include "board.h"
 #include "bytes.h"
 #include "chunks.h"
+#include "dedupe.h"
 #include "efcodec.h"
 #include "flags.h"
 #include "input-verification.h"
@@ -105,11 +106,6 @@ void ProcessPerm(int64_t perm_index, const Perm &perm, ChunkStats *stats, std::v
       assert(o == WIN);
     }
   });
-}
-
-void SortAndDedupe(std::vector<int64_t> &v) {
-  std::sort(v.begin(), v.end());
-  v.erase(std::unique(v.begin(), v.end()), v.end());
 }
 
 void ComputeChunkThread(int chunk, std::atomic<int> *next_part, std::vector<int64_t> *wins, ChunkStats *stats) {

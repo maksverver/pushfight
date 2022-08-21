@@ -30,6 +30,7 @@
 #include "board.h"
 #include "bytes.h"
 #include "chunks.h"
+#include "dedupe.h"
 #include "efcodec.h"
 #include "flags.h"
 #include "input-generation.h"
@@ -223,11 +224,6 @@ void BackpropagateLoss(
       assert(o == WIN);
     }
   });
-}
-
-void SortAndDedupe(std::vector<int64_t> &v) {
-  std::sort(v.begin(), v.end());
-  v.erase(std::unique(v.begin(), v.end()), v.end());
 }
 
 void ComputeWinsThread(
