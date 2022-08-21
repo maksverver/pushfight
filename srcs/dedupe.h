@@ -1,5 +1,5 @@
 #ifndef DEDUPE_H_INCLUDED
-#define DEDUP_H_INCLUDED
+#define DEDUPE_H_INCLUDED
 
 #include <algorithm>
 
