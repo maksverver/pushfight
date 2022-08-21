@@ -9,6 +9,21 @@
 #include <vector>
 #include <utility>
 
+// An upper bound on the maximum number of successors for any position.
+//
+// Calculated as (1 + 5 * 16 + 5 * 4 / 2  * 16 * 16) * (3 * 3),
+// where the first factor is the maximum total number of moves (assuming 0,
+// 1 or 2 of the total 5 pieces are being moved to any of the 16 free squares)
+// and the second term is the total number of pushes (any of the 3 pushers times
+// 3 directions). Pushers can push in 3 rather than 4 directions because due to
+// the shape of the board, for any position, a pusher can only push up or down,
+// but never both.
+//
+// In practice, positions have around 4000 distinct successors on average (around
+// double that without deduplication) with outliers over 8,000 (e.g. index
+// 1707612174 has 18,431 possible turns, and 8412 distinct successors).
+constexpr int max_successors = 23769;
+
 // Enumerates the successors of `perm`.
 //
 // Precondition: `perm` must be a permutation that is started or in-progress.
