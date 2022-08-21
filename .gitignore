@@ -44,6 +44,7 @@
 /test-client
 /verify-input-chunks
 /verify-min-index
+/verify-minimized
 /verify-new
 /verify-r0
 /verify-r1

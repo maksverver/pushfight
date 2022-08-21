@@ -149,6 +149,9 @@ verify-input-chunks: $(OBJDIR)/verify-input-chunks.o $(COMMON_OBJS) $(OBJDIR)/in
 verify-min-index: $(OBJDIR)/verify-min-index.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+verify-minimized: $(OBJDIR)/verify-minimized.o $(COMMON_OBJS) $(LOOKUP_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(LOOKUP_LDLIBS)
+
 verify-new: $(OBJDIR)/verify-new.o $(COMMON_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
