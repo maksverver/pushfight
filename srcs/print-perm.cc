@@ -7,15 +7,18 @@
 #include <cassert>
 #include <cctype>
 #include <iostream>
+#include <map>
 #include <optional>
+#include <set>
 #include <sstream>
 
 namespace {
 
-bool print_successors = false;
-bool print_predecessors = false;
 bool print_compact = false;
 bool print_coords = false;
+bool print_successors = false;
+bool print_predecessors = false;
+bool print_unique = false;
 
 PrettyPerm Print(const Perm &perm) {
   return PrettyPerm{.perm=perm, .compact=print_compact, .coords=print_coords};
@@ -60,9 +63,18 @@ void DumpPerm(PermType type, const Perm &perm) {
     }
 
     o = LOSS;  // will be updated below
-    GenerateSuccessors(perm, [&o](const Moves &moves, const State &state) {
+    std::map<Perm, Outcome> seen;
+    GenerateSuccessors(perm, [&](const Moves &moves, const State &state) {
       assert(ValidatePerm(state.perm) == (state.outcome == TIE ? PermType::IN_PROGRESS : PermType::FINISHED));
-      if (print_successors) {
+      auto it = seen.find(state.perm);
+      bool dupe = false;
+      if (it == seen.end()) {
+        seen[state.perm] = state.outcome;
+      } else {
+        assert(it->second == state.outcome);
+        dupe = true;
+      }
+      if (print_successors && (!print_unique || !dupe)) {
         std::cout << moves << '\n';
         if (state.outcome == TIE) {
           PrintPermId(std::cout, state.perm);
@@ -87,10 +99,13 @@ void DumpPerm(PermType type, const Perm &perm) {
       std::cout << "Cannot print predecessors because this position is finished.\n";
     } else {
       std::cout << "\nPredecessors:\n\n";
-      GeneratePredecessors(perm, [](const Perm &pred) {
-        PrintPermId(std::cout, pred);
-        std::cout << Print(pred) << '\n';
-        if (print_compact) std::cout << '\n';
+      std::set<Perm> seen;
+      GeneratePredecessors(perm, [&](const Perm &pred) {
+        if (!print_unique || seen.insert(pred).second) {
+          PrintPermId(std::cout, pred);
+          std::cout << Print(pred) << '\n';
+          if (print_compact) std::cout << '\n';
+        }
       });
     }
   }
@@ -107,7 +122,9 @@ void PrintUsage() {
     "  --compact: print permutations without spaces\n"
     "  --coords: include coordinates in output\n"
     "  --succ: print successors\n"
-    "  --pred: print predecessors" << std::endl;
+    "  --pred: print predecessors\n"
+    "  --uniq: only show one possible turn leading to each unique state"
+    << std::endl;
 }
 
 }  // namespace
@@ -117,12 +134,14 @@ int main(int argc, char *argv[]) {
   std::string arg_coords;
   std::string arg_succ;
   std::string arg_pred;
+  std::string arg_uniq;
 
   std::map<std::string, Flag> flags = {
     {"compact", Flag::optional(arg_compact)},
     {"coords", Flag::optional(arg_coords)},
     {"succ", Flag::optional(arg_succ)},
     {"pred", Flag::optional(arg_pred)},
+    {"uniq", Flag::optional(arg_uniq)},
   };
 
   if (argc == 1) {
@@ -147,6 +166,7 @@ int main(int argc, char *argv[]) {
   print_coords = arg_coords == "true";
   print_predecessors = arg_pred == "true";
   print_successors = arg_succ == "true";
+  print_unique = arg_uniq == "true";
 
   std::string error;
   std::optional<Perm> perm = ParsePerm(perm_arg, &error);
