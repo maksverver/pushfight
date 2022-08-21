@@ -34,10 +34,12 @@ void VerifyThread(
     std::atomic<int64_t> *next_index,
     std::atomic<int64_t> *failures,
     std::mutex *io_mutex) {
+  std::vector<int64_t> offsets_scratch;
+  std::vector<uint8_t> bytes_scratch;
   int64_t index;
   while ((index = (*next_index)++) < end_index) {
     Perm perm = PermAtMinIndex(index);
-    uint8_t expected_byte = RecalculateValue(*acc, perm).byte;
+    uint8_t expected_byte = RecalculateValue(*acc, perm, offsets_scratch, bytes_scratch).byte;
     uint8_t actual_byte = acc->ReadByte(index);
     if (expected_byte != actual_byte) [[unlikely]] {
       std::lock_guard lock(*io_mutex);

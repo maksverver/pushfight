@@ -7,6 +7,7 @@
 
 #include "accessors.h"
 #include "board.h"
+#include "dedupe.h"
 #include "perms.h"
 #include "position-value.h"
 #include "parse-perm.h"
@@ -154,12 +155,13 @@ LookupValue(const MinimizedAccessor &acc, const Perm &perm, std::string *error) 
   }
 }
 
-Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm) {
+Value RecalculateValue(
+    const MinimizedAccessor &acc,
+    const Perm &perm,
+    std::vector<int64_t> &offsets,
+    std::vector<uint8_t> &bytes) {
+  offsets.resize(0);
   Value best_value = Value::LossIn(0);
-  // Note: this allocates ~190 KB on the stack! This might not be supported on
-  // all operating systems. If needed, replace this array with an std::vector.
-  int64_t offsets[max_successors];
-  size_t noffset = 0;
   if (!GenerateSuccessors(perm, [&](const Moves &, const State &state) {
     if (state.outcome == LOSS) {
       // Win in 1 is the best value possible, so abort the search.
@@ -170,8 +172,7 @@ Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm) {
       best_value = Value::LossIn(1);
     } else {
       assert(state.outcome == TIE);
-      assert(noffset < max_successors);
-      offsets[noffset++] = MinIndexOf(state.perm, nullptr);
+      offsets.push_back(MinIndexOf(state.perm, nullptr));
     }
     return true;  // continue
   })) {
@@ -179,14 +180,12 @@ Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm) {
     return Value::WinIn(1);
   }
 
-  if (noffset > 0) {
-    std::sort(&offsets[0], &offsets[noffset]);
-    noffset = std::unique(&offsets[0], &offsets[noffset]) - &offsets[0];
-
-    uint8_t bytes[max_successors];
-    acc.ReadBytes(offsets, bytes, noffset);
-    for (size_t i = 0; i < noffset; ++i) {
-      best_value = std::min(best_value, Value(bytes[i]).ToPredecessor());
+  if (!offsets.empty()) {
+    SortAndDedupe(offsets);
+    bytes.resize(offsets.size());
+    acc.ReadBytes(offsets.data(), bytes.data(), offsets.size());
+    for (uint8_t byte : bytes) {
+      best_value = std::min(best_value, Value(byte).ToPredecessor());
     }
   }
 

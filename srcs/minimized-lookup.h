@@ -54,6 +54,21 @@ std::optional<Value> LookupValue(const MinimizedAccessor &acc, const Perm &perm,
 // positions in the accessor if a win-in-1 is found.
 //
 // The given permutation must be a valid starting or in-progress permutation.
-Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm);
+//
+// The `offsets` and `bytes` objects are used as scratch space; this is useful
+// to minimize allocations when RecalculateValue() is called many times. If you
+// don't care about this, call the overload below instead.
+Value RecalculateValue(
+  const MinimizedAccessor &acc,
+  const Perm &perm,
+  std::vector<int64_t> &offsets,
+  std::vector<uint8_t> &bytes);
+
+
+inline Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm) {
+  std::vector<int64_t> offsets;
+  std::vector<uint8_t> bytes;
+  return RecalculateValue(acc, perm, offsets, bytes);
+}
 
 #endif  // ndef MINIMIZED_LOOKUP_H_INCLUDED
