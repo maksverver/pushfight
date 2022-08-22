@@ -1,4 +1,4 @@
-COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -flto -pthread
+COMMON_FLAGS=-Wall -Wextra -Wno-sign-compare -O3 -pthread
 CFLAGS=$(COMMON_FLAGS) -std=c17
 CXXFLAGS=$(COMMON_FLAGS) -std=c++20
 LDFLAGS=
