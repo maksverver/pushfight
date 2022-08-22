@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DIR=$(readlink -f $(dirname "$0"))
-VERSION=1.0.0
+VERSION=1.0.1
 BASENAME=pushfight
 DIRNAME=$BASENAME-$VERSION
 ZIPNAME=$BASENAME-$VERSION-windows.zip
@@ -11,7 +11,7 @@ set -e -E -o pipefail
 # Build windows binaries
 echo 'Building executables...'
 make clean
-make -f Makefile.mingw -j lookup-min pushfight-standalone-server
+make -f Makefile.mingw -j lookup-min print-perm pushfight-standalone-server
 
 # Build statically served files (HTML, JS, etc.)
 echo 'Building static files...'
@@ -21,7 +21,7 @@ echo 'Populating temporary directory...'
 TEMPDIR=$(mktemp -d)
 trap "rm -R '$TEMPDIR'" EXIT
 mkdir "$TEMPDIR/$DIRNAME"
-cp lookup-min.exe pushfight-standalone-server.exe "$TEMPDIR/$DIRNAME/"
+cp lookup-min.exe print-perm.exe pushfight-standalone-server.exe "$TEMPDIR/$DIRNAME/"
 cp -R html/dist "$TEMPDIR/$DIRNAME/static"
 
 cat >"$TEMPDIR/$DIRNAME/README.txt" <<EOF
@@ -103,24 +103,28 @@ files with XZ Utils (https://tukaani.org/xz/) or 7-Zip (https://www.7-zip.org/).
 AVAILABLE EXECUTABLES
 ---------------------
 
-This release contains two executables:
+This release contains three executables:
 
-  1. lookup-min.exe, which can be used to analyze any position on the command
-     line. For a given position, it prints all successors sorted by valuation.
+ 1. print-perm.exe, which can be used to convert between permutation strings,
+    permutation indices, and minimized indices, and which can show the
+    successors and predecessors of any permutation.
 
-  2. pushfight-standalone-server.exe, which can be used to run a standalone
-     version of the web app that is also available at:
-     https://styx.verver.ch/pushfight/
+ 2. lookup-min.exe, which can be used to analyze any position using the data
+    from the minimized.bin or minimzed.bin.xz file. Output is one successor
+    state per line, sorted by decreasing valuations.
 
-     After downloading minimized.bin.xz, start pushfight-standalone-server.exe,
-     and then open http://localhost:8080/ in your browser to interact with the
-     app.
+ 3. pushfight-standalone-server.exe, which can be used to run a standalone
+    version of the analyzer web app that is also available at:
+    https://styx.verver.ch/pushfight/
 
-     Run "pushfight-standalone-server.exe --help" to get a list of command line
-     options, including which host and port to serve on.
+    To start the server, run: pushfight-standalone-server.exe, and then open
+    http://localhost:8080/ in your browser to interact with the app.
 
-     Note that this server is meant for local use only. It's not meant to serve
-     large amounts of production traffic.
+    Run "pushfight-standalone-server.exe --help" to get a list of command line
+    options, including which host and port to serve on.
+
+    Note that this server is meant for local use only. It's not meant to serve
+    large amounts of production traffic.
 EOF
 
 echo 'Ready to archive the following files:'
