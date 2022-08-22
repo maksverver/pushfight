@@ -116,7 +116,7 @@ print-perm: $(OBJDIR)/print-perm.o $(COMMON_OBJS)
 print-r1: $(OBJDIR)/print-r1.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-potential-new-losses: $(OBJDIR)/potential-new-losses.o $(COMMON_OBJS) $(SOLVER_OBJS)
+potential-new-losses: $(OBJDIR)/potential-new-losses.o $(COMMON_OBJS) $(CLIENT_OBJS) $(SOLVER_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(CLIENT_LDLIBS)
 
 pushfight-standalone-server: $(OBJDIR)/pushfight-standalone-server.o $(COMMON_OBJS) $(LOOKUP_OBJS)
