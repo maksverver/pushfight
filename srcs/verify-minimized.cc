@@ -102,22 +102,24 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  std::cerr << "Solving from min-index +" << start_index << " to min-index +" << end_index
+      << " using " << thread_count << " threads." << std::endl;
+
   int64_t checkpoint_index = 0;
   std::ifstream ifs(checkpoint_path);
   if (!ifs || !(ifs >> checkpoint_index)) {
     std::cerr << "Could not read previous checkpoint index! "
-        << "Restarting computation from index " << start_index << "." << std::endl;
+        << "Restarting computation from min-index +" << start_index << "." << std::endl;
     checkpoint_index = start_index;
   } else if (checkpoint_index < start_index || checkpoint_index > end_index) {
     std::cerr << "Checkpoint index (" << checkpoint_index << ") out of range!" << std::endl;
     return EXIT_FAILURE;
   } else {
-    std::cerr << "Resuming from checkpoint index " << checkpoint_index << std::endl;
+    std::cerr << "Resuming from checkpoint min-index +" << checkpoint_index << std::endl;
   }
 
   MinimizedAccessor acc(minimized_path);
 
-  std::cerr << "Using " << thread_count << " threads." << std::endl;
   while (checkpoint_index < end_index) {
     int64_t chunk_start_index = checkpoint_index;
     int64_t chunk_end_index = std::min(checkpoint_index + checkpoint_interval, end_index);
