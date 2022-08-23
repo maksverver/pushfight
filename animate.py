@@ -30,13 +30,17 @@ FIELD_COL = [
       1,  2,  3,  4,  5
 ]
 
-if len(sys.argv) < 3:
-  print('Usage: animate.py <output.gif> <state> [<moves>...]')
+if len(sys.argv) < 3 or (sys.argv[1] == '--monochrome' and len(sys.argv) < 4):
+  print('Usage: animate.py [<--monochrome>] <output.gif> <state> [<moves>...]')
   sys.exit(1)
 
-output_arg = sys.argv[1]
-state_arg = sys.argv[2]
-turn_args = sys.argv[3:]
+# --monochrome enables monochrome mode, where only shades of grey are used. This
+# is useful for printing still images where white (red) is to move, but not good
+# for animation, since the anchor (which is white) would be invisible!
+bw = sys.argv[1] == '--monochrome'
+output_arg = sys.argv[1 + bw]
+state_arg = sys.argv[2 + bw]
+turn_args = sys.argv[3 + bw:]
 
 if len(state_arg) != 26:
   print('Invalid state: ' + state_arg + ' (expected a 26-character string like ".OX.....oxY....Oox.....OX.")')
@@ -103,9 +107,9 @@ for i, ch in enumerate(state_arg):
 BLACK = (  0,   0,   0)
 WHITE = (255, 255, 255)
 GRAY  = (128, 128, 128)
-RED  =  (240,   0,   0)
-BLUE =  (  0,   0, 240)
-BEIGE = (209, 188, 138)
+RED  =  (240,   0,   0) if not bw else (255, 255, 255)
+BLUE =  (  0,   0, 240) if not bw else (0, 0, 0)
+BEIGE = (209, 188, 138) if not bw else (224, 224, 224)
 
 
 font = ImageFont.truetype('/usr/share/fonts/liberation/LiberationMono-Regular.ttf', 20)
