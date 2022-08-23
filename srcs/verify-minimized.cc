@@ -23,7 +23,8 @@
 namespace {
 
 // Number of threads to use for calculations. 0 to disable multithreading.
-const int thread_count = std::thread::hardware_concurrency();
+// By default, use 1.5 times the number of cores.
+const int thread_count = (std::thread::hardware_concurrency() * 3 + 1) / 2;
 
 // Create a checkpoint after this many iterations.
 const int64_t checkpoint_interval = 100000;
@@ -116,6 +117,7 @@ int main(int argc, char *argv[]) {
 
   MinimizedAccessor acc(minimized_path);
 
+  std::cerr << "Using " << thread_count << " threads." << std::endl;
   while (checkpoint_index < end_index) {
     int64_t chunk_start_index = checkpoint_index;
     int64_t chunk_end_index = std::min(checkpoint_index + checkpoint_interval, end_index);
