@@ -24,6 +24,8 @@ FROM nginx:alpine
 WORKDIR /app
 COPY --link minimized.bin.xz ./
 COPY lookup-min-http-server.py ./
+COPY dist/startup.sh ./
+RUN chmod +x ./startup.sh
 COPY dist/nginx-default.conf /etc/nginx/conf.d/default.conf
 COPY --from=html-build /html/dist/ /app/static/
 COPY --from=bin-build /build/lookup-min ./
@@ -31,4 +33,4 @@ RUN apk add --no-cache \
     libressl \
     python3 \
     xz
-CMD nginx && ./lookup-min-http-server.py --ipv4 --host=127.0.0.1 --port=8003 --lookup=./lookup-min --minimized=minimized.bin.xz
+CMD ./startup.sh
