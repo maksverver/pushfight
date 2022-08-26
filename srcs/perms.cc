@@ -84,72 +84,69 @@ int64_t min_index_verti_offset_begin[5][5][5][5];  // top, left, right, bottom
 // min_index_start[i] = start index for permutations with the anchor at field i
 int64_t min_index_anchor_offset_begin[13];
 
-// Ends used by PermAtMinIndex().
-int64_t min_index_horiz_offset_end[5][5];
-int64_t min_index_verti_offset_end[5][5][5][5];
-int64_t min_index_anchor_offset_end[13];
-
 Perm PermAtMinIndexImpl(int64_t idx) {
   assert(idx >= 0 && idx < min_index_size);
 
   Perm perm;
-  REP(i, 13) if (idx < min_index_anchor_offset_end[i]) {
 
-    idx -= min_index_anchor_offset_begin[i];
+  int i = 11;  // anchor index (must be between 1 and 11, inclusive)
+  while (idx < min_index_anchor_offset_begin[i]) --i;
+  assert(i > 0 && axes[i] > 0);
 
-    assert(axes[i] > 0 && i >= 1);
+  idx -= min_index_anchor_offset_begin[i];
 
-    REP(a, 5) REP(b, 5) if (idx < min_index_horiz_offset_end[a][b]) {
-      idx -= min_index_horiz_offset_begin[a][b];
+  if (idx < min_index_verti_offset_begin[0][0][0][0]) {
+    int a = 0, b = 0;  // type of piece to the left/right
+    while (a < 4 && idx >= min_index_horiz_offset_begin[a + 1][0]) ++a;
+    while (b < 4 && idx >= min_index_horiz_offset_begin[a][b + 1]) ++b;
 
-      perm[i - 1] = a;
-      perm[i    ] = 5;
-      perm[i + 1] = b;
+    idx -= min_index_horiz_offset_begin[a][b];
 
-      std::array<int, 6> f = in_progress_freq;
-      --f[a];
-      --f[5];
-      --f[b];
-      char remaining[23];
-      PermAtIndexImpl(idx, f, std::begin(remaining), std::end(remaining));
-      int pos = 0;
-      FOR(j,     0, i - 1) perm[j] = remaining[pos++];
-      FOR(j, i + 2,     L) perm[j] = remaining[pos++];
-      assert(pos == 23);
-      goto done;
-    }
+    perm[i - 1] = a;
+    perm[i    ] = 5;
+    perm[i + 1] = b;
 
+    std::array<int, 6> f = in_progress_freq;
+    --f[a];
+    --f[5];
+    --f[b];
+    char remaining[23];
+    PermAtIndexImpl(idx, f, std::begin(remaining), std::end(remaining));
+    int pos = 0;
+    FOR(j,     0, i - 1) perm[j] = remaining[pos++];
+    FOR(j, i + 2,     L) perm[j] = remaining[pos++];
+    assert(pos == 23);
+  } else {
     assert(axes[i] > 1 && i >= 7);
 
-    REP(a, 5) REP(b, 5) REP(c, 5) REP(d, 5) if (idx < min_index_verti_offset_end[a][b][c][d]) {
-      idx -= min_index_verti_offset_begin[a][b][c][d];
+    int a = 0, b = 0, c = 0, d = 0;  // type of piece to the top/left/right/bottom
+    while (a < 4 && idx >= min_index_verti_offset_begin[a + 1][0][0][0]) ++a;
+    while (b < 4 && idx >= min_index_verti_offset_begin[a][b + 1][0][0]) ++b;
+    while (c < 4 && idx >= min_index_verti_offset_begin[a][b][c + 1][0]) ++c;
+    while (d < 4 && idx >= min_index_verti_offset_begin[a][b][c][d + 1]) ++d;
+    idx -= min_index_verti_offset_begin[a][b][c][d];
 
-      perm[i - 7] = a;
-      perm[i - 1] = b;
-      perm[i    ] = 5;
-      perm[i + 1] = c;
-      perm[i + 8] = d;
+    perm[i - 7] = a;
+    perm[i - 1] = b;
+    perm[i    ] = 5;
+    perm[i + 1] = c;
+    perm[i + 8] = d;
 
-      std::array<int, 6> f = in_progress_freq;
-      --f[a];
-      --f[b];
-      --f[5];
-      --f[c];
-      --f[d];
-      char remaining[21];
-      PermAtIndexImpl(idx, f, std::begin(remaining), std::end(remaining));
-      int pos = 0;
-      FOR(j,     0, i - 7) perm[j] = remaining[pos++];
-      FOR(j, i - 6, i - 1) perm[j] = remaining[pos++];
-      FOR(j, i + 2, i + 8) perm[j] = remaining[pos++];
-      FOR(j, i + 9,     L) perm[j] = remaining[pos++];
-      assert(pos == 21);
-      goto done;
-    }
+    std::array<int, 6> f = in_progress_freq;
+    --f[a];
+    --f[b];
+    --f[5];
+    --f[c];
+    --f[d];
+    char remaining[21];
+    PermAtIndexImpl(idx, f, std::begin(remaining), std::end(remaining));
+    int pos = 0;
+    FOR(j,     0, i - 7) perm[j] = remaining[pos++];
+    FOR(j, i - 6, i - 1) perm[j] = remaining[pos++];
+    FOR(j, i + 2, i + 8) perm[j] = remaining[pos++];
+    FOR(j, i + 9,     L) perm[j] = remaining[pos++];
+    assert(pos == 21);
   }
-  assert(false);
-
-done:
   return perm;
 }
 
@@ -223,7 +220,6 @@ void InitializePerms() {
         // aY.
         horiz += num_perms[15][2 - (a == 1)][3 - (a == 2)][2 - (a == 3)][2 - (a == 4)][0];
       }
-      min_index_horiz_offset_end[a][b] = horiz;
     }
     int64_t verti = horiz;
     REP(a, 5) REP(b, 5) REP(c, 5) REP(d, 5) {
@@ -264,7 +260,6 @@ void InitializePerms() {
           verti += num_perms[15][p][q][r][s][0];
         }
       }
-      min_index_verti_offset_end[a][b][c][d] = verti;
     }
     int64_t total = 0;
     REP(i, 13) {
@@ -274,7 +269,6 @@ void InitializePerms() {
       } else if (axes[i] == 2) {
         total += verti;
       }
-      min_index_anchor_offset_end[i] = total;
     }
     assert(total == min_index_size);
   }
