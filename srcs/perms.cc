@@ -153,6 +153,29 @@ done:
   return perm;
 }
 
+// i is the position of the anchor
+int64_t MinIndexOfImpl(const Perm &p, int i) {
+  assert(axes[i] > 0);
+  int64_t offset = min_index_anchor_offset_begin[i];
+  if ((p[i - 1] == 0) != (p[i + 1] == 0)) {
+    offset += min_index_horiz_offset_begin[int{p[i - 1]}][int{p[i + 1]}];
+    IndexOfCalculator calc;
+    calc.Add(&p[i + 2], &p[L]);
+    calc.Add(&p[0], &p[i - 1]);
+    offset += calc.idx;
+  } else {
+    assert(axes[i] == 2);
+    offset += min_index_verti_offset_begin[int{p[i - 7]}][int{p[i - 1]}][int{p[i + 1]}][int{p[i + 8]}];
+    IndexOfCalculator calc;
+    calc.Add(&p[i + 9], &p[L]);
+    calc.Add(&p[i + 2], &p[i + 8]);
+    calc.Add(&p[i - 6], &p[i - 1]);
+    calc.Add(&p[0    ], &p[i - 7]);
+    offset += calc.idx;
+  }
+  return offset;
+}
+
 // Initializes lookup tables. This must be called before any of the other
 // functions. Ideally, it's only called once, but it's possible to call it
 // multiple times.
@@ -311,34 +334,16 @@ Perm Rotated(const Perm &perm) {
 }
 
 int64_t MinIndexOf(const Perm &p, bool *rotated) {
-  REP(i, 26) if (p[i] == 5) {
-    if (i >= 13) {
-      if (rotated) *rotated = true;
-      return MinIndexOf(Rotated(p));
-    }
-    assert(axes[i] > 0);
-    int64_t offset = min_index_anchor_offset_begin[i];
-    if ((p[i - 1] == 0) != (p[i + 1] == 0)) {
-      offset += min_index_horiz_offset_begin[int{p[i - 1]}][int{p[i + 1]}];
-      IndexOfCalculator calc;
-      calc.Add(&p[i + 2], &p[L]);
-      calc.Add(&p[0], &p[i - 1]);
-      offset += calc.idx;
-    } else {
-      assert(axes[i] == 2);
-      offset += min_index_verti_offset_begin[int{p[i - 7]}][int{p[i - 1]}][int{p[i + 1]}][int{p[i + 8]}];
-      IndexOfCalculator calc;
-      calc.Add(&p[i + 9], &p[L]);
-      calc.Add(&p[i + 2], &p[i + 8]);
-      calc.Add(&p[i - 6], &p[i - 1]);
-      calc.Add(&p[0    ], &p[i - 7]);
-      offset += calc.idx;
-    }
+  int i = 0;
+  while (p[i] != 5) ++i;
+  if (i < 13) {
     if (rotated) *rotated = false;
-    return offset;
+    return MinIndexOfImpl(p, i);
+  } else {
+    assert(i < 26);
+    if (rotated) *rotated = true;
+    return MinIndexOfImpl(Rotated(p), 25 - i);
   }
-  assert(false);
-  return -1;
 }
 
 Perm PermAtMinIndex(int64_t idx, bool rotated) {
