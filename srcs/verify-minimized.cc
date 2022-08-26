@@ -41,8 +41,17 @@ void VerifyThread(
   int64_t index;
   while ((index = (*next_index)++) < end_index) {
     Perm perm = PermAtMinIndex(index);
-    uint8_t expected_byte = RecalculateValue(*acc, perm, offsets_scratch, bytes_scratch).byte;
     uint8_t actual_byte = acc->ReadByte(index);
+    uint8_t expected_byte;
+    // Special case for when we expect a win-in-1 (about 84.9% of minimized
+    // positions): quickly confirm that there is an immediate winning turn,
+    // instead of enumerating all successors with RecalculateValue().
+    if (actual_byte == Value::WinIn(1).byte && (PartialHasWinningMove(perm) || HasWinningMove(perm))) {
+      expected_byte = Value::WinIn(1).byte;
+    } else {
+      // General case: recalculate the value of perm from its successors.
+      expected_byte = RecalculateValue(*acc, perm, offsets_scratch, bytes_scratch).byte;
+    }
     if (expected_byte != actual_byte) [[unlikely]] {
       std::lock_guard lock(*io_mutex);
       std::cerr << "FAILURE at min-index +" << index << "! "
