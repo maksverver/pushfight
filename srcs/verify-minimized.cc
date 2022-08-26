@@ -11,6 +11,7 @@
 #include "parse-int.h"
 #include "perms.h"
 #include "position-value.h"
+#include "search.h"
 
 #include <algorithm>
 #include <cstdlib>

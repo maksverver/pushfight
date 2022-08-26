@@ -62,4 +62,18 @@ void Deduplicate(std::vector<std::pair<Moves, State>> &successors);
 // value before returning.
 bool HasWinningMove(Perm &perm);
 
+// Partial version of HasWinningMove().
+//
+// If this function returns `true`, then there is an immediate winning move
+// and HasWinningMove(perm) would return `true` as well.
+//
+// If this function returns `false` instead, there may or may not be an
+// immediate winning move. Thus, this function can be used to quickly identify
+// win-in-1s, which make up about 84.9% of all permutations, but it cannot be
+// used to show that a position is not won-in-1.
+//
+// The current version identifies approximately 96.6% of randomly-selected
+// permutations that are win-in-1.
+bool PartialHasWinningMove(const Perm &perm);
+
 #endif  // ndef SEARCH_H_INCLUDED

@@ -83,11 +83,12 @@ int main() {
   std::cerr << "Average number of succcessors: " << num_successors / num_cases << std::endl;
   std::cerr << "Average number of predecessors: " << num_predecessors / num_cases << std::endl;
 
-  // Test HasWinningMove()
+  // Test HasWinningMove() and PartialHasWinningMove().
   {
-    int cases = 10000;
-    int winning = 0;
-    REP(n, 1000) {
+    int case_count = 10000;
+    int winning_count = 0;
+    int partial_count = 0;
+    REP(n, case_count) {
       std::uniform_int_distribution<int64_t> dist(0, total_perms - 1);
       int64_t index = dist(rng);
       Perm perm = PermAtIndex(index);
@@ -96,13 +97,18 @@ int main() {
           [index, &perm, &num_successors](const Moves &, const State &state) {
             return state.outcome != LOSS;
           });
-      bool received = HasWinningMove(perm);
+      bool has_winning_move = HasWinningMove(perm);
+      assert(has_winning_move == expected);
 
-      assert(expected == received);
+      bool partial_has_winning_move = PartialHasWinningMove(perm);
+      assert(!partial_has_winning_move || expected);
 
-      winning += expected;
+      winning_count += expected;
+      partial_count += partial_has_winning_move;
     }
-    std::cerr << "HasWinningMove() tested with " << winning << " winning cases "
-        << "out of " << cases << " total." << std::endl;
+    std::cerr << "HasWinningMove() tested with " << winning_count << " winning cases "
+        << "out of " << case_count << " total." << std::endl;
+    std::cerr << "PartialHasWinningMove() identified " << partial_count << " of "
+        <<  winning_count << " winning cases." << std::endl;
   }
 }

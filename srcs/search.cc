@@ -191,3 +191,70 @@ bool HasWinningMove(Perm &perm) {
 
   return HasWinningMove(danger_data, perm, 2, -1);
 }
+
+bool PartialHasWinningMove(const Perm &perm) {
+  bool seen[L] = {};
+  int queue[L];  // uninitialized for efficiency
+  int queue_size = 0;
+
+  // Fill the queue with empty spaces where, if white moved a pusher there, it
+  // could push a black piece off the board.
+  for (int i : DANGER_POSITIONS) {
+    if (perm[i] == BLACK_MOVER || perm[i] == BLACK_PUSHER) {
+       REP(d, 4) {
+        int r = FIELD_ROW[i];
+        int c = FIELD_COL[i];
+        const int dr = DR[d];
+        const int dc = DC[d];
+        if (r + dr >= 0 && r + dr < H && (c + dc < 0 || c + dc >= W || BOARD_INDEX[r + dr][c + dc] < 0)) {
+          for (;;) {
+            r -= dr;
+            c -= dc;
+            int i = getBoardIndex(r, c);
+            if (i < 0 || perm[i] == BLACK_ANCHOR) break;  // not pushable
+            if (perm[i] == EMPTY) {
+              // Empty space found where white might be able to move a pusher.
+              if (!seen[i]) {
+                seen[i] = true;
+                queue[queue_size++] = i;
+              }
+              break;
+            }
+            if (perm[i] == WHITE_PUSHER) return true;  // definitely pushable!
+          }
+        }
+      }
+    }
+  }
+
+  // Breadth-first search for a white pusher that can move to a free space that
+  // allows pushing a black piece off the board.
+  for (int queue_pos = 0; queue_pos < queue_size; ++queue_pos) {
+    int i = queue[queue_pos];
+    assert(perm[i] == EMPTY);
+    REP(d, 4) {
+      int j = getNeighbourIndex(i, d);
+      if (j < 0) continue;
+      if (!seen[j]) {
+        if (perm[j] == WHITE_PUSHER) return true;
+        if (perm[j] == EMPTY) {
+          seen[j] = true;
+          queue[queue_size++] = j;
+        }
+      }
+    }
+  }
+
+  // We could extend the above logic to compute HasWinningMove() completely, by
+  // marking reachable white movers too, and then checking if they can be moved
+  // aside to clear a path for a white pusher to get next to the unanchored
+  // black piece, but the logic is a bit complicated. Note that we'd also have
+  // to consider the case where the white mover is moved next to the piece (or
+  // sequence of pieces) and then the white pusher pushes both the white mover,
+  // some other pieces, and finally pushes the black piece off the board.
+  // Very complicated!
+  //
+  // So instead of doing all that, we'll just return pessimistically `false`
+  // here.
+  return false;
+}
