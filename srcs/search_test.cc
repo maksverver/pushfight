@@ -82,4 +82,27 @@ int main() {
   std::cerr << "Tested " << num_cases << " random cases." << std::endl;
   std::cerr << "Average number of succcessors: " << num_successors / num_cases << std::endl;
   std::cerr << "Average number of predecessors: " << num_predecessors / num_cases << std::endl;
+
+  // Test HasWinningMove()
+  {
+    int cases = 10000;
+    int winning = 0;
+    REP(n, 1000) {
+      std::uniform_int_distribution<int64_t> dist(0, total_perms - 1);
+      int64_t index = dist(rng);
+      Perm perm = PermAtIndex(index);
+
+      bool expected = !GenerateSuccessors(perm,
+          [index, &perm, &num_successors](const Moves &, const State &state) {
+            return state.outcome != LOSS;
+          });
+      bool received = HasWinningMove(perm);
+
+      assert(expected == received);
+
+      winning += expected;
+    }
+    std::cerr << "HasWinningMove() tested with " << winning << " winning cases "
+        << "out of " << cases << " total." << std::endl;
+  }
 }
