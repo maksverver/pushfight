@@ -254,7 +254,6 @@ ChunkStats2 ComputeWins(
     ComputeWinsThread(chunk, &losses, &next_loss, &wins, &stats);
     assert(next_loss == losses.size() + 1);
   } else {
-    assert(chunk_size % num_threads == 0);
     // Multi-threaded computation.
     std::vector<std::thread> threads;
     std::vector<std::vector<int64_t>> thread_wins(num_threads);

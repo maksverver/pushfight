@@ -133,14 +133,13 @@ ChunkStats ProcessChunk(int chunk, std::vector<int64_t> &wins) {
     // Single-threaded computation.
     ComputeChunkThread(chunk, &next_part, &wins, &stats);
   } else {
-    assert(chunk_size % num_threads == 0);
     // Multi-threaded computation.
     std::vector<std::thread> threads;
     std::vector<std::vector<int64_t>> thread_wins(num_threads);
     std::vector<ChunkStats> thread_stats(num_threads);
     threads.reserve(num_threads);
     REP(i, num_threads) {
-      threads.emplace_back(ComputeChunkThread, chunk, &next_part, &thread_wins[i],&thread_stats[i]);
+      threads.emplace_back(ComputeChunkThread, chunk, &next_part, &thread_wins[i], &thread_stats[i]);
     }
     REP(i, num_threads) {
       threads[i].join();
