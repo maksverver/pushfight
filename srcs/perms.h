@@ -32,7 +32,8 @@ constexpr int L = 26;
 // 26! / 16! / 2! / 3! / 2! / 2! = 401,567,166,000
 constexpr int64_t total_perms = 401567166000;
 
-// A permutation of 26 values character
+// An array of 26 values describing the pieces on the board. For an IN_PROGRESS
+// position, this is always a permutation of `first_perm`, hence the name Perm.
 using Perm = std::array<char, L>;
 
 // First permutation (of IN_PROGRESS permutations).

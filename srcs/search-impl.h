@@ -75,16 +75,15 @@ inline Outcome ExecutePush(Perm &perm, int i, int d) {
 }
 
 template<class Callback>
-bool GenerateSuccessors(Perm &perm, Moves &moves, int moves_left, Callback &callback) {
-  if (moves_left > 0) {
+bool GenerateSuccessors(Perm &perm, Moves &moves, int move, Callback &callback) {
+  if (move < moves.size - 1) {
     // Generate moves.
-    int todo_data[L];  // uninitialized for efficiency
-    int todo_size;
     REP(i0, L) if (perm[i0] == WHITE_MOVER || perm[i0] == WHITE_PUSHER) {
       // Optimization: don't move the same piece twice. There is never any reason for it.
-      if (moves.size > 0 && moves.moves[moves.size - 1].second == i0) continue;
+      if (move > 0 && moves.moves[move - 1].second == i0) continue;
 
-      todo_size = 0;
+      int todo_data[L];  // uninitialized for efficiency
+      int todo_size = 0;
       todo_data[todo_size++] = i0;
       uint32_t visited = uint32_t{1} << i0;
       for (int j = 0; j < todo_size; ++j) {
@@ -95,14 +94,11 @@ bool GenerateSuccessors(Perm &perm, Moves &moves, int moves_left, Callback &call
             visited |= uint32_t{1} << i2;
             todo_data[todo_size++] = i2;
 
-            moves.moves[moves.size] = {i0, i2};
-            ++moves.size;
+            moves.moves[move] = {i0, i2};
 
             std::swap(perm[i0], perm[i2]);
-            if (!GenerateSuccessors(perm, moves, moves_left - 1, callback)) return false;
+            if (!GenerateSuccessors(perm, moves, move + 1, callback)) return false;
             std::swap(perm[i0], perm[i2]);
-
-            --moves.size;
           }
         }
       }
@@ -110,16 +106,13 @@ bool GenerateSuccessors(Perm &perm, Moves &moves, int moves_left, Callback &call
   } else {
     // Generate push moves.
     REP(i, L) if (perm[i] == WHITE_PUSHER) REP(d, 4) if (IsValidPush(perm, i, d)) {
-      moves.moves[moves.size] = {i, getNeighbourIndex(i, d)};
-      ++moves.size;
+      moves.moves[move] = {i, getNeighbourIndex(i, d)};
 
       // Possible optimization: undo push instead of copying the permutation?
       State state = {.perm = perm, .outcome = TIE};
       state.outcome = ExecutePush(state.perm, i, d);
 
       if (!callback(const_cast<const Moves&>(moves), const_cast<const State&>(state))) return false;
-
-      --moves.size;
     }
   }
   return true;
