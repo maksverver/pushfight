@@ -41,7 +41,8 @@ struct MinIndexBits {
 static MinIndexBits seen1;  // normal
 static MinIndexBits seen2;  // rotated
 
-static std::atomic<int> duplicates = 0;
+static std::atomic<int64_t> duplicates = 0;
+static std::atomic<int64_t> irreversibles = 0;
 
 static void CountReachableThread(std::atomic<int> *next_chunk) {
   for (;;) {
@@ -64,6 +65,12 @@ static void CountReachableThread(std::atomic<int> *next_chunk) {
               << (rotated ? " rotated " : " normal ")
               << "index " << index << std::endl;
         }
+        if (PermAtMinIndex(min_index, rotated) != perm) {
+          ++irreversibles;
+          std::cerr << "Found irreversible permutation " << perm
+              << " with min-index " << min_index
+              << (rotated ? " (rotated)" : " (normal)") << std::endl;
+        }
       }
     }
     std::cerr << "Chunk " << chunk << " / " << num_chunks << " done." << std::endl;
@@ -74,19 +81,14 @@ int main() {
   std::atomic<int> next_chunk = 0;
   std::vector<std::thread> threads;
   threads.reserve(num_threads);
-  REP(i, num_threads) {
-    threads.emplace_back(CountReachableThread, &next_chunk);
-  }
-  REP(i, num_threads) {
-    threads[i].join();
-  }
+  REP(i, num_threads) threads.emplace_back(CountReachableThread, &next_chunk);
+  REP(i, num_threads) threads[i].join();
 
-  if (duplicates) {
-    std::cerr << duplicates << " duplicates!" << std::endl;
-    return 1;
-  }
+  if (duplicates) std::cerr << duplicates << " duplicates!" << std::endl;
+  if (irreversibles) std::cerr << irreversibles << " irreversibles!" << std::endl;
+  if (duplicates || irreversibles) return 1;
 
-  // Verify that all minimized indices were found.
+  std::cerr << "Verifying that all minimized indices were found..." << std::endl;
   int64_t missing = 0;
   for (size_t i = 0; i < min_index_size; ++i) {
     if (!seen1.Get(i)) {
@@ -103,5 +105,6 @@ int main() {
     return 1;
   }
 
+  std::cerr << "Verification completed succesfully." << std::endl;
   return 0;
 }
