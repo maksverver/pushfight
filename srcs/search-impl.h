@@ -74,9 +74,6 @@ inline Outcome ExecutePush(Perm &perm, int i, int d) {
   }
 }
 
-// Possible optimization: deduplicate states after move(s), just before push?
-// That would make deduplicating after the fact unnecessary.
-
 template<class Callback>
 bool GenerateSuccessors(Perm &perm, Moves &moves, int moves_left, Callback &callback) {
   if (moves_left > 0) {
