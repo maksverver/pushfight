@@ -19,6 +19,7 @@
 #include "parse-int.h"
 #include "perms.h"
 #include "position-value.h"
+#include "search.h"
 
 #include <iostream>
 #include <optional>
@@ -31,6 +32,12 @@ const int thread_count = (std::thread::hardware_concurrency() * 3 + 1) / 2;
 
 std::optional<MinimizedAccessor> acc;
 
+Value LookupValue(const Perm &perm) {
+  return IsReachable(perm) ? Value(acc->ReadByte(MinIndexOf(perm))) :
+      PartialHasWinningMove(perm) ? Value::WinIn(1) :
+      RecalculateValue(*acc, perm);
+}
+
 void ExpandThread(int chunk, std::atomic<int> *next_part, uint8_t bytes[]) {
   const int64_t start_index = int64_t{chunk} * int64_t{chunk_size};
   for (;;) {
@@ -40,7 +47,7 @@ void ExpandThread(int chunk, std::atomic<int> *next_part, uint8_t bytes[]) {
     int part_start = part * part_size;
     Perm perm = PermAtIndex(start_index + part_start);
     REP(i, part_size) {
-      bytes[part_start + i] = LookupValue(*acc, perm, nullptr).value().byte;
+      bytes[part_start + i] = LookupValue(perm).byte;
       std::next_permutation(perm.begin(), perm.end());
     }
   }
