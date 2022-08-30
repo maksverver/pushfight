@@ -36,9 +36,18 @@ There are two files of interest:
   * **merged.bin** is a 401 GB file that contains one byte per position, indicating the status of that position (how positions correspond with byte offsets is described below.)
   * **minimized.bin** is an 86 GB file that contains the same data, excluding unreachable positions and eliminating positions that are equivalent by rotation.
 
-Each of these files can be generated from the other. ([minify-merged](srcs/minify-merged.cc))
-converts *merged.bin* to *minimized.bin*, and ([expand-minimized](srcs/expand-minimized.cc))
-converts *minimized.bin* back to *merged.bin*.
+Each of these files can be generated from the other. [minify-merged](srcs/minify-merged.cc)
+converts *merged.bin* to *minimized.bin*, and [expand-minimized](srcs/expand-minimized.cc)
+converts *minimized.bin* back to *merged.bin*, but the former transformation is
+much faster than the latter, because expanding the minimized file requires
+recalculating the value of all unreachable positions.
+
+I verified the internal consistency of *minimized.bin* using
+[verify-minimized](srcs/verify-minimized.cc), which took several weeks.
+This proves the absence of data errors (e.g. due to corruption on disk), but it
+only proves correctness under the assumption that the game logic is correctly
+implemented. I believe this is true but I haven't proven it formally.
+
 
 ### The Push Fight Analyzer web app
 
