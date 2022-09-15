@@ -158,7 +158,7 @@ int64_t XzAccessor::GetUncompressedFileSize() const {
 
 void XzAccessor::ReadBytes(const int64_t *offsets, uint8_t *bytes, size_t count) const {
   // Check that offsets nonnegative and in nondecreasing order.
-  assert(offsets[0] >= 0);
+  assert(count == 0 || offsets[0] >= 0);
   assert(std::is_sorted(&offsets[0], &offsets[count]));
 
   // Process offsets in order, but lookup bytes in the same block at once.
