@@ -2,6 +2,7 @@
 #define DEDUPE_H_INCLUDED
 
 #include <algorithm>
+#include <vector>
 
 template<class T>
 void SortAndDedupe(std::vector<T> &v) {
