@@ -122,6 +122,9 @@ potential-new-losses: $(OBJDIR)/potential-new-losses.o $(COMMON_OBJS) $(CLIENT_O
 pushfight-standalone-server: $(OBJDIR)/pushfight-standalone-server.o $(COMMON_OBJS) $(LOOKUP_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(LOOKUP_LDLIBS)
 
+random-walk: $(OBJDIR)/random-walk.o $(COMMON_OBJS) $(LOOKUP_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(LOOKUP_LDLIBS)
+
 sample-bytes: $(OBJDIR)/sample-bytes.o $(OBJDIR)/random.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
