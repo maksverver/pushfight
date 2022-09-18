@@ -45,14 +45,14 @@
 #include "macros.h"
 #include "parse-int.h"
 #include "perms.h"
+#include "random.h"
 #include "search.h"
 
 namespace {
 
 constexpr int default_sample_ratio = 100;
 
-std::random_device dev;
-std::mt19937 rng(dev());
+std::mt19937 rng = InitializeRng();
 
 std::ifstream OpenInputUnbuffered(const char *filename) {
   std::ifstream ifs;

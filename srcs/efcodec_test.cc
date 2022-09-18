@@ -16,11 +16,11 @@
 
 #include "bytes.h"
 #include "byte_span.h"
+#include "random.h"
 
 namespace {
 
-std::random_device dev;
-std::mt19937 rng(dev());
+std::mt19937 rng = InitializeRng();
 
 constexpr int64_t max_int64 = std::numeric_limits<int64_t>::max();
 

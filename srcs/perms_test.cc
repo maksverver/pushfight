@@ -2,6 +2,7 @@
 
 #include "board.h"
 #include "macros.h"
+#include "random.h"
 
 #ifdef NDEBUG
 #error "Can't compile test with -DNDEBUG!"
@@ -12,12 +13,7 @@
 #include <iostream>
 #include <random>
 
-namespace {
-
-std::random_device dev;
-std::mt19937 rng(dev());
-
-}  // namespace
+static std::mt19937 rng = InitializeRng();
 
 int main() {
   assert(IsInProgress(first_perm));

@@ -27,13 +27,13 @@ include $(wildcard $(DEPFILES))
 
 # Rules to build tests follow.
 
-efcodec_test: $(OBJDIR)/efcodec_test.o $(OBJDIR)/efcodec.o
+efcodec_test: $(OBJDIR)/efcodec_test.o $(OBJDIR)/efcodec.o $(OBJDIR)/random.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-perms_test: $(OBJDIR)/perms_test.o $(OBJDIR)/perms.o $(OBJDIR)/board.o
+perms_test: $(OBJDIR)/perms_test.o $(OBJDIR)/perms.o $(OBJDIR)/board.o $(OBJDIR)/random.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-search_test: $(OBJDIR)/search_test.o $(OBJDIR)/search.o $(OBJDIR)/board.o $(OBJDIR)/perms.o
+search_test: $(OBJDIR)/search_test.o $(OBJDIR)/search.o $(OBJDIR)/board.o $(OBJDIR)/perms.o $(OBJDIR)/random.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 ternary_test: $(OBJDIR)/ternary_test.o
@@ -122,7 +122,7 @@ potential-new-losses: $(OBJDIR)/potential-new-losses.o $(COMMON_OBJS) $(CLIENT_O
 pushfight-standalone-server: $(OBJDIR)/pushfight-standalone-server.o $(COMMON_OBJS) $(LOOKUP_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS) $(LOOKUP_LDLIBS)
 
-sample-bytes: $(OBJDIR)/sample-bytes.o
+sample-bytes: $(OBJDIR)/sample-bytes.o $(OBJDIR)/random.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 solve2: $(OBJDIR)/solve2.o $(COMMON_OBJS) $(CLIENT_OBJS) $(SOLVER_OBJS)

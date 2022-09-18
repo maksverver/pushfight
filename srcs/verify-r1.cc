@@ -26,8 +26,7 @@ namespace {
 
 constexpr int num_probes = 100000;
 
-std::random_device dev;
-std::mt19937 rng(dev());
+std::mt19937 rng = InitializeRng();
 
 // Does a 2-ply minimax search to calculate the exact answer.
 //

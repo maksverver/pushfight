@@ -1,6 +1,7 @@
 #include "chunks.h"
 #include "board.h"
 #include "macros.h"
+#include "random.h"
 #include "search.h"
 
 #include <algorithm>
@@ -16,8 +17,7 @@ namespace {
 
 constexpr int num_probes = 1000;
 
-std::random_device dev;
-std::mt19937 rng(dev());
+std::mt19937 rng = InitializeRng();
 
 void VerifyFile(const char *filename) {
   std::cout << "Verifying " << filename << "... ";

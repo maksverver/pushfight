@@ -14,6 +14,7 @@
 #include "accessors.h"
 #include "hash.h"
 #include "macros.h"
+#include "random.h"
 
 // This class has friend access to RnAccessor to be able to access the
 // underlying memory mapped file.
@@ -109,8 +110,7 @@ constexpr std::pair<int, const char*> r6_chunk_hashes[] = {
   {4457, "2bcec64447633a63a6ca19dfe6b467560554eb398e04127b2e9cc786b816b0d0"},
 };
 
-std::random_device dev;
-std::mt19937 rng(dev());
+std::mt19937 rng = InitializeRng();
 
 int Verify(int phase, const RnAccessor &acc, const std::pair<int, const char*> *hashes, size_t size) {
   ChunkVerifier verifier = ChunkVerifier(acc);

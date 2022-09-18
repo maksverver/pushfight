@@ -23,6 +23,7 @@
 #include "macros.h"
 #include "parse-int.h"
 #include "perms.h"
+#include "random.h"
 #include "search.h"
 
 namespace {
@@ -40,8 +41,7 @@ const int64_t default_num_probes = 1000000;
 // magnitude more permutations than if we sampled completely randomly.
 const int num_consecutive_probes = 10000;
 
-std::random_device dev;
-std::mt19937 rng(dev());
+std::mt19937 rng = InitializeRng();
 
 Outcome CalculateOutcome(const RnAccessor &acc, const Perm &perm) {
   Outcome o = LOSS;
