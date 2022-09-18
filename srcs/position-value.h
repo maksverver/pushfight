@@ -23,6 +23,10 @@ struct Value {
     return byte >> 1;
   }
 
+  bool IsTie() const { return byte == 0; };
+  bool IsLoss() const { return (byte&1) != 0; };
+  bool IsWin() const { return byte != 0 && (byte & 1) == 0; };
+
   // Converts a value from a successor to the value for its predecessor.
   //
   // Examples:
