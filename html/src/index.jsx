@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from 'react-dom/client';
 
 import * as ai from './ai.js';
+import {getFieldIndex} from './board.js';
 import {PositionAnalysis, parseStatus} from './analysis.js';
 import {generatePieceAnimations} from './animation.js';
 import {totalPerms, permAtIndex} from './perms.js';
@@ -25,7 +26,32 @@ import {
 // https://reactjs.org/docs/strict-mode.html
 const reactStrictMode = true;
 
+function useEventListener(type, callback, element=document) {
+  if (typeof callback !== 'function') {
+    throw new Error('useEventListener: callback must be a function');
+  }
+  React.useEffect(
+    () => {
+      element.addEventListener(type, callback);
+      return () => element.removeEventListener(type, callback);
+    },
+    [type, callback, element]);
+}
+
+function useKeyDownListener(onKeyDown) {
+  useEventListener('keydown', onKeyDown);
+}
+
+function KeyDownListener({onKeyDown}) {
+  useKeyDownListener(onKeyDown);
+  return null;
+}
+
 class Board extends React.Component {
+
+  // Column selected by typing (see handleKeyDown())
+  selectedColumn = -1;
+
   constructor(props) {
     super(props);
 
@@ -52,6 +78,28 @@ class Board extends React.Component {
         );
       }
     }
+
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+  }
+
+  handleKeyDown(ev) {
+    if (ev.altKey || ev.ctrlKey || ev.shiftKey || ev.metaKey) return;
+
+    const column = 'abcdefgh'.indexOf(ev.key);
+    if (column !== -1) {
+      this.selectedColumn = column;
+    } else {
+      if (this.selectedColumn !== -1) {
+        const row = '4321'.indexOf(ev.key);
+        if (row !== -1) {
+          const i = getFieldIndex(row, this.selectedColumn);
+          if (i !== -1 && this.props.isSelectable(i)) {
+            this.props.onFieldClick(i, row, this.selectedColumn);
+          }
+        }
+      }
+      this.selectedColumn = -1;
+    }
   }
 
   render() {
@@ -73,12 +121,15 @@ class Board extends React.Component {
     }
 
     return (
-      <div className="board">
-        {this.rowCoordinates}
-        {this.columnCoordinates}
-        {fields}
-        {this.props.children}
-      </div>
+      <React.Fragment>
+        <div className="board">
+          {this.rowCoordinates}
+          {this.columnCoordinates}
+          {fields}
+          {this.props.children}
+        </div>
+        <KeyDownListener onKeyDown={this.handleKeyDown}/>
+      </React.Fragment>
     );
   }
 }
@@ -751,6 +802,7 @@ class PlayComponent extends React.Component {
     this.handleExit = this.handleExit.bind(this);
     this.playFullTurn = this.playFullTurn.bind(this);
     this.maybeAutoplayAiMove = this.maybeAutoplayAiMove.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
 
     this.state = {
       // Positions of pieces on the board.
@@ -791,6 +843,15 @@ class PlayComponent extends React.Component {
     this.lastPieceAnimations = null;
     this.animationEndTime = 0;
     this.aiTimeoutId = null;
+  }
+
+  get undoEnabled() {
+    const {moves, turns} = this.state;
+    return turns.length > 0 || moves.length > 0;
+  }
+
+  get redoEnabled() {
+    return this.state.redoTurns.length > 0;
   }
 
   componentDidUpdate() {
@@ -969,8 +1030,14 @@ class PlayComponent extends React.Component {
     }
   }
 
+  handleKeyDown(ev) {
+    if (ev.altKey || ev.ctrlKey || ev.shiftKey || ev.metaKey) return;
+    if (ev.key === 'ArrowLeft' && this.undoEnabled) this.handleUndo();
+    if (ev.key === 'ArrowRight' && this.redoEnabled) this.handleRedo();
+  }
+
   render() {
-    const {pieces, turns, moves, redoTurns, analysisAtTurnStart, piecesAtTurnStart,
+    const {pieces, turns, moves, analysisAtTurnStart, piecesAtTurnStart,
         pieceAnimations, strength, aiPlayer} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
@@ -982,11 +1049,7 @@ class PlayComponent extends React.Component {
 
     const firstPlayer = this.state.piecesAtTurnStart[0].includes(RED_ANCHOR) ? BLUE_PLAYER : RED_PLAYER;
 
-    // Can undo if there is a (partial) turn to be undo.
-    const undoEnabled = turns.length > 0 || moves.length > 0;
-    const redoEnabled = redoTurns.length > 0;
-
-    const autoplayBlocked = redoEnabled && aiPlayer >= 0 && aiPlayer === nextPlayer;
+    const autoplayBlocked = this.redoEnabled && aiPlayer >= 0 && aiPlayer === nextPlayer;
 
     const analysis = analysisAtTurnStart[turns.length];
 
@@ -1036,10 +1099,10 @@ class PlayComponent extends React.Component {
           <PlayPanel
               renderTab={renderTab}>
             <div className="buttons">
-              <button disabled={!undoEnabled} onClick={this.handleUndo}>
+              <button disabled={!this.undoEnabled} onClick={this.handleUndo}>
                 Undo turn
               </button>
-              <button disabled={!redoEnabled} onClick={this.handleRedo}>
+              <button disabled={!this.redoEnabled} onClick={this.handleRedo}>
                 Redo turn
               </button>
               <button disabled={analysis.result == null} onClick={this.handlePlayAiMove}>
@@ -1052,6 +1115,7 @@ class PlayComponent extends React.Component {
           </PlayPanel>
         </div>
         <UpdateUrlHash pieces={piecesAtTurnStart[0]} turns={turns}/>
+        <KeyDownListener onKeyDown={this.handleKeyDown}/>
       </React.Fragment>
     );
   }
