@@ -207,22 +207,24 @@ function SetupBoard({pieces, onPiecesChange, onStart}) {
           onFieldClick={handleFieldClick}>
         <PiecePalette fieldIndex={selectedFieldIndex} onSelect={handlePieceSelect} />
       </Board>
-      <div className="setup-panel side-panel">
-        <h1>Push Fight Setup</h1>
-        <p>
-          Change the initial placement of the pieces by clicking on fields.
-          Press the <em>Start game</em> button to start playing from the chosen position.
-        </p>
-        <h4>Permutation string</h4>
-        <code>{formatPieces(pieces)}</code>
-        <p className="buttons">
-          <button onClick={handleClear}>Clear board</button>
-          <button onClick={handleRandomStart}>Random starting position</button>
-          <button onClick={handleRandomize}>Random position</button>
-          <button onClick={handleInvertColors}>Invert colors</button>
-          <button onClick={handleChangePermutation}>Enter permutation</button>
-          <button disabled={onStart == null} onClick={onStart}>Start game</button>
-        </p>
+      <div className="side-panel">
+        <div className="setup-panel">
+          <h1>Push Fight Setup</h1>
+          <p>
+            Change the initial placement of the pieces by clicking on fields.
+            Press the <em>Start game</em> button to start playing from the chosen position.
+          </p>
+          <h4>Permutation string</h4>
+          <code>{formatPieces(pieces)}</code>
+          <p className="buttons">
+            <button onClick={handleClear}>Clear board</button>
+            <button onClick={handleRandomStart}>Random starting position</button>
+            <button onClick={handleRandomize}>Random position</button>
+            <button onClick={handleInvertColors}>Invert colors</button>
+            <button onClick={handleChangePermutation}>Enter permutation</button>
+            <button disabled={onStart == null} onClick={onStart}>Start game</button>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -737,19 +739,21 @@ function PlayPanel({renderTab, children}) {
   const [selectedTab, setSelectedTab] = React.useState('ai');
 
   return (
-    <div className="tab-panel side-panel">
-      <div>
-        <div className="tabs">
-          <div className="tab clickable ai-tab"
-              onClick={() => setSelectedTab('ai')}>AI</div>
-          <div className="tab clickable history-tab"
-              onClick={() => setSelectedTab('history')}>Move history</div>
-          <div className="tab clickable analysis-tab"
-              onClick={() => setSelectedTab('analysis')}>Analysis</div>
+    <div className="side-panel">
+      <div className="tab-panel">
+        <div>
+          <div className="tabs">
+            <div className="tab clickable ai-tab"
+                onClick={() => setSelectedTab('ai')}>AI</div>
+            <div className="tab clickable history-tab"
+                onClick={() => setSelectedTab('history')}>Move history</div>
+            <div className="tab clickable analysis-tab"
+                onClick={() => setSelectedTab('analysis')}>Analysis</div>
+          </div>
+          {renderTab(selectedTab)}
         </div>
-        {renderTab(selectedTab)}
+        {children}
       </div>
-      {children}
     </div>
   );
 }
