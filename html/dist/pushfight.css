@@ -6,6 +6,10 @@ body {
   font: 12pt sans-serif;
 }
 
+.float-right {
+  float: right;
+}
+
 .status {
   padding: 0.5em;
   background: black;
@@ -347,8 +351,8 @@ adding to it.
   color: #666;
 }
 
-.setup-panel, .ai, .history, .analysis {
-  min-width: 400px;
+.side-panel {
+  min-width: 480px;
 }
 
 .analysis,
@@ -370,10 +374,6 @@ adding to it.
 
 .analysis .group:not(:first-of-type) .header {
   margin-top: 5px;
-}
-
-.float-right {
-  float: right;
 }
 
 .analysis .group .turns {
