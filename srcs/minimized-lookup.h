@@ -71,4 +71,17 @@ inline Value RecalculateValue(const MinimizedAccessor &acc, const Perm &perm) {
   return RecalculateValue(acc, perm, offsets, bytes);
 }
 
+// Looks up the values of successors of multiple permutations.
+//
+// The result is a vector with size equal to `perms`, where each element is
+// itself a vector of values that's equal to the values that would have been
+// returned by LookupSuccessors() for the corresponding permutation.
+//
+// The advantage of this function over calling LookupSuccessors() repeatedly
+// is that looking up the successor values of multiple permutations can be much
+// more efficient, especially when the MinimizedAccessor is using a compressed
+// data file.
+std::vector<std::vector<Value>> LookupSuccessorValues(
+  const MinimizedAccessor &acc, const std::vector<Perm> &perms);
+
 #endif  // ndef MINIMIZED_LOOKUP_H_INCLUDED

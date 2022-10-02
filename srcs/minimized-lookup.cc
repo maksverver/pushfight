@@ -155,6 +155,58 @@ LookupValue(const MinimizedAccessor &acc, const Perm &perm, std::string *error) 
   }
 }
 
+std::vector<std::vector<Value>> LookupSuccessorValues(
+    const MinimizedAccessor &acc, const std::vector<Perm> &perms) {
+  std::vector<std::vector<std::pair<Outcome, int64_t>>> all_outcome_and_min_indices;
+  all_outcome_and_min_indices.reserve(perms.size());
+  for (const Perm &perm : perms) {
+    std::vector<std::pair<Moves, State>> successors = GenerateAllSuccessors(perm);
+    Deduplicate(successors);
+    std::vector<std::pair<Outcome, int64_t>> outcome_and_min_indices;
+    outcome_and_min_indices.reserve(successors.size());
+    for (const auto &[moves, state] : successors) {
+      int64_t min_index = state.outcome == TIE ? MinIndexOf(state.perm) : -1;
+      outcome_and_min_indices.push_back({state.outcome, min_index});
+    }
+    all_outcome_and_min_indices.push_back(std::move(outcome_and_min_indices));
+  }
+
+  std::vector<int64_t> offsets;
+  for (const auto &values : all_outcome_and_min_indices) {
+    for (const auto &[outcome, min_index] : values) {
+      if (outcome == TIE) offsets.push_back(min_index);
+    }
+  }
+  SortAndDedupe(offsets);
+
+  std::vector<uint8_t> bytes = acc.ReadBytes(offsets);
+
+  std::vector<std::vector<Value>> all_values;
+  all_values.reserve(all_outcome_and_min_indices.size());
+  for (const auto &outcome_and_min_indices : all_outcome_and_min_indices) {
+    std::vector<Value> values;
+    for (const auto &[outcome, min_index] : outcome_and_min_indices) {
+      Value value;
+      if (outcome == LOSS) {
+        value = Value::WinIn(1);
+      } else if (outcome == WIN) {
+        // Currently, GenerateAllSuccessors() does not return losing moves,
+        // so this code never executes.
+        value = Value::LossIn(1);
+      } else {
+        assert(outcome == TIE);
+        auto it = std::lower_bound(offsets.begin(), offsets.end(), min_index);
+        assert(it != offsets.end() && *it == min_index);
+        value = Value(bytes[it - offsets.begin()]).ToPredecessor();
+      }
+      values.push_back(value);
+    }
+    std::sort(values.begin(), values.end());
+    all_values.push_back(std::move(values));
+  }
+  return all_values;
+}
+
 Value RecalculateValue(
     const MinimizedAccessor &acc,
     const Perm &perm,
