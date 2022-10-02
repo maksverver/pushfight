@@ -35,6 +35,7 @@ PERM_PATH = re.compile('^/perms/([.oOxXY]{26})$')
 # Input are lines of the form:
 #
 #  L1 d3-b2,d2-a3,d4-e4 +8660632211
+#  L2 e2-b2,g4-d3,c1-c2 -72702403683 838 15 13 W2*12,W4*1,T*15,L11*1,L10*8,L8*3,L7*1,L6*2,L5*4,L3*3,L2*176,L1*640
 #
 # Note that statuses are guaranteed to be grouped and ordered from best to
 # worst outcome.
@@ -51,6 +52,7 @@ PERM_PATH = re.compile('^/perms/([.oOxXY]{26})$')
 #     {
 #       status: "T",
 #       moves: ["a3-a4,b3-b4,c3-c4", "d3-d4", etc.]
+#       details: ["T*15,L11*1,L10*8,..", etc.]
 #     }
 #     etc.
 #   ]
@@ -58,19 +60,33 @@ PERM_PATH = re.compile('^/perms/([.oOxXY]{26})$')
 #
 # Note that moves are grouped by status, but successors is a list, not an
 # object, to guarantee that ordering is preserved.
+#
+# The "details" property is only provided for statuses other than W1 and L1,
+# and only if detailed analysis is requested with query parameter ?d=1 (see
+# HttpRequestHandler below). If it exists, the length of "details" equals the
+# length of "moves", and element correspond one to one.
+#
 def ConvertSuccessors(output):
   lines = output.splitlines()
   if not lines:
     return {'status': 'L0', 'successors': []}
 
   successors = []
+  last_successor = None
   last_status = None
   for line in lines:
-    status, moves, *rest = line.split(' ', 2)
+    status, moves, *rest = line.split(' ')
     if status != last_status:
       last_status = status
-      successors.append({'status': status, 'moves': []})
-    successors[-1]['moves'].append(moves)
+      last_successor = {'status': status, 'moves': []}
+      successors.append(last_successor)
+    last_successor['moves'].append(moves)
+    if len(rest) >= 5:
+      min_index, losses, wins, ties, details, *rest = rest
+      if 'details' not in last_successor:
+        last_successor['details'] = []
+      last_successor['details'].append(details)
+      assert(len(last_successor['moves']) == len(last_successor['details']))
   return {'status': successors[0]['status'], 'successors': successors}
 
 
@@ -82,9 +98,11 @@ class HttpServer(http.server.ThreadingHTTPServer):
 
 # Handles a request to analyze a position.
 #
-# Request URL must be of the form: '/perms/.OX.....oxX....Oox.....OX',
-# where the second component is a 26-letter permutation string that denotes a
-# started or in-progress position.
+# Request URL must be of the form: '/perms/.OX.....oxX....Oox.....OX' or
+# '/perms/.OX.....oxX....Oox.....OX?d=1' where the second component is a
+# 26-letter permutation string that denotes a started or in-progress position,
+# and the ?d=1 query parameter indicates whether to retrieve detailed
+# information (corresponding to the -d parameter of lookup-min).
 #
 # On error, the response status is 400 (client error) or 500 (server error),
 # and the body contains an error mesage.
@@ -102,10 +120,16 @@ class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
       return
     perm = m.group(1)
 
+    # Note: this keeps only the last value for each parameter.
+    params = dict(urllib.parse.parse_qsl(request_url.query))
+
     # Execute lookup-min, which does the actual work of calculating
     # successors and their statuses.
-    result = subprocess.run([LOOKUP_MIN_PATH, MINIMIZED_BIN_PATH, perm],
-        capture_output=True, text=True)
+    options = []
+    if params.get('d') == '1':
+      options.append('-d')
+    result = subprocess.run([LOOKUP_MIN_PATH] + options + [MINIMIZED_BIN_PATH, perm],
+      capture_output=True, text=True)
 
     if result.returncode == 2:
       # User error
