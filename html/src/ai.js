@@ -11,7 +11,7 @@ export const MAX_STRENGTH = 15;
 // Values from 1 to 8 (inclusive) correspond to search depth 1 through 8,
 // while for values 9 through 14 the search depth increases exponentially:
 // 10, 12, 16, 24, 40, 72.
-function strengthToMaxDepth(strength) {
+export function strengthToMaxDepth(strength) {
   return strength <= 8 ? strength : 8 + (1 << (strength - 8));
 }
 

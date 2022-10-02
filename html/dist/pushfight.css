@@ -337,6 +337,13 @@ adding to it.
   color: orange;
 }
 
+.ai .detail {
+  opacity: 50%;
+  font-size: 80%;
+  vertical-align: middle;
+  padding: 0 1em;
+}
+
 .history .bad-move {
   font-weight: bold;
   color: red;

@@ -522,8 +522,12 @@ function AI({
           {'AI Strength: '}
           <input type="range" min={0} max={ai.MAX_STRENGTH} value={strength}
               onChange={(e) => onChangeStrength(parseInt(e.target.value, 10))}/>
-          {' ' + String(strength) + (strength === 0 ? ' (random)' :
-              strength === ai.MAX_STRENGTH ? ' (perfect)' : '')}
+          {' ' + String(strength) + ' '}
+          <span className="detail">{
+              strength === 0 ? '(random play)' :
+              strength === ai.MAX_STRENGTH ? '(perfect play)' :
+                  `(search depth: ${ai.strengthToMaxDepth(strength)})`
+          }</span>
         </label>
       </p>
       <p>
