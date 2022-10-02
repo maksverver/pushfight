@@ -1,0 +1,127 @@
+AI design
+=========
+
+For any starting or in-progess position, we can enumerate the successor
+positions, look up their values, and then choose the successor with the maximum
+value for the current player (i.e., if the successor has status loss-in-1 or L1,
+it is win-in-2 or W2 for the previous player).
+
+We can group successors by status, and order them by decreasing value. From the
+perspective of the current player, the ordering looks like this:
+
+  W1, W2, W3, .., T, .., L3, L2, L1
+
+i.e., wins come before ties, ties come before losses; quick wins are preferable
+over longer wins, and long losses are preferable over quick losses.
+
+For perfect play, it suffices to pick a move with highest status.
+
+
+Difficulty levels
+-----------------
+
+Playing against the perfect AI is not very fun for human players, so I
+introduced the concept of difficulty levels which correspond with a simulated
+minimax search limit to a fixed depth, which creates an imperfect AI.
+
+(The web app uses a separate "strength" setting which maps nonlinearly to a
+maximum search. See strengthToMaxDepth() defined in html/src/ai.js for details.)
+
+At search depth 0, the AI does not look ahead and plays randomly.
+
+At search depth 1, the AI looks 1 turn ahead, taking advantage of win-in-1s, but
+not avoiding loss-in-1s.
+
+At search depth 2, the AI looks 2 turns ahead, taking advantage of W1 and
+avoiding L1.
+
+At search depth N, the AI looks N turns ahead, taking advantage of W(N/2)
+(rounding up if N is odd) and avoiding L(N/2) (rounding down).
+
+Of course, we don't do actually construct a search tree, which would be too
+slow. Instead, we take the status of the successors and translate them to what
+the value would have been if we had done a limited-depth minimax search instead.
+For example, recognizing W3 requires a minimum search depth of 5, so if the
+search depth is 4 or less, we map that value to T instead.
+
+For another example, if there are four possible moves with values W7, T, L7, L1,
+then the perfect AI would always pick the W7. But at search depth 5, these
+statuses look like T, T, T, L1, and the AI picks randomly from the first three
+options (potentially even picking the losing move!), while avoiding the fourth
+move which is an obvious loss-in-1.
+
+
+Aggressive AI
+-------------
+
+Selecting randomly from all options leads to an AI that plays rather passively,
+even when playing perfectly. When the game is tied (as it usually is in the
+start) the AI is happy to let you push its pieces to the side as long as it has
+at least 1 option to prevent a loss. This can lead to long-running games where
+the AI doesn't try to attack its opponent much.
+
+To remedy this, I designed an aggressive mode of play, where the AI uses an
+additional tie-breaking rule to choose between optimal moves, rather than
+choosing a move randomly.
+
+The tie-breaking rule is simple: for each optimal successor, consider *their*
+successors, then choose a successor so that the opponent has a minimum number
+of optimal moves to chose from.
+
+For example, if the AI can chose between two moves which both lead to ties, but
+in one the opponent has 20 moves that lead to a tie, and the second the
+opponent has only 2 moves that lead to a tie, then the second move is better,
+because there is a higher change that the opponent will pick a losing move by
+mistake. Of course, this assumes an imperfect player.
+
+(A slightly different approach would have been to use the ratio of optimal to
+suboptimal moves, rather than the absolute number of optimal moves, but I think
+in practice the absolute number is a better metric because positions with fewer
+total moves available tend to be worse.)
+
+For imperfect play, the successor's successor statuses are also converted as
+described above. So if an opponent has W6, T, L7, L1, then at search depth 10,
+the AI considers those to be 3 ties, rather than 1 win. Again, this is intended
+to emulate a fixed-depth minimax search.
+
+
+Aggressive AI design options
+----------------------------
+
+Game positions typically have around 1000 to 5000 successors, so expanding
+two levels of the game tree leads to 1 to 25 million positions to be evaluated,
+which can take a long time, especially with the compressed data file.
+
+This is suboptimal because we don't typically need the successor statuses for
+all possible turns. For example, if a position has 1 W1 turn, and 100 Ts, the
+AI will pick the 1 win (at search depth 1 or above), and the information about
+the ties is irrelevant.
+
+On the other hand, if the search depth is lower, then if a position has 1 W9,
+2 W7, 100 T, these are all considered ties, and tie-breaking is necessary.
+
+There are several options to make this more efficient:
+
+  1. Create a separate API endpoint for the client to request successor
+     evaluation for just a subset of positions. This would be the candidates
+     being considered, which is only a subset of all possible successors.
+     However, in many cases, the size difference isn't very large, so the
+     benefit is limited.
+
+     Disadvantages include the need to create a separate API end point, and the
+     fact that the number of relevant positions can be largish, leading to very
+     long URLs.
+
+  2. We could do the same as above, but also move the evaluation of candidate
+     moves to the server side, with the client passing the desired search depth
+     to the server. In return, the server only has to return a set of possible
+     optimal moves (from which the client will than choose randomly).
+
+     The main advantages are that URLs can be short, and there is much less
+     data to be exchanged between client and server. For reference, in the
+     current implementation, basic analysis transfers around 3 KiB of data per
+     turn, and detailed analysis around 10 KiB of data, roughly quadrupling the
+     bandwidth requirement.
+
+Before implementing one of the above options, I should try to quantify how
+much time and data is saved by implementing the options.

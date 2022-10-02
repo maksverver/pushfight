@@ -366,6 +366,13 @@ adding to it.
   min-width: 480px;
 }
 
+.tab-panel .fetching-details {
+  color: white;
+  font-size: 10pt;
+  opacity: 50%;
+  padding: 0.25em 0.5em;
+}
+
 .analysis,
 .analysis-tab {
   background: rgb(32, 32, 80);

@@ -33,7 +33,7 @@ export function strengthToMaxDepth(strength) {
 function selectCandidates(strength, successors) {
   if (strength >= MAX_STRENGTH) {
     // Perfect play: just select from optimal moves.
-    return successors[0].moves;
+    return successors[0];
   }
 
   const maxDepth = strengthToMaxDepth(strength);
@@ -43,12 +43,13 @@ function selectCandidates(strength, successors) {
   const [bestSign, bestMagnitude] = parseStatus(successors[0].status);
   if (bestSign === 1 && 2*bestMagnitude - 1 <= maxDepth) {
     // Winning moves available.
-    return successors[0].moves;
+    return successors[0];
   }
 
   // Otherwise, select randomly among ties and wins and losses that are outside
   // our search depth.
-  const candidates = [];
+  const moves = [];
+  let details = undefined;
   for (const s of successors) {
     // Check if a losing move is within our search depth. If so, we will avoid
     // it. Since groups are ordered from best to worst, all subsequent moves
@@ -56,12 +57,21 @@ function selectCandidates(strength, successors) {
     // candidates.length > 0 is necessary to keep some candidates in the
     // case where only losing moves are available.
     const [sign, magnitude] = parseStatus(s.status);
-    if (candidates.length > 0 && sign === -1 && 2*magnitude <= maxDepth) {
+    if (moves.length > 0 && sign === -1 && 2*magnitude <= maxDepth) {
       break;
     }
-    candidates.push(...s.moves);
+    moves.push(...s.moves);
+    if (s.details) {
+      if (details == null) details = [];
+      details.push(...s.details);
+      if (details.length !== moves.length) {
+        console.error('Invalid number of details!', successors);
+        alert('Invalid number of details! (See JavaScript console for details)');
+        return;
+      }
+    }
   }
-  return candidates;
+  return {moves, details};
 }
 
 // Selects a random move to play, subject to the given play strength.
@@ -70,8 +80,64 @@ function selectCandidates(strength, successors) {
 //
 // `successors` is a list of successors grouped by status, as returned by
 // PositionAnalysis. If the list is empty, this function returns undefined.
-export function selectMove(strength, successors) {
+export function selectRandomMove(strength, successors) {
   if (successors.length === 0) return undefined;
   const candidates = selectCandidates(strength, successors);
-  return getRandomElement(candidates);
+  return getRandomElement(candidates.moves);
+}
+
+// Selects an an aggressive move to play, subject to the given play strength,
+// which must be at least 2 (!) and at most MAX_STRENGTH (inclusive).
+//
+// `successors` is a list of successors grouped by `status` with `details`.
+export function selectAggressiveMove(strength, successors) {
+  if (successors.length === 0) return undefined;
+  const {moves, details} = selectCandidates(strength, successors);
+
+  if (details == null) {
+    // This happens when all moves are lost-in-1.
+    return getRandomElement(moves);
+  }
+
+  const maxDepth = strengthToMaxDepth(strength);
+  const bestMoves = [];
+  let minValue = Infinity;
+  for (let i = 0; i < moves.length; ++i) {
+    // Details is a list of comma-separated pairs of successor status and count,
+    // ordered from best to worst. Statuses are relative to the opponent; if a
+    // turn is L9 for me, then it is W9 for the opponent (or if it's W2 for me,
+    // then it's L1 for the opponent).
+    //
+    // Example string: 'W9*1,W28*1,T*49,L19*1,L12*1,..,L1*1798'
+    //
+    // The value of the move is the number of optimal moves. But as in
+    // selectCandidates(), we evaluate the candidates relative to a simulated
+    // search depth.
+    let parsedDetails = details[i].split(',').map(d => {
+      const [status, count] = d.split('*');
+      const [sign, magnitude] = parseStatus(status);
+      return [sign, magnitude, Number(count)];
+    });
+    let value = 0;
+    const [bestSign, bestMagnitude, bestCount] = parsedDetails[0];
+    if (bestSign === 1 && 2 * bestMagnitude <= maxDepth) {
+      // Win-in-x is within search depth. Assume the opponent will play optimally.
+      value = bestCount;
+    } else {
+      // Opponent has no win within the search depth. So consider all wins, ties
+      // and losses outside the search depth as ties.
+      for (const [sign, magnitude, count] of parsedDetails) {
+        if (sign === -1 && 2 * magnitude + 1 <= maxDepth) break;
+        value += count;
+      }
+    }
+    if (value < minValue) {
+      bestMoves.length = 0;
+      minValue = value;
+    }
+    if (value === minValue) {
+      bestMoves.push(moves[i]);
+    }
+  }
+  return getRandomElement(bestMoves);
 }

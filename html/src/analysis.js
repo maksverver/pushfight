@@ -9,9 +9,10 @@ const unreliableAnalysis = false;
 
 // Fetches the position analysis using LOOKUP_URL. Don't call this directly;
 // use PositionAnalysis instead.
-async function fetchPositionAnalysis(pieces) {
-  async function fetchImpl(pieces) {
-    const url = 'lookup/perms/' + encodeURIComponent(formatPieces(pieces, true));
+export async function fetchPositionAnalysis(pieces, detailed) {
+  let url = 'lookup/perms/' + encodeURIComponent(formatPieces(pieces, true));
+  if (detailed) url += '?d=1';
+  async function fetchImpl() {
     const response = await fetch(url);
     if (response.status !== 200) {
       const error = await response.text();
@@ -26,7 +27,7 @@ async function fetchPositionAnalysis(pieces) {
   }
 
   if (!unreliableAnalysis) {
-    return fetchImpl(pieces);
+    return fetchImpl();
   }
 
   return new Promise((resolve, reject) => {
@@ -34,7 +35,7 @@ async function fetchPositionAnalysis(pieces) {
       if (Math.random() < 0.25) {
         reject(new Error('Fake error'));
       }
-      resolve(fetchImpl(pieces));
+      resolve(fetchImpl());
     }, Math.random() * 3000);
   });
 }

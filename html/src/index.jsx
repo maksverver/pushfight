@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 
 import * as ai from './ai.js';
 import {getFieldIndex} from './board.js';
-import {PositionAnalysis, parseStatus} from './analysis.js';
+import {fetchPositionAnalysis, PositionAnalysis, parseStatus} from './analysis.js';
 import {generatePieceAnimations} from './animation.js';
 import {totalPerms, permAtIndex} from './perms.js';
 import {getRandomElement, shuffle} from './random.js';
@@ -513,8 +513,8 @@ function SetUpComponent({initialPieces, onStart}) {
 }
 
 function AI({
-    visible, strength, aiPlayer, autoplayBlocked,
-    onChangeStrength, onChangeAiPlayer}) {
+    visible, strength, aggressive, aiPlayer, autoplayBlocked,
+    onChangeStrength, onChangeAggressive, onChangeAiPlayer}) {
   return (
     <div className="ai" style={{display: visible ? undefined : 'none'}}>
       <p>
@@ -528,6 +528,17 @@ function AI({
               strength === ai.MAX_STRENGTH ? '(perfect play)' :
                   `(search depth: ${ai.strengthToMaxDepth(strength)})`
           }</span>
+        </label>
+      </p>
+      <p>
+        <label>
+          <input
+            disabled={strength < 2}
+            type="checkbox"
+            checked={strength >= 2 && aggressive}
+            onChange={(e) => onChangeAggressive(e.target.checked)}
+          />
+          Play aggressively (slower)
         </label>
       </p>
       <p>
@@ -832,6 +843,14 @@ class PlayComponent extends React.Component {
       analysisAtTurnStart: props.initialPiecesAtTurnStart.map(pieces =>
           new PositionAnalysis(pieces, this.forceUpdate)),
 
+      // Currently loading detailed position analysis.
+      //
+      // This is used by the AI to play aggressively. While the object here
+      // is non-null, the analysis is loading. It is reset to null after
+      // playing, and whenever the state changes (e.g. undo pressed while
+      // waiting for the analysis to load).
+      detailedAnalysis: null,
+
       // List of turns available for redo. These are populated by undoTurn().
       redoTurns: [],
 
@@ -843,6 +862,9 @@ class PlayComponent extends React.Component {
 
       // AI strength.
       strength: 5,
+
+      // AI plays aggressively (by selecting successors with few ties)
+      aggressive: false,
 
       // AI player that plays automatically.
       aiPlayer: -1,
@@ -885,7 +907,7 @@ class PlayComponent extends React.Component {
   }
 
   maybeAutoplayAiMove() {
-    const {turns, moves, analysisAtTurnStart, redoTurns, strength, aiPlayer} = this.state;
+    const {turns, moves, analysisAtTurnStart, redoTurns, strength, aggressive, aiPlayer} = this.state;
 
     // Block autoplay when the redo stack is nonempty. This allows the user
     // to undo and redo without the AI clearing the redo stack by making a
@@ -911,8 +933,43 @@ class PlayComponent extends React.Component {
     const successors = analysis.result.successors;
     if (successors.length === 0) return;
 
-    // Randomly pick one of the best moves to play.
-    this.playFullTurn(parseTurn(ai.selectMove(strength, successors)));
+    this.selectAiMove(strength, aggressive, successors);
+  }
+
+  selectAiMove(strength, aggressive, successors) {
+    if (!aggressive || strength < 2) {
+      // Randomly pick one of the best moves to play.
+      this.playFullTurn(parseTurn(ai.selectRandomMove(strength, successors)));
+    } else if (this.state.detailedAnalysis == null) {
+      // Playing aggressively.
+      const detailedAnalysis = new Object();
+
+      const callback = (value, error) => {
+        // Check if update has been superseded by another state change.
+        if (this.state.detailedAnalysis !== detailedAnalysis) return;
+
+        if (error) {
+          console.error('Detailed analysis failed!\n', error);  // includes stack trace
+          alert('Detailed analysis failed!\n' + error);
+        } else {
+          const detailedSuccessors = value.successors;
+          this.playFullTurn(parseTurn(ai.selectAggressiveMove(strength, detailedSuccessors)));
+        }
+        this.setState(() => ({detailedAnalysis: null}));
+      }
+
+      this.setState(
+          () => ({detailedAnalysis}),
+          () => {
+            // Check if update has been superseded by another state change.
+            if (this.state.detailedAnalysis !== detailedAnalysis) return;
+
+            fetchPositionAnalysis(this.state.pieces, true)
+                .then(
+                    result => callback(result),
+                    error => callback(undefined, error));
+          });
+      }
   }
 
   handleMove(src, dst) {
@@ -930,6 +987,7 @@ class PlayComponent extends React.Component {
         moves.push([src, dst]);
       }
       return {
+        detailedAnalysis: null,
         pieces: Object.freeze(newPieces),
         moves,
         pieceAnimations,
@@ -950,6 +1008,7 @@ class PlayComponent extends React.Component {
         analysisAtTurnStart: [
             ...analysisAtTurnStart,
             new PositionAnalysis(newPieces, this.forceUpdate)],
+        detailedAnalysis: null,
         redoTurns: updateRedoTurns(redoTurns, turn),
         pieceAnimations,
       };
@@ -960,7 +1019,8 @@ class PlayComponent extends React.Component {
     this.setState(({turns, piecesAtTurnStart, analysisAtTurnStart}) => ({
       analysisAtTurnStart: [
         ...analysisAtTurnStart.slice(0, turns.length),
-        new PositionAnalysis(piecesAtTurnStart[turns.length], this.forceUpdate)]
+        new PositionAnalysis(piecesAtTurnStart[turns.length], this.forceUpdate)],
+      detailedAnalysis: null,
     }));
   }
 
@@ -977,6 +1037,7 @@ class PlayComponent extends React.Component {
         analysisAtTurnStart: [
             ...analysisAtTurnStart,
             new PositionAnalysis(newPieces, this.forceUpdate)],
+        detailedAnalysis: null,
         redoTurns: updateRedoTurns(redoTurns, turn),
         pieceAnimations,
       };
@@ -984,7 +1045,7 @@ class PlayComponent extends React.Component {
   }
 
   handlePlayAiMove() {
-    const {turns, analysisAtTurnStart, strength} = this.state;
+    const {turns, analysisAtTurnStart, strength, aggressive} = this.state;
     const analysis = analysisAtTurnStart[turns.length];
     if (analysis == null || analysis.isLoading()) {
       // This shouldn't be possible, since the button is supposed
@@ -997,8 +1058,7 @@ class PlayComponent extends React.Component {
       alert('No moves available!');
       return;
     }
-    // Randomly pick one of the best moves to play.
-    this.playFullTurn(parseTurn(ai.selectMove(strength, successors)));
+    this.selectAiMove(strength, aggressive, successors);
   }
 
   handleUndo() {
@@ -1008,6 +1068,7 @@ class PlayComponent extends React.Component {
         return {
           pieces: piecesAtTurnStart[turns.length],
           moves: [],
+          detailedAnalysis: null,
           pieceAnimations: {},
         };
       }
@@ -1018,6 +1079,7 @@ class PlayComponent extends React.Component {
           turns: turns.slice(0, turns.length - 1),
           piecesAtTurnStart: piecesAtTurnStart.slice(0, turns.length),
           analysisAtTurnStart: analysisAtTurnStart.slice(0, turns.length),
+          detailedAnalysis: null,
           pieceAnimations: {},
           redoTurns: [turns[turns.length - 1], ...redoTurns],
         };
@@ -1046,7 +1108,7 @@ class PlayComponent extends React.Component {
 
   render() {
     const {pieces, turns, moves, analysisAtTurnStart, piecesAtTurnStart,
-        pieceAnimations, strength, aiPlayer} = this.state;
+        detailedAnalysis, pieceAnimations, strength, aggressive, aiPlayer} = this.state;
     const {validity, error, nextPlayer, winner, index} = validatePieces(pieces);
 
     const isUnfinished = validity === PiecesValidity.STARTED || validity === PiecesValidity.IN_PROGRESS;
@@ -1070,8 +1132,10 @@ class PlayComponent extends React.Component {
         <AI
             visible={tab === 'ai'}
             strength={strength}
+            aggressive={aggressive}
             aiPlayer={aiPlayer}
             onChangeStrength={(strength) => this.setState({strength})}
+            onChangeAggressive={(aggressive) => this.setState({aggressive})}
             onChangeAiPlayer={(aiPlayer) => this.setState({aiPlayer})}
             autoplayBlocked={autoplayBlocked}
         />
@@ -1113,13 +1177,19 @@ class PlayComponent extends React.Component {
               <button disabled={!this.redoEnabled} onClick={this.handleRedo}>
                 Redo turn
               </button>
-              <button disabled={analysis.result == null} onClick={this.handlePlayAiMove}>
+              <button
+                  disabled={analysis.result == null || detailedAnalysis != null}
+                  onClick={this.handlePlayAiMove}>
                 Play AI Move
               </button>
               <button onClick={this.handleExit}>
                 Return to setup
               </button>
             </div>
+            {detailedAnalysis != null &&
+              <div className="fetching-details">
+                Fetching detailed analysis for aggressive AI...
+              </div>}
           </PlayPanel>
         </div>
         <UpdateUrlHash pieces={piecesAtTurnStart[0]} turns={turns}/>
