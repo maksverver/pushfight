@@ -951,11 +951,15 @@ class PlayComponent extends React.Component {
         if (error) {
           console.error('Detailed analysis failed!\n', error);  // includes stack trace
           alert('Detailed analysis failed!\n' + error);
+          this.setState(() => ({
+            detailedAnalysis: null,
+            aiPlayer: -1,
+          }));
         } else {
           const detailedSuccessors = value.successors;
           this.playFullTurn(parseTurn(ai.selectAggressiveMove(strength, detailedSuccessors)));
+          this.setState(() => ({detailedAnalysis: null}));
         }
-        this.setState(() => ({detailedAnalysis: null}));
       }
 
       this.setState(
