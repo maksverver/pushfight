@@ -471,6 +471,17 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  if (!std::filesystem::exists(std::filesystem::path(serve_dir) / index_file)) {
+    std::cerr << "Index file (" << index_file << ") does not exist!" << std::endl;
+    return 1;
+  }
+
+  if (!std::filesystem::exists(std::filesystem::path(serve_dir) / "bundle.js")) {
+    std::cerr << "bundle.js file does not exist!\n"
+        "See html/README.txt for instructions how to rebuild it." << std::endl;
+    return 1;
+  }
+
   std::cout << "Using index file: " << index_file << std::endl;
   if (const auto index_path = std::filesystem::path(serve_dir) / index_file;
       !std::filesystem::is_regular_file(index_path)) {
