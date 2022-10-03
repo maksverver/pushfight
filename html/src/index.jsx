@@ -944,17 +944,22 @@ class PlayComponent extends React.Component {
       // Playing aggressively.
       const detailedAnalysis = new Object();
 
-      const callback = (value, error) => {
+      let callback, tryFetch;  // forward declaration of mutually recursive functions
+
+      callback = (value, error) => {
         // Check if update has been superseded by another state change.
         if (this.state.detailedAnalysis !== detailedAnalysis) return;
 
         if (error) {
           console.error('Detailed analysis failed!\n', error);  // includes stack trace
-          alert('Detailed analysis failed!\n' + error);
-          this.setState(() => ({
-            detailedAnalysis: null,
-            aiPlayer: -1,
-          }));
+          if (confirm('Detailed analysis failed!\n' + error + '\nPress OK to retry.')) {
+            tryFetch();
+          } else {
+            this.setState(() => ({
+              detailedAnalysis: null,
+              aiPlayer: -1,
+            }));
+          }
         } else {
           const detailedSuccessors = value.successors;
           this.playFullTurn(parseTurn(ai.selectAggressiveMove(strength, detailedSuccessors)));
@@ -962,18 +967,18 @@ class PlayComponent extends React.Component {
         }
       }
 
-      this.setState(
-          () => ({detailedAnalysis}),
-          () => {
-            // Check if update has been superseded by another state change.
-            if (this.state.detailedAnalysis !== detailedAnalysis) return;
+      tryFetch = () => {
+        // Check if update has been superseded by another state change.
+        if (this.state.detailedAnalysis !== detailedAnalysis) return;
 
-            fetchPositionAnalysis(this.state.pieces, true)
-                .then(
-                    result => callback(result),
-                    error => callback(undefined, error));
-          });
-      }
+        fetchPositionAnalysis(this.state.pieces, true)
+            .then(
+                result => callback(result),
+                error => callback(undefined, error));
+      };
+
+      this.setState(() => ({detailedAnalysis}), tryFetch);
+    }
   }
 
   handleMove(src, dst) {
