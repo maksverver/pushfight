@@ -75,6 +75,7 @@
 #include "macros.h"
 #include "minimized-accessor.h"
 #include "minimized-lookup.h"
+#include "parse-perm.h"
 #include "perms.h"
 #include "search.h"
 #include "position-value.h"
@@ -107,47 +108,32 @@ int main(int argc, char *argv[]) {
 
   MinimizedAccessor acc(filename);
 
+  std::optional<std::vector<std::pair<EvaluatedSuccessor, std::vector<Value>>>> successors;
   std::string error;
-  auto result = LookupSuccessors(acc, perm_string, &error);
-  if (!result) {
+  if (std::optional<Perm> perm = ParsePerm(perm_string, &error); perm) {
+    successors = LookupDetailedSuccessors(acc, *perm, detailed, &error);
+  }
+  if (!successors) {
     std::cerr << error << std::endl;
     return 2;
   }
 
-  std::vector<Perm> perms_to_lookup;
-  std::vector<std::vector<Value>> succ_values;
-  if (detailed) {
-    // Calculate values of successors of successors.
-    for (const auto &elem : *result) {
-      if (elem.state.outcome == TIE) {
-        if (elem.value == Value::LossIn(1)) break;
-        perms_to_lookup.push_back(elem.state.perm);
-      }
-    }
-    succ_values = LookupSuccessorValues(acc, perms_to_lookup);
-  }
+  for (const auto &[succ, values] : *successors) {
+    std::cout << succ.value << ' ' << succ.moves;
+    if (succ.state.outcome == TIE) {
+      std::cout << ' ' << "+-"[succ.rotated] << succ.min_index;
 
-  size_t succ_values_index = 0;
-  for (const auto &elem : *result) {
-    std::cout << elem.value << ' ' << elem.moves;
-    if (elem.state.outcome == TIE) {
-      std::cout << ' ' << "+-"[elem.rotated] << elem.min_index;
-
-      if (detailed && elem.value != Value::LossIn(1)) {
+      if (!values.empty()) {
         // Print values of successors of successors.
         std::ostringstream details;
         int counts[3] = {0, 0, 0};
-        assert(succ_values_index < succ_values.size());
-        if (succ_values_index < succ_values.size()) {
-          const std::vector<Value> &values = succ_values[succ_values_index++];
-          for (size_t i = 0, j = 0; i < values.size(); i = j) {
-            Value v = values[i];
-            while (j < values.size() && values[j] == v) ++j;
-            int n = j - i;
-            counts[v.Sign() + 1] += n;
-            if (i > 0) details << ',';
-            details << v << '*' << n;
-          }
+        for (size_t i = 0, j = 0; i < values.size(); i = j) {
+          Value v = values[i];
+          while (j < values.size() && values[j] == v) ++j;
+          int n = j - i;
+          counts[v.Sign() + 1] += n;
+          if (i > 0) details << ',';
+          details << v << '*' << n;
         }
         for (int c : counts) std::cout << ' ' << c;
         std::cout << ' ' << details.str();
@@ -155,6 +141,5 @@ int main(int argc, char *argv[]) {
     }
     std::cout << '\n';
   }
-  assert(succ_values_index == succ_values.size());
   std::cout.flush();
 }

@@ -10,7 +10,6 @@
 #include "dedupe.h"
 #include "perms.h"
 #include "position-value.h"
-#include "parse-perm.h"
 #include "search.h"
 
 namespace {
@@ -36,16 +35,6 @@ std::optional<int64_t> CheckPermType(const Perm &perm, std::string *error) {
 }
 
 }  // namespace
-
-std::optional<std::vector<EvaluatedSuccessor>>
-LookupSuccessors(
-    const MinimizedAccessor &acc,
-    std::string_view perm_string,
-    std::string *error) {
-  auto perm = ParsePerm(perm_string, error);
-  if (!perm) return {};
-  return LookupSuccessors(acc, *perm, error);
-}
 
 std::optional<std::vector<EvaluatedSuccessor>>
 LookupSuccessors(
@@ -139,6 +128,45 @@ LookupSuccessors(
     assert(init_min_index == -1 || stored_value == evaluated_successors.front().value);
   }
   return evaluated_successors;
+}
+
+std::optional<std::vector<std::pair<EvaluatedSuccessor, std::vector<Value>>>>
+LookupDetailedSuccessors(
+    const MinimizedAccessor &acc,
+    const Perm &perm,
+    bool include_successor_values,
+    std::string *error) {
+  std::optional<std::vector<EvaluatedSuccessor>> successors = LookupSuccessors(acc, perm, error);
+  if (!successors) return {};
+
+  std::vector<std::pair<EvaluatedSuccessor, std::vector<Value>>> result(successors->size());
+  for (size_t i = 0; i < successors->size(); ++i) {
+    result[i].first = std::move((*successors)[i]);
+  }
+
+  if (include_successor_values) {
+    // Calculate values of successors of successors.
+    std::vector<Perm> perms_to_lookup;
+    for (const auto &elem : *successors) {
+      if (elem.state.outcome == TIE) {
+        if (elem.value == Value::LossIn(1)) break;
+        perms_to_lookup.push_back(elem.state.perm);
+      }
+    }
+    std::vector<std::vector<Value>> succ_values = LookupSuccessorValues(acc, perms_to_lookup);
+
+    // Associate values of successors with successor elements.
+    size_t succ_values_index = 0;
+    for (auto &[succ, value] : result) {
+      if (succ.state.outcome == TIE && succ.value != Value::LossIn(1)) {
+        assert(succ_values_index < succ_values.size());
+        value = std::move(succ_values[succ_values_index++]);
+      }
+    }
+    assert(succ_values_index == succ_values.size());
+  }
+
+  return result;
 }
 
 std::optional<Value>

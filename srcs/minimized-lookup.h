@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "board.h"
@@ -33,11 +34,21 @@ inline bool operator<(const EvaluatedSuccessor &a, const EvaluatedSuccessor &b) 
 // The returned values are for the previous player (e.g., if a successor state
 // is lost-in-X, the value returned will be win-in-(X + 1), and so on.)
 std::optional<std::vector<EvaluatedSuccessor>>
-LookupSuccessors(const MinimizedAccessor &acc, std::string_view perm_string, std::string *error);
-
-// Similar to LookupSuccessor above, but starts from a parsed permutation.
-std::optional<std::vector<EvaluatedSuccessor>>
 LookupSuccessors(const MinimizedAccessor &acc, const Perm &perm, std::string *error);
+
+// Like LookupSuccessors() above, but if `include_successor_values` is true,
+// also looks up the values of the successors of each successor.
+//
+// The successor values are relative to the opponent. For example, if a
+// successor has value W3, then the values of its successors may be L2 or L1.
+// Successor values are ordered from best to worst, and they are not
+// deduplicated.
+std::optional<std::vector<std::pair<EvaluatedSuccessor, std::vector<Value>>>>
+LookupDetailedSuccessors(
+    const MinimizedAccessor &acc,
+    const Perm &perm,
+    bool include_successor_values,
+    std::string *error);
 
 // Calculates the value of the given permutation, without successor information.
 //
