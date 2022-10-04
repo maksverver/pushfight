@@ -11,6 +11,7 @@
 #include "flags.h"
 #include "minimized-lookup.h"
 #include "minimized-accessor.h"
+#include "parse-perm.h"
 #include "position-value.h"
 
 #if _WIN32
@@ -296,8 +297,11 @@ void HandleHttpRequest(
     std::vector<std::string> components = SplitString(request_uri.substr(lookup_path.size()), SLASH_STRING);
     // Match path of the form: perms/<permutation string/id>
     if (components.size() == 2 && components[0] == "perms") {
+      std::optional<std::vector<EvaluatedSuccessor>> successors;
       std::string error;
-      auto successors = LookupSuccessors(*acc, components[1], &error);
+      if (std::optional<Perm> perm = ParsePerm(components[1], &error); perm) {
+        successors = LookupSuccessors(*acc, *perm, &error);
+      }
       if (!successors) {
         SendResponse(s, 400, "Bad Request", error);
         return;
