@@ -126,8 +126,13 @@ class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
     # Execute lookup-min, which does the actual work of calculating
     # successors and their statuses.
     options = []
-    if params.get('d') == '1':
+    d = params.get('d', '0')
+    if d == '1':
       options.append('-d')
+    elif d != '0':
+      self.send_client_error('Invalid value for d parameter')
+      return
+
     result = subprocess.run([LOOKUP_MIN_PATH] + options + [MINIMIZED_BIN_PATH, perm],
       capture_output=True, text=True)
 
