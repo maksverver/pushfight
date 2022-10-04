@@ -70,7 +70,6 @@ std::optional<MinimizedAccessor> acc;
 constexpr int max_header_size = 102400;  // 100 KiB
 
 const std::string SPACE_STRING = " ";
-const std::string AMPERSAND_STRING = "&";
 const std::string NEWLINE_STRING = "\r\n";
 const std::string SLASH_STRING = "/";
 
@@ -278,6 +277,24 @@ bool StartsWith(const std::string &s, const char *prefix) {
   return s.rfind(prefix, 0) == 0;
 }
 
+// Note: this currently does not do URI-decoding of keys or values!
+// If there are duplicate keys, this only keeps the latest entry.
+std::map<std::string, std::string> ParseQueryString(const std::string &query_string) {
+  std::map<std::string, std::string> params;
+  size_t i = 0;
+  while (i < query_string.size()) {
+    size_t j = i;
+    while (j < query_string.size() && query_string[j] != '&') ++j;
+    size_t k = i;
+    while (k < j && query_string[k] != '=') ++k;
+    if (k < j) {
+      params[query_string.substr(i, k - i)] = query_string.substr(k + 1, j - (k + 1));
+    }
+    i = j + 1;
+  }
+  return params;
+}
+
 void HandleHttpRequest(
     int s,
     const std::string &request_method,
@@ -291,10 +308,19 @@ void HandleHttpRequest(
     return;
   }
 
-  // Maybe TODO: strip query string from path? Currently we will return 404.
+  std::string request_path;
+  std::map<std::string, std::string> query_params;
 
-  if (StartsWith(request_uri, lookup_path)) {
-    std::vector<std::string> components = SplitString(request_uri.substr(lookup_path.size()), SLASH_STRING);
+  if (std::string::size_type i = request_uri.find('?'); i == std::string::npos) {
+    request_path = request_uri;
+  } else {
+    request_path = request_uri.substr(0, i);
+    std::string query_string = request_uri.substr(i + 1);
+    query_params = ParseQueryString(query_string);
+  }
+
+  if (StartsWith(request_path, lookup_path)) {
+    std::vector<std::string> components = SplitString(request_path.substr(lookup_path.size()), SLASH_STRING);
     // Match path of the form: perms/<permutation string/id>
     if (components.size() == 2 && components[0] == "perms") {
       std::optional<std::vector<EvaluatedSuccessor>> successors;
@@ -329,16 +355,16 @@ void HandleHttpRequest(
       return;
     }
     // The main security feature: forbid absolute paths and double-dot components;
-    std::filesystem::path request_path = request_uri.substr(1);
-    request_path = request_path.lexically_normal();
-    if (request_path.empty() || (request_path.native().size() == 1 && request_path.native()[0] == '.')) {
-      request_path = index_file;
+    std::filesystem::path rel_path = request_uri.substr(1);
+    rel_path = rel_path.lexically_normal();
+    if (rel_path.empty() || (rel_path.native().size() == 1 && rel_path.native()[0] == '.')) {
+      rel_path = index_file;
     }
-    if (!request_path.is_relative()) {
+    if (!rel_path.is_relative()) {
       SendBadRequest(s);
       return;
     }
-    for (const auto &component : request_path) {
+    for (const auto &component : rel_path) {
       if (component.native()[0] == '.') {
         // Deny access to any files that start with dot.
         // Importantly, this includes ".." components!
@@ -347,13 +373,13 @@ void HandleHttpRequest(
       }
     }
 
-    std::filesystem::path path = std::filesystem::path(serve_dir) / request_path;
-    if (!std::filesystem::exists(path)) {
+    std::filesystem::path file_path = std::filesystem::path(serve_dir) / rel_path;
+    if (!std::filesystem::exists(file_path)) {
       SendNotFound(s);
       return;
     }
 
-    std::string extension = path.extension().string();
+    std::string extension = file_path.extension().string();
     std::string content_type;
     if (!extension.empty()) {
       auto it = content_type_by_extension.find(extension);
@@ -361,7 +387,7 @@ void HandleHttpRequest(
     }
 
     // Note: this aborts on error, which is not ideal :/
-    bytes_t bytes = ReadFromFile(path.string().c_str());
+    bytes_t bytes = ReadFromFile(file_path.string().c_str());
 
     std::ostringstream oss;
     oss << "HTTP/1.0 200 OK\r\n";
