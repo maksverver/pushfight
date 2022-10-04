@@ -73,6 +73,9 @@ const std::string SPACE_STRING = " ";
 const std::string NEWLINE_STRING = "\r\n";
 const std::string SLASH_STRING = "/";
 
+const std::string d_param_name = "d";
+const std::string d_param_default_value = "0";
+
 const std::map<std::string, std::string> empty_headers = {};
 
 const std::map<std::string, std::string> content_type_by_extension = {
@@ -152,21 +155,21 @@ void MakeLowercase(std::string &s) {
 // This converts the successors to a JSON object in the same format as
 // lookup-min-http-server.py, which is understood by analysis.js.
 std::string ConvertSuccessors(
-    const std::vector<EvaluatedSuccessor> &successors) {
+    const std::vector<std::pair<EvaluatedSuccessor, std::vector<Value>>> &successors) {
   std::ostringstream oss;
 
   // Calculate overall status. Since successors are guaranteed to be sorted from
   // best to worst, the best status comes first. Special case: if there are no
   // successors, the position is lost-in-0.
-  Value status = successors.empty() ? Value::LossIn(0) : successors.front().value;
+  Value status = successors.empty() ? Value::LossIn(0) : successors.front().first.value;
 
   // Group successors by status. Again, the successors are already sorted.
-  std::vector<std::pair<Value, std::vector<Moves>>> grouped_moves;
-  for (const EvaluatedSuccessor &successor : successors) {
+  std::vector<std::pair<Value, std::vector<std::pair<Moves, std::string>>>> grouped_moves;
+  for (const auto &[successor, values] : successors) {
     if (grouped_moves.empty() || grouped_moves.back().first != successor.value) {
       grouped_moves.push_back({successor.value, {}});
     }
-    grouped_moves.back().second.push_back(successor.moves);
+    grouped_moves.back().second.push_back({successor.moves, SuccessorValuesToString(values)});
   }
 
   // Convert to a JSON string.
@@ -178,11 +181,23 @@ std::string ConvertSuccessors(
   for (size_t i = 0; i < grouped_moves.size(); ++i) {
     if (i != 0) oss << ',';
     oss << "{\"status\":\"" << grouped_moves[i].first << "\",\"moves\":[";
+    bool have_details = false;
     for (size_t j = 0; j < grouped_moves[i].second.size(); ++j) {
       if (j != 0) oss << ',';
-      oss << '"' << grouped_moves[i].second[j] << '"';
+      oss << '"' << grouped_moves[i].second[j].first << '"';
+      if (!grouped_moves[i].second[j].second.empty()) have_details = true;
     }
-    oss << "]}";
+    oss << ']';
+    if (have_details) {
+      oss << ",\"details\":[";
+      for (size_t j = 0; j < grouped_moves[i].second.size(); ++j) {
+        if (j != 0) oss << ',';
+        assert(!grouped_moves[i].second[j].second.empty());
+        oss << '"' << grouped_moves[i].second[j].second << '"';
+      }
+      oss << ']';
+    }
+    oss << '}';
   }
   oss << "]}";
   return oss.str();
@@ -295,6 +310,15 @@ std::map<std::string, std::string> ParseQueryString(const std::string &query_str
   return params;
 }
 
+template<class K, class V>
+V GetValue(const std::map<K, V> map, const K &key, const V &default_value) {
+  if (auto it = map.find(key); it != map.end()) {
+    return it->second;
+  } else {
+    return default_value;
+  }
+}
+
 void HandleHttpRequest(
     int s,
     const std::string &request_method,
@@ -323,10 +347,19 @@ void HandleHttpRequest(
     std::vector<std::string> components = SplitString(request_path.substr(lookup_path.size()), SLASH_STRING);
     // Match path of the form: perms/<permutation string/id>
     if (components.size() == 2 && components[0] == "perms") {
-      std::optional<std::vector<EvaluatedSuccessor>> successors;
+
+      bool detailed = false;
+      if (std::string d = GetValue(query_params, d_param_name, d_param_default_value); d == "1") {
+        detailed = true;
+      } else if (d != "0") {
+        SendBadRequest(s, "Invalid value for d parameter");
+        return;
+      }
+
+      std::optional<std::vector<std::pair<EvaluatedSuccessor, std::vector<Value>>>> successors;
       std::string error;
       if (std::optional<Perm> perm = ParsePerm(components[1], &error); perm) {
-        successors = LookupSuccessors(*acc, *perm, &error);
+        successors = LookupDetailedSuccessors(*acc, *perm, detailed, &error);
       }
       if (!successors) {
         SendResponse(s, 400, "Bad Request", error);
