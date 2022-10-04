@@ -50,6 +50,13 @@ LookupDetailedSuccessors(
     bool include_successor_values,
     std::string *error);
 
+// Converts a sorted sequence of values (as returned by
+// LookupDetailedSuccessors(), for example), to a comma-separated string with
+// duplicates compressed.
+//
+// For example, {T, T, L9, L5, L5, L4} is converted to: "T*2,L9*1,L5*2,L4*1".
+std::string SuccessorValuesToString(const std::vector<Value> &values);
+
 // Calculates the value of the given permutation, without successor information.
 //
 // The given permutation does not need to be reachable, but it must be valid and

@@ -124,19 +124,12 @@ int main(int argc, char *argv[]) {
       std::cout << ' ' << "+-"[succ.rotated] << succ.min_index;
 
       if (!values.empty()) {
-        // Print values of successors of successors.
-        std::ostringstream details;
+        // Count losses, ties and wins.
         int counts[3] = {0, 0, 0};
-        for (size_t i = 0, j = 0; i < values.size(); i = j) {
-          Value v = values[i];
-          while (j < values.size() && values[j] == v) ++j;
-          int n = j - i;
-          counts[v.Sign() + 1] += n;
-          if (i > 0) details << ',';
-          details << v << '*' << n;
-        }
+        for (Value v : values) ++counts[v.Sign() + 1];
+
         for (int c : counts) std::cout << ' ' << c;
-        std::cout << ' ' << details.str();
+        std::cout << ' ' << SuccessorValuesToString(values);
       }
     }
     std::cout << '\n';

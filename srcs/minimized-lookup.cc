@@ -169,6 +169,17 @@ LookupDetailedSuccessors(
   return result;
 }
 
+std::string SuccessorValuesToString(const std::vector<Value> &values) {
+  std::ostringstream oss;
+  for (size_t i = 0, j = 0; i < values.size(); i = j) {
+    if (i > 0) oss << ',';
+    Value v = values[i];
+    while (j < values.size() && values[j] == v) ++j;
+    oss << v << '*' << j - i;
+  }
+  return oss.str();
+}
+
 std::optional<Value>
 LookupValue(const MinimizedAccessor &acc, const Perm &perm, std::string *error) {
   if (std::optional<int64_t> min_index = CheckPermType(perm, error); !min_index) {
