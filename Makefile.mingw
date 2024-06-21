@@ -13,7 +13,7 @@ CC = x86_64-w64-mingw32-cc
 CXX = x86_64-w64-mingw32-c++
 LD = x86_64-w64-mingw32-c++
 LDFLAGS += -static
-LDLIBS += -lws2_32
+LDLIBS += -lws2_32 -lcrypt32
 
 most: $(BINARIES)
 
