@@ -15,7 +15,7 @@ import urllib.parse
 parser = argparse.ArgumentParser(description='Serve results from lookup-min over HTTP.')
 parser.add_argument('--host', default='localhost', help='Hostname to bind to')
 parser.add_argument('--port', default=8003, type=int, help='Port number to bind to')
-parser.add_argument('--ipv4', default=False, type=bool, action=argparse.BooleanOptionalAction,
+parser.add_argument('--ipv4', default=False, action=argparse.BooleanOptionalAction,
     help='Bind to IPv4 adress instead of IPv6 address')
 parser.add_argument('--lookup', default='./lookup-min', help='Path to lookup-min binary')
 parser.add_argument('--minimized', default='minimized.bin', help='Path to minimized.bin or minimized.bin.xz')
