@@ -4,6 +4,7 @@
 #include "perms.h"
 #include "board.h"
 
+#include <algorithm>
 #include <cassert>
 #include <functional>
 #include <vector>

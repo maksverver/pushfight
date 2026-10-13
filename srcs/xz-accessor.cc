@@ -4,6 +4,7 @@
 
 #include <lzma.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <fstream>

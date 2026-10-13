@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <random>
 
 std::mt19937 InitializeRng() {

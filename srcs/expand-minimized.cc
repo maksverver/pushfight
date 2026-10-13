@@ -21,6 +21,7 @@
 #include "position-value.h"
 #include "search.h"
 
+#include <algorithm>
 #include <iostream>
 #include <optional>
 
