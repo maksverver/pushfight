@@ -74,9 +74,11 @@ inline Outcome ExecutePush(Perm &perm, int i, int d) {
   }
 }
 
-template<class Callback>
-bool GenerateSuccessors(Perm &perm, Moves &moves, int move, Callback &callback) {
-  if (move < moves.size - 1) {
+template<int move, int move_count, class Callback>
+bool GenerateSuccessors(Perm &perm, Moves &moves, Callback &callback) {
+  static_assert(0 <= move && move <= move_count && move_count < 3);
+
+  if constexpr (move < move_count) {
     // Generate moves.
     REP(i0, L) if (perm[i0] == WHITE_MOVER || perm[i0] == WHITE_PUSHER) {
       // Optimization: don't move the same piece twice. There is never any reason for it.
@@ -97,7 +99,7 @@ bool GenerateSuccessors(Perm &perm, Moves &moves, int move, Callback &callback) 
             moves.moves[move] = {i0, i2};
 
             std::swap(perm[i0], perm[i2]);
-            if (!GenerateSuccessors(perm, moves, move + 1, callback)) return false;
+            if (!GenerateSuccessors<move + 1, move_count>(perm, moves, callback)) return false;
             std::swap(perm[i0], perm[i2]);
           }
         }
@@ -116,6 +118,12 @@ bool GenerateSuccessors(Perm &perm, Moves &moves, int move, Callback &callback) 
     }
   }
   return true;
+}
+
+template<int move_count, class Callback>
+bool GenerateSuccessors(Perm &perm, Moves &moves, Callback &callback) {
+  moves.size = move_count + 1;
+  return GenerateSuccessors<0, move_count>(perm, moves, callback);
 }
 
 }  // namespace impl

@@ -38,9 +38,9 @@ bool GenerateSuccessors(const Perm &perm, Callback callback) {
   Perm mutable_perm = perm;
   Moves moves = {.size = 0, .moves={}};
   return
-    (moves.size = 1, impl::GenerateSuccessors(mutable_perm, moves, 0, callback)) &&
-    (moves.size = 2, impl::GenerateSuccessors(mutable_perm, moves, 0, callback)) &&
-    (moves.size = 3, impl::GenerateSuccessors(mutable_perm, moves, 0, callback));
+    impl::GenerateSuccessors<0>(mutable_perm, moves, callback) &&
+    impl::GenerateSuccessors<1>(mutable_perm, moves, callback) &&
+    impl::GenerateSuccessors<2>(mutable_perm, moves, callback);
 }
 
 // Enumerates the predecessors of `perm`.
